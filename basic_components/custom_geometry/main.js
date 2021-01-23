@@ -71,6 +71,25 @@ function init(){
   geom.faces = faces;
   geom.computeFaceNormals();
 
+  // array of materials
+  var materials = [
+    new THREE.MeshLambertMaterial({
+        opacity: 0.6,
+        color: 0x44ff44
+    }),
+    new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        wireframe: true
+    })
+  ];
+
+  /*
+    THREE.SceneUtils has been moved to /examples/jsm/utils/SceneUtils.js
+  */
+  // creating a mesh object for each of the materials specified above
+  var mesh = new THREE.SceneUtils.createMultiMaterialObject(geom, materials);
+  scene.add(mesh);
+
   // fog
   scene.fog = new THREE.Fog(0xffffff, 0.015, 100); // color, near, far
   //scene.fog = new THREE.FogExp2(0xffffff, 0.01); // exponential fog growth
