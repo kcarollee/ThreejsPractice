@@ -11,12 +11,12 @@ function init(){
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   
-  camera.position.x = -30;
-  camera.position.y = 40;
-  camera.position.z = 30;
-  camera.lookAt(scene.position);
+  camera.position.x = -20;
+  camera.position.y = 15;
+  camera.position.z = 45;
+  camera.lookAt(new THREE.Vector3(10, 0, 0));
 
-  var textureGrass = THREE.ImageUtils.loadTexture("assets/grass.jpg");
+  var textureGrass = new THREE.TextureLoader().load("assets/grass.jpg");
   textureGrass.wrapS = THREE.RepeatWrapping;
   textureGrass.wrapT = THREE.RepeatWrapping;
   textureGrass.repeat.set(4, 4);
@@ -33,6 +33,15 @@ function init(){
   // add the plane to the scene
   scene.add(plane);
 
+  var cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+  var cubeMaterial = new THREE.MeshLambertMaterial({color: 0xff3333});
+  var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+  cube.castShadow = true;
+
+  cube.position.x = -4;
+  cube.position.y = 3;
+  cube.position.z = 0;
+  scene.add(cube);
   document.body.appendChild(renderer.domElement);
   
   renderScene();
