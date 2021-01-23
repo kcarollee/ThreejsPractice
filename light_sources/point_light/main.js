@@ -31,6 +31,13 @@ function init(){
   cube.position.set(-4, 3, 0);
   scene.add(cube);
 
+  var lsGeo = new THREE.SphereGeometry(0.2);
+  var lsMat = new THREE.MeshBasicMaterial({color: 0xac6c25});
+  var lightSphere = new THREE.Mesh(lsGeo, lsMat);
+  lightSphere.castShadow = true;
+  lightSphere.position.set(3, 0, 3);
+  scene.add(lightSphere);
+
   var ambColor = "#0c0c0c";
   var ambLight = new THREE.AmbientLight(ambColor);
   scene.add(ambLight);
@@ -40,6 +47,11 @@ function init(){
   spotLight.castShadow = true;
   scene.add(spotLight);
 
+  var pointColor = "#ccffcc";
+  var pointLight = new THREE.PointLight(pointColor);
+  pointLight.distance = 100;
+  scene.add(pointLight);
+
   document.body.appendChild(renderer.domElement);
   
   renderScene();
@@ -47,6 +59,9 @@ function init(){
   var controls = new function(){
     this.ambientColor = ambColor;
     this.disableSpotLight = false;
+    this.pointColor = pointColor;
+    this.intensity = 1;
+    this.distance = 100;
     this.outputObj = function(){
       console.log(scene.children);
     }
@@ -59,6 +74,15 @@ function init(){
   gui.add(controls, 'disableSpotLight').onChange(e => {
     spotLight.visible = !e;
   });
+  gui.addColor(controls, 'pointColor').onChange(e => {
+    pointLight.color = new THREE.Color(e);
+  });
+  gui.add(controls, 'distance', 0, 100).onChange(e => {
+    pointLight.distance = e;
+  })
+  gui.add(controls, 'intensity', 0, 15).onChange(e => {
+    pointLight.intensity = e;
+  })
   
   var step = 0;
   function animateScene(){
@@ -66,6 +90,14 @@ function init(){
     cube.rotation.x = step;
     cube.rotation.y = step;
     cube.rotation.z = step;
+
+    lightSphere.position.set(
+      14 * Math.cos(step * 2.0),
+      7 * Math.sin(step * 2.0),
+      5
+    );
+
+    pointLight.position.copy(lightSphere.position);
   }
   
   function renderScene(){
