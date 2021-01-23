@@ -1,4 +1,4 @@
-var camera, scene, rendrer, stats;
+var camera, scene, renderer, stats;
 var gui = new dat.GUI();
 
 function init(){
@@ -9,8 +9,14 @@ function init(){
   renderer = new THREE.WebGLRenderer();
   renderer.setClearColor(0xEEEEEE, 1.0);
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMapEnabled = false;
- document.body.appendChild(renderer.domElement);
+  renderer.shadowMap.enabled = true;
+
+  camera.position.x = -30;
+  camera.position.y = 40;
+  camera.position.z = 30;
+  camera.lookAt(scene.position);
+
+  document.body.appendChild(renderer.domElement);
   renderScene();
 }
 
