@@ -11,15 +11,18 @@ function init(){
   //var gui = new dat.GUI();
   var axesHelper = new THREE.AxesHelper(5);
   scene.add(axesHelper);
+
+  RectAreaLightUniformsLib.init();
   
   var orbitControls = new OrbitControls(camera, renderer.domElement);
   orbitControls.target.copy(scene.position);
   orbitControls.update();
   
-  //renderer.setClearColor(0xEEEEEE, 1.0);
+  renderer.setClearColor(0x000000, 1.0);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
-  //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMapSoft = true;
   //renderer.outputEncoding = THREE.sRGBEndocing;
   
   camera.position.set(-50, 30, 50);
@@ -31,10 +34,10 @@ function init(){
   var planeMat = new THREE.MeshStandardMaterial({
     roughness: 0.044676705160855,
     metalness: 0.0,
-    color:0xA00c000
+    //color:0xA00c000
   });
   var plane = new THREE.Mesh(planeGeo, planeMat);
-
+  //plane.receiveShadow = true;
   plane.rotation.x = -0.5 * Math.PI;
   plane.position.x = 0;
   plane.position.y = 0;
@@ -48,15 +51,19 @@ function init(){
   scene.add(spotLight0);
 
   var areaLight1 = new THREE.RectAreaLight(0xff0000, 500, 4, 10);
-  areaLight1.position.set(-10, 10, -35);
+  areaLight1.position.set(-10, 10, 35);
   scene.add(areaLight1);
-
+/*
+  var helper1 = new RectAreaLightHelper(areaLight1);
+  areaLight1.add(helper1);
+  helper1.update();
+*/
   var areaLight2 = new THREE.RectAreaLight(0x00ff00, 500, 4, 10);
-  areaLight2.position.set(0, 10, -35);
+  areaLight2.position.set(0, 10, 35);
   scene.add(areaLight2);
 
   var areaLight3 = new THREE.RectAreaLight(0x0000ff, 500, 4, 10);
-  areaLight3.position.set(10, 10, -35);
+  areaLight3.position.set(10, 10, 35);
   scene.add(areaLight3);
 
   var planeGeometry1 = new THREE.BoxGeometry(4, 10, 0);
@@ -85,6 +92,16 @@ function init(){
   plane3.position.copy(areaLight3.position);
   scene.add(plane3);
 
+  var boxGeo = new THREE.BoxGeometry(10, 10, 10);
+  var boxMat = new THREE.MeshStandardMaterial({
+    roughness: 0.1,
+    metalness: 0.0,
+    //color:0xAA00cc
+  });
+  var box = new THREE.Mesh(boxGeo, boxMat);
+  box.position.set(0, 0, 0);
+  //box.castShadow = true;
+  scene.add(box);
   var controls = new function () {
     this.rotationSpeed = 0.02;
     this.color1 = 0xff0000;
@@ -98,6 +115,7 @@ function init(){
   var gui = new dat.GUI();
   gui.addColor(controls, 'color1').onChange(function (e) {
     areaLight1.color = new THREE.Color(e);
+    console.log(areaLight1);
     planeGeometry1Mat.color = new THREE.Color(e);
     scene.remove(plane1);
     plane1 = new THREE.Mesh(planeGeometry1, planeGeometry1Mat);
@@ -123,7 +141,7 @@ function init(){
     areaLight3.color = new THREE.Color(e);
     planeGeometry3Mat.color = new THREE.Color(e);
     scene.remove(plane3);
-    plane3 = new THREE.Mesh(planeGeometry1, planeGeometry3Mat);
+    plane3 = new THREE.Mesh(planeGeometry3, planeGeometry3Mat);
     plane3.position.copy(areaLight3.position);
     scene.add(plane3);
   });
@@ -138,7 +156,9 @@ function init(){
   function animateScene(){
     step += 0.01;
     
-
+    box.rotation.x = step;
+    box.rotation.y = step;
+    box.rotation.z = step;
   }
   
   function renderScene(){
