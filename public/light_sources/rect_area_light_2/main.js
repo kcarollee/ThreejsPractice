@@ -1,6 +1,6 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.124.0/build/three.module.js";
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
-import {RectAreaLightUniformsLib} from 'https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/lights/RectAreaLightUniformsLib.js';
+import {RectAreaLightUniformsLib} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import {RectAreaLightHelper} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/helpers/RectAreaLightHelper.js";
 function init(){
   
@@ -32,8 +32,8 @@ function init(){
   
   var planeGeo = new THREE.PlaneGeometry(70, 70, 1, 1);
   var planeMat = new THREE.MeshStandardMaterial({
-    roughness: 0.044676705160855,
-    metalness: 0.0,
+    roughness: 0.0,
+    metalness: 0.2,
     //color:0xA00c000
   });
   var plane = new THREE.Mesh(planeGeo, planeMat);
@@ -45,13 +45,21 @@ function init(){
   scene.add(plane);
 
   var spotLight0 = new THREE.SpotLight(0xcccccc);
-  spotLight0.position.set(-40, 60, -10);
-  spotLight0.intensity = 0.1;
+  spotLight0.position.set(0, 20, 0);
+  spotLight0.intensity = 0.2;
   spotLight0.lookAt(plane);
   scene.add(spotLight0);
 
+  var spotLightSphereGeo = new THREE.SphereGeometry(0.5, 32, 32);
+  var spotLightSphereMat = new THREE.MeshBasicMaterial({
+    color: 0xcccccc
+  });
+  var spotLightSphere = new THREE.Mesh(spotLightSphereGeo, spotLightSphereMat);
+  spotLightSphere.position.copy(spotLight0.position);
+  scene.add(spotLightSphere);
+
   var areaLight1 = new THREE.RectAreaLight(0xff0000, 500, 4, 10);
-  areaLight1.position.set(-10, 10, 35);
+  areaLight1.position.set(-10, 10, -35);
   scene.add(areaLight1);
 /*
   var helper1 = new RectAreaLightHelper(areaLight1);
@@ -59,11 +67,11 @@ function init(){
   helper1.update();
 */
   var areaLight2 = new THREE.RectAreaLight(0x00ff00, 500, 4, 10);
-  areaLight2.position.set(0, 10, 35);
+  areaLight2.position.set(0, 10, -35);
   scene.add(areaLight2);
 
   var areaLight3 = new THREE.RectAreaLight(0x0000ff, 500, 4, 10);
-  areaLight3.position.set(10, 10, 35);
+  areaLight3.position.set(10, 10, -35);
   scene.add(areaLight3);
 
   var planeGeometry1 = new THREE.BoxGeometry(4, 10, 0);
@@ -141,7 +149,7 @@ function init(){
     areaLight3.color = new THREE.Color(e);
     planeGeometry3Mat.color = new THREE.Color(e);
     scene.remove(plane3);
-    plane3 = new THREE.Mesh(planeGeometry3, planeGeometry3Mat);
+    plane3 = new THREE.Mesh(planeGeometry1, planeGeometry3Mat);
     plane3.position.copy(areaLight3.position);
     scene.add(plane3);
   });
@@ -159,6 +167,12 @@ function init(){
     box.rotation.x = step;
     box.rotation.y = step;
     box.rotation.z = step;
+
+    areaLight1.position.z = 35 * Math.sin(step);
+    plane1.position.copy(areaLight1.position);
+
+    spotLight0.position.z = 35 * Math.sin(step);
+    spotLightSphere.position.copy(spotLight0.position);
   }
   
   function renderScene(){
