@@ -7,31 +7,32 @@ class Walker {
         
         this.lineMat = new THREE.LineBasicMaterial({
             color: 0xffffff * Math.random(),
-            linewidth: 5
+            linewidth: Walker.linewidth
         });
 
-        this.colorMat = new THREE.MeshBasicMaterial({
+        this.colorMat = new THREE.MeshStandardMaterial({
             color: 0xffffff * Math.random(),
+            roughness: 0.1
         });
         
         this.movementRadius = movementRadius;
         this.sphereArr = [];
 
         this.startRand = Math.random() * 100.0;
-        this.noiseStep = 0.001;
+       
         this.pointArr = [];
 
         var randDeg1, randDeg2;
         for (let i = 0; i < this.trailNum; i++) {
-            var sphereGeo = new THREE.SphereGeometry(0.1, 5, 5);
+            var sphereGeo = new THREE.SphereGeometry(0.5, 32, 32);
             var sphere = new SceneUtils.createMultiMaterialObject(sphereGeo, [this.colorMat]);
-            randDeg1 = noise.simplex2(this.noiseStep * i, 0) * Math.PI * 2;
-            randDeg2 = noise.simplex2(this.startRand + this.noiseStep * i, 0) * Math.PI * 2;
+            randDeg1 = noise.simplex2(Walker.noiseStep * i, 0) * Math.PI * 2;
+            randDeg2 = noise.simplex2(this.startRand + Walker.noiseStep * i, 0) * Math.PI * 2;
             var pos = this.getPos(randDeg1, randDeg2);
             
             sphere.position.set(pos[0], pos[1], pos[2]);
             
-            scene.add(sphere);
+            //scene.add(sphere);
             this.sphereArr.push(sphere);
 
             var point = new THREE.Vector3(pos[0], pos[1], pos[2]);
@@ -53,27 +54,31 @@ class Walker {
     }
 
     update(step) {
-        step *= 0.1;
+        var vel =  step * 0.01;
         var randDeg1, randDeg2;
-        for (let i = 0; i < this.sphereArr.length; i++) {
-            randDeg1 = noise.simplex2(this.noiseStep * i + step, this.startRand) * Math.PI * 2;
-            randDeg2 = noise.simplex2(this.startRand + this.noiseStep * i + step, this.startRand) * Math.PI * 2;
+        var i = step % Walker.modBy;
+
+        for (; i < this.sphereArr.length; i += Walker.modBy) {
+            randDeg1 = noise.simplex2(Walker.noiseStep * i + vel, this.startRand) * Math.PI * 2;
+            randDeg2 = noise.simplex2(this.startRand + Walker.noiseStep * i + vel, this.startRand) * Math.PI * 2;
             var pos = this.getPos(randDeg1, randDeg2);
-            this.sphereArr[i].position.set(pos[0], pos[1], pos[2]);
+            //this.sphereArr[i].position.set(pos[0], pos[1], pos[2]);
             this.pointArr[i].set(pos[0], pos[1], pos[2]);
             
         }
         this.lineGeo.setFromPoints(this.pointArr);
         
+        
     }
 }
-
 Walker.depthMat = new THREE.MeshDepthMaterial();
-
+Walker.noiseStep = 0.01;
+Walker.modBy = 1;
+Walker.linewidth = 2;
 function init() {
     noise.seed(Math.random());
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 10, 130);
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
@@ -82,10 +87,15 @@ function init() {
 
     var walkerArr = [];
 
-    var walkerNum = 50;
+    var walkerNum = 20;
+    var sphereMaxRadius = 50;
+    var gapSize = sphereMaxRadius / walkerNum;
+    var walkerNumPerRadius = 1;
     for (let i = 0; i < walkerNum; i++){
-        var w = new Walker(200,  20, scene);
-        walkerArr.push(w);
+        for (let j = 0; j < walkerNumPerRadius; j++){
+            var w = new Walker(30,  (i + 1) * gapSize, scene);
+            walkerArr.push(w);
+        }
     }
 
     scene.add(camera);
@@ -105,9 +115,17 @@ function init() {
     camera.lookAt(scene.position);
 
     var ambLight = new THREE.AmbientLight({
-        color: 0xffffff
+        color: 0xffffff,
+        instensity: 0.0
+    });
+    //scene.add(ambLight);
+    var spotLight = new THREE.SpotLight({
+        color: 0xffffff,
+        intensity: 3.0
     });
     
+    spotLight.position.set(0, 0, 100);
+    scene.add(spotLight);
 
     document.body.appendChild(renderer.domElement);
 
@@ -117,14 +135,27 @@ function init() {
         this.outputObj = function() {
             console.log(scene.children);
         }
+        this.noiseStep = 0.1;
+        this.indexMod = 1;
+        this.lineWidth = 1;
     }
     gui.add(controls, 'outputObj');
+    
+    gui.add(controls, 'noiseStep', 0.001, 0.1).onChange(function(e){
+        Walker.noiseStep = e;
+    });
+    gui.add(controls, 'indexMod', 1, 10).onChange(function(e){
+        Walker.modBy = Math.floor(e);
+    });
+    gui.add(controls, 'lineWidth', 1, 10).onChange(function(e){
+        Walker.modBy = Math.floor(e);
+    });
 
     var step = 0;
     function animateScene() {
-        step += 0.1;
-        
-        walkerArr.forEach(w => w.update(step * 0.1));
+        step++;
+        spotLight.position.set(0, 0, 10);
+        walkerArr.forEach(w => w.update(step));
     }
 
     function renderScene() {
