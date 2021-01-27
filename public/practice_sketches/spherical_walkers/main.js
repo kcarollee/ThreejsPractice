@@ -18,7 +18,7 @@ class Walker {
         this.sphereArr = [];
 
         this.startRand = Math.random() * 100.0;
-        this.noiseStep = 0.01;
+        this.noiseStep = 0.001;
         this.pointArr = [];
 
         var randDeg1, randDeg2;
@@ -82,9 +82,9 @@ function init() {
 
     var walkerArr = [];
 
-    var walkerNum = 10;
+    var walkerNum = 50;
     for (let i = 0; i < walkerNum; i++){
-        var w = new Walker(10,  (i + 1) * 2, scene);
+        var w = new Walker(200,  20, scene);
         walkerArr.push(w);
     }
 
