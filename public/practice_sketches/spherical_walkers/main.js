@@ -1,6 +1,8 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.124.0/build/three.module.js";
+//import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.124.0/build/three.module.js";
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 import {SceneUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/SceneUtils.js";
+//import EffectComposer from "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/jsm/postprocessing/EffectComposer.js";
+//import Composer from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/js/postprocessing/RenderPass.js";
 class Walker {
     constructor(trailNum, movementRadius, scene) {
         this.trailNum = trailNum;
@@ -74,20 +76,29 @@ class Walker {
 Walker.depthMat = new THREE.MeshDepthMaterial();
 Walker.noiseStep = 0.01;
 Walker.modBy = 1;
-Walker.linewidth = 2;
+Walker.linewidth = 1;
+
+const params = {
+				exposure: 1,
+				bloomStrength: 1.5,
+				bloomThreshold: 0,
+				bloomRadius: 0
+			};
 function init() {
     noise.seed(Math.random());
+    
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
     });
+    
     var gui = new dat.GUI();
 
     var walkerArr = [];
 
-    var walkerNum = 20;
+    var walkerNum = 10;
     var sphereMaxRadius = 50;
     var gapSize = sphereMaxRadius / walkerNum;
     var walkerNumPerRadius = 1;
@@ -127,6 +138,15 @@ function init() {
     spotLight.position.set(0, 0, 100);
     scene.add(spotLight);
 
+    var composer = new THREE.EffectComposer(renderer);
+    var renderPass = new THREE.RenderPass(scene, camera);
+    composer.addPass(renderPass);
+    var bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
+    bloomPass.threshold = params.bloomThreshold;
+	bloomPass.strength = params.bloomStrength;
+	bloomPass.radius = params.bloomRadius;
+    composer.addPass(bloomPass);
+
     document.body.appendChild(renderer.domElement);
 
     renderScene();
@@ -158,11 +178,17 @@ function init() {
         walkerArr.forEach(w => w.update(step));
     }
 
+    var clock = new THREE.Clock();
+    
     function renderScene() {
+        
+        //var delta = clock.getDelta();
         animateScene();
         stats.update();
         requestAnimationFrame(renderScene);
-        renderer.render(scene, camera);
+        //renderer.render(scene, camera);
+        composer.render();
+        
     }
 
     function initStats() {
