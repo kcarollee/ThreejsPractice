@@ -1,15 +1,12 @@
-//import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.124.0/build/three.module.js";
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 import {SceneUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/SceneUtils.js";
-//import EffectComposer from "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/jsm/postprocessing/EffectComposer.js";
-//import Composer from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/js/postprocessing/RenderPass.js";
 class Walker {
     constructor(trailNum, movementRadius, scene) {
         this.trailNum = trailNum;
         
         this.lineMat = new THREE.LineBasicMaterial({
             color: 0xffffff * Math.random(),
-            linewidth: Walker.linewidth
+            linewidth: 1
         });
 
         this.colorMat = new THREE.MeshStandardMaterial({
@@ -34,7 +31,7 @@ class Walker {
             
             sphere.position.set(pos[0], pos[1], pos[2]);
             
-            //scene.add(sphere);
+            scene.add(sphere);
             this.sphereArr.push(sphere);
 
             var point = new THREE.Vector3(pos[0], pos[1], pos[2]);
@@ -47,6 +44,11 @@ class Walker {
         this.positionVec3Arr = [];
     }
 
+    hideLine(){this.line.visible = false;}
+    showLine(){this.line.visible = true;}
+    hideSpheres(){this.sphereArr.forEach(s => s.visible = false)}
+    showSpheres(){this.sphereArr.forEach(s => s.visible = true)}
+    changeLineWidth(newWidth) {this.lineMat.lineWidth = newWidth;}
     getPos(deg1, deg2){
         var x = this.movementRadius * Math.cos(deg1) * Math.cos(deg2);
         var y = this.movementRadius * Math.sin(deg1) * Math.cos(deg2);
@@ -64,26 +66,22 @@ class Walker {
             randDeg1 = noise.simplex2(Walker.noiseStep * i + vel, this.startRand) * Math.PI * 2;
             randDeg2 = noise.simplex2(this.startRand + Walker.noiseStep * i + vel, this.startRand) * Math.PI * 2;
             var pos = this.getPos(randDeg1, randDeg2);
-            //this.sphereArr[i].position.set(pos[0], pos[1], pos[2]);
-            this.pointArr[i].set(pos[0], pos[1], pos[2]);
+            if (Walker.showSpheres) this.sphereArr[i].position.set(pos[0], pos[1], pos[2]);
+            if (Walker.showLine) this.pointArr[i].set(pos[0], pos[1], pos[2]);
             
         }
-        this.lineGeo.setFromPoints(this.pointArr);
-        
+    
+        if (Walker.showLine) this.lineGeo.setFromPoints(this.pointArr);
         
     }
 }
 Walker.depthMat = new THREE.MeshDepthMaterial();
 Walker.noiseStep = 0.01;
 Walker.modBy = 1;
-Walker.linewidth = 1;
+Walker.showLine = true;
+Walker.showSpheres = false;
 
-const params = {
-				exposure: 1,
-				bloomStrength: 1.5,
-				bloomThreshold: 0,
-				bloomRadius: 0
-			};
+
 function init() {
     noise.seed(Math.random());
     
@@ -91,7 +89,7 @@ function init() {
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
-        antialias: true
+        antialias: false
     });
     
     var gui = new dat.GUI();
@@ -104,7 +102,7 @@ function init() {
     var walkerNumPerRadius = 1;
     for (let i = 0; i < walkerNum; i++){
         for (let j = 0; j < walkerNumPerRadius; j++){
-            var w = new Walker(30,  (i + 1) * gapSize, scene);
+            var w = new Walker(30,  (i + 1) * gapSize * 0.5, scene);
             walkerArr.push(w);
         }
     }
@@ -112,6 +110,7 @@ function init() {
     scene.add(camera);
 
     renderer.setClearColor(0x000000, 1.0);
+    
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -141,34 +140,45 @@ function init() {
     var composer = new THREE.EffectComposer(renderer);
     var renderPass = new THREE.RenderPass(scene, camera);
     composer.addPass(renderPass);
-    var bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight ), 1.5, 0.4, 0.85 );
-    bloomPass.threshold = params.bloomThreshold;
-	bloomPass.strength = params.bloomStrength;
-	bloomPass.radius = params.bloomRadius;
+    
+    // bloom shader pass
+    var bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85 );
+    bloomPass.threshold = 0;
+	bloomPass.strength = 1.5;
+	bloomPass.radius = 1;
     composer.addPass(bloomPass);
 
+    // anti-alias shader pass
+    var smaaPass = new THREE.SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+    composer.addPass(smaaPass);
     document.body.appendChild(renderer.domElement);
 
     renderScene();
 
     var controls = new function() {
-        this.outputObj = function() {
-            console.log(scene.children);
-        }
         this.noiseStep = 0.1;
         this.indexMod = 1;
         this.lineWidth = 1;
+        this.showSpheres = false;
+        this.showLines = true;
+        this.changeLineWidth = 1;
     }
-    gui.add(controls, 'outputObj');
-    
     gui.add(controls, 'noiseStep', 0.001, 0.1).onChange(function(e){
         Walker.noiseStep = e;
     });
     gui.add(controls, 'indexMod', 1, 10).onChange(function(e){
         Walker.modBy = Math.floor(e);
     });
-    gui.add(controls, 'lineWidth', 1, 10).onChange(function(e){
-        Walker.modBy = Math.floor(e);
+    gui.add(controls, 'showSpheres').onChange(e => {
+        Walker.showSpheres = e;
+        Walker.showSpheres ? walkerArr.forEach(w => w.showSpheres()) : walkerArr.forEach(w => w.hideSpheres());
+    });
+    gui.add(controls, 'showLines').onChange(e => {
+        Walker.showLine = e;
+        Walker.showLine ? walkerArr.forEach(w => w.showLine()) : walkerArr.forEach(w => w.hideLine());
+    });
+    gui.add(controls, 'changeLineWidth', 0, 5).onChange(e => {
+        walkerArr.forEach(w => w.changeLineWidth(e));
     });
 
     var step = 0;
