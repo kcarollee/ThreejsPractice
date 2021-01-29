@@ -6,7 +6,7 @@ class Walker {
         
         this.lineMat = new THREE.LineBasicMaterial({
             color: 0xffffff * Math.random(),
-            linewidth: 1
+            linewidth: 3
         });
 
         this.colorMat = new THREE.MeshStandardMaterial({
@@ -30,7 +30,7 @@ class Walker {
             var pos = this.getPos(randDeg1, randDeg2);
             
             sphere.position.set(pos[0], pos[1], pos[2]);
-            
+            sphere.visible = false;
             scene.add(sphere);
             this.sphereArr.push(sphere);
 
@@ -58,7 +58,7 @@ class Walker {
     }
 
     update(step) {
-        var vel =  step * 0.01;
+        var vel =  step * Walker.vel;
         var randDeg1, randDeg2;
         var i = step % Walker.modBy;
 
@@ -72,7 +72,7 @@ class Walker {
         }
     
         if (Walker.showLine) this.lineGeo.setFromPoints(this.pointArr);
-        
+        console.log(this.pointArr.length);
     }
 }
 Walker.depthMat = new THREE.MeshDepthMaterial();
@@ -80,14 +80,14 @@ Walker.noiseStep = 0.01;
 Walker.modBy = 1;
 Walker.showLine = true;
 Walker.showSpheres = false;
-
+Walker.vel = 0.001;
 
 function init() {
     noise.seed(Math.random());
     
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    var stats = initStats();
+    //var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: false
     });
@@ -96,13 +96,13 @@ function init() {
 
     var walkerArr = [];
 
-    var walkerNum = 10;
+    var walkerNum = 3;
     var sphereMaxRadius = 50;
     var gapSize = sphereMaxRadius / walkerNum;
     var walkerNumPerRadius = 1;
     for (let i = 0; i < walkerNum; i++){
         for (let j = 0; j < walkerNumPerRadius; j++){
-            var w = new Walker(30,  (i + 1) * gapSize * 0.5, scene);
+            var w = new Walker(200,  (i + 1) * gapSize * 0.5, scene);
             walkerArr.push(w);
         }
     }
@@ -124,18 +124,31 @@ function init() {
 
     camera.lookAt(scene.position);
 
-    var ambLight = new THREE.AmbientLight({
+    var ambLight = new THREE.PointLight({
         color: 0xffffff,
-        instensity: 0.0
+        instensity: 0.5
     });
-    //scene.add(ambLight);
-    var spotLight = new THREE.SpotLight({
-        color: 0xffffff,
-        intensity: 3.0
-    });
+    scene.add(ambLight);
     
-    spotLight.position.set(0, 0, 100);
-    scene.add(spotLight);
+    var spotLightArr = [];
+    var spotLightDist = 10;
+    var spotLightPosArr = [
+        [0, 0, 0],
+        [spotLightDist, 0, 0],
+        [-spotLightDist, 0, 0],
+        [0, 0, spotLightDist],
+        [0, 0, -spotLightDist]
+    ];
+    for (let i = 0;  i < 5; i++){
+        var spotLight = new THREE.SpotLight({
+            color: 0xffffff,
+            intensity: 30.0
+        })
+        spotLight.position.set(spotLightPosArr[i]);
+        scene.add(spotLight);
+    }
+    
+    
 
     var composer = new THREE.EffectComposer(renderer);
     var renderPass = new THREE.RenderPass(scene, camera);
@@ -144,7 +157,7 @@ function init() {
     // bloom shader pass
     var bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85 );
     bloomPass.threshold = 0;
-	bloomPass.strength = 1.5;
+	bloomPass.strength = 3.0;
 	bloomPass.radius = 1;
     composer.addPass(bloomPass);
 
@@ -162,7 +175,10 @@ function init() {
         this.showSpheres = false;
         this.showLines = true;
         this.changeLineWidth = 1;
+        this.velocity = 0.001;
+        
     }
+        
     gui.add(controls, 'noiseStep', 0.001, 0.1).onChange(function(e){
         Walker.noiseStep = e;
     });
@@ -180,6 +196,10 @@ function init() {
     gui.add(controls, 'changeLineWidth', 0, 5).onChange(e => {
         walkerArr.forEach(w => w.changeLineWidth(e));
     });
+    gui.add(controls, 'velocity', 0.001, 0.01).onChange(e => {
+        Walker.vel = e;
+    });
+    
 
     var step = 0;
     function animateScene() {
@@ -188,13 +208,13 @@ function init() {
         walkerArr.forEach(w => w.update(step));
     }
 
-    var clock = new THREE.Clock();
+    
     
     function renderScene() {
         
         //var delta = clock.getDelta();
         animateScene();
-        stats.update();
+        //stats.update();
         requestAnimationFrame(renderScene);
         //renderer.render(scene, camera);
         composer.render();
@@ -215,6 +235,8 @@ function init() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+        //smaaPass.setSize(window.innerWidth, window.innerHeight);
     }
 
     window.addEventListener('resize', onResize, false);
