@@ -11,7 +11,7 @@ class Walker {
 
         this.colorMat = new THREE.MeshStandardMaterial({
             color: 0xffffff * Math.random(),
-            roughness: 0.1
+            roughness: 0.0
         });
         
         this.movementRadius = movementRadius;
@@ -23,8 +23,10 @@ class Walker {
 
         var randDeg1, randDeg2;
         for (let i = 0; i < this.trailNum; i++) {
-            var sphereGeo = new THREE.SphereGeometry(0.5, 32, 32);
-            var sphere = new SceneUtils.createMultiMaterialObject(sphereGeo, [this.colorMat]);
+            var sphereGeo = new THREE.SphereGeometry(1.0, 16, 16);
+
+            //var sphere = new SceneUtils.createMultiMaterialObject(sphereGeo, [this.colorMat]);
+            var sphere = new THREE.Mesh(sphereGeo, this.colorMat);
             randDeg1 = noise.simplex2(Walker.noiseStep * i, 0) * Math.PI * 2;
             randDeg2 = noise.simplex2(this.startRand + Walker.noiseStep * i, 0) * Math.PI * 2;
             var pos = this.getPos(randDeg1, randDeg2);
@@ -72,7 +74,16 @@ class Walker {
         }
     
         if (Walker.showLine) this.lineGeo.setFromPoints(this.pointArr);
-        console.log(this.pointArr.length);
+        
+        this.sphereArr.forEach(s => {
+            s.rotation.x = step * 0.01;
+            s.rotation.y = step * 0.01;
+            s.rotation.z = step * 0.01;
+        });
+        this.line.rotation.x = step * 0.01;
+        this.line.rotation.y = step * 0.01;
+        this.line.rotation.z = step * 0.01;
+        
     }
 }
 Walker.depthMat = new THREE.MeshDepthMaterial();
@@ -115,7 +126,7 @@ function init() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMapSoft = true;
-
+    
     var orbitControls = new OrbitControls(camera, renderer.domElement);
     orbitControls.target.copy(scene.position);
     orbitControls.update();
@@ -157,7 +168,7 @@ function init() {
     // bloom shader pass
     var bloomPass = new THREE.UnrealBloomPass( new THREE.Vector2( window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85 );
     bloomPass.threshold = 0;
-	bloomPass.strength = 3.0;
+	bloomPass.strength = 2.0;
 	bloomPass.radius = 1;
     composer.addPass(bloomPass);
 
@@ -169,7 +180,7 @@ function init() {
     renderScene();
 
     var controls = new function() {
-        this.noiseStep = 0.1;
+        this.noiseStep = 0.01;
         this.indexMod = 1;
         this.lineWidth = 1;
         this.showSpheres = false;
