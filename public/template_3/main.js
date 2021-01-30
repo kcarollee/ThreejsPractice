@@ -1,4 +1,3 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.124.0/build/three.module.js";
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 
 function init() {
@@ -38,8 +37,9 @@ function init() {
     }
     gui.add(controls, 'outputObj');
 
+    var step = 0;
     function animateScene() {
-
+        step++;
     }
 
     function renderScene() {

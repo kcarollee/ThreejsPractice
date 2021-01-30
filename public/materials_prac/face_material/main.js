@@ -80,9 +80,10 @@ function init() {
         
     }
     
-
+    var step = 0;
     function animateScene() {
-
+        group.rotation.y = step+=0.1;
+        
     }
 
     function renderScene() {
