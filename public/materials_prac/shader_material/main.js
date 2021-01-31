@@ -27,14 +27,19 @@ function init() {
     camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     var cubeGeo = new THREE.BoxGeometry(20, 20, 20);
-    var cubeMatArr = [];
-    
-    console.log(cubeGeo);
-    for (let i = 0; i < 6; i++){
-        var cubeMaterial = createShaderMaterial("vert1", "frag1");
-        cubeMatArr.push(cubeMaterial);
-    }
-    console.log(cubeMatArr);
+     var meshMaterial1 = createShaderMaterial("vertex-shader",
+    "fragment-shader-1");
+  var meshMaterial2 = createShaderMaterial("vertex-shader",
+    "fragment-shader-2");
+  var meshMaterial3 = createShaderMaterial("vertex-shader",
+    "fragment-shader-3");
+  var meshMaterial4 = createShaderMaterial("vertex-shader",
+    "fragment-shader-4");
+  var meshMaterial5 = createShaderMaterial("vertex-shader",
+    "fragment-shader-5");
+  var meshMaterial6 = createShaderMaterial("vertex-shader",
+    "fragment-shader-6");
+    var cubeMatArr = [meshMaterial1, meshMaterial2, meshMaterial3, meshMaterial4, meshMaterial5, meshMaterial6];
     var cube = new THREE.Mesh(cubeGeo, cubeMatArr);
     
     scene.add(cube);
