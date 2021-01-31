@@ -18,3 +18,5 @@ Learning Three.js
         ...
         var cubeGeom = new THREE.BoxGeometry(2.9, 2.9, 2.9);
         var cube = new THREE.Mesh(cubeGeom, mats);
+
+- computeLineDistances() for THREE.Geometry has been remvoed.
