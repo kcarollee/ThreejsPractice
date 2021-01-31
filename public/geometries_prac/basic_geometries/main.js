@@ -43,6 +43,11 @@ function init() {
     var plane = new THREE.Mesh(planeGeo, matArr);
 
     scene.add(plane);
+
+    var shapeGeo = new THREE.ShapeGeometry(drawShape());
+    var shape = new THREE.Mesh(shapeGeo, matArr);
+    scene.add(shape);
+    
     document.body.appendChild(renderer.domElement);
 
     renderScene();
@@ -52,7 +57,36 @@ function init() {
         this.normalWireFrame = true;
         this.basicWireFrame = true;
         this.geometries = "plane";
+        this.asGeom = function () {
+                // remove the old plane
+                scene.remove(shape);
+                // create a new one
+                shape = createMesh(new THREE.ShapeGeometry(drawShape()));
+                // add it to the scene.
+                scene.add(shape);
+            };
+
+            this.asPoints = function () {
+                // remove the old plane
+                scene.remove(shape);
+                // create a new one
+                shape = createLine(drawShape(), false);
+                // add it to the scene.
+                scene.add(shape);
+            };
+
+            this.asSpacedPoints = function () {
+                // remove the old plane
+                scene.remove(shape);
+                // create a new one
+                shape = createLine(drawShape(), true);
+                // add it to the scene.
+                scene.add(shape);
+            };
     }
+    gui.add(controls, 'asGeom');
+        gui.add(controls, 'asPoints');
+        gui.add(controls, 'asSpacedPoints');
     gui.add(controls, 'normalWireFrame').onChange(e => {
         this.normalWireFrame = e;
         meshMat.wireframe = this.normalWireFrame;
@@ -97,6 +131,67 @@ function init() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    function createLine(shape, spaced) {
+            console.log(shape);
+            if (!spaced) {
+                var mesh = new THREE.Line(shape.createPointsGeometry(10), new THREE.LineBasicMaterial({
+                    color: 0xff3333,
+                    linewidth: 2
+                }));
+                return mesh;
+            } else {
+                var mesh = new THREE.Line(shape.createSpacedPointsGeometry(3), new THREE.LineBasicMaterial({
+                    color: 0xff3333,
+                    linewidth: 2
+                }));
+                return mesh;
+            }
+
+        }
+function createMesh(geom) {
+
+            // assign two materials
+            var meshMaterial = new THREE.MeshNormalMaterial();
+            meshMaterial.side = THREE.DoubleSide;
+            var wireFrameMat = new THREE.MeshBasicMaterial();
+            wireFrameMat.wireframe = true;
+
+            // create a multimaterial
+            var mesh = THREE.Mesh(geom, [meshMaterial, wireFrameMat]);
+
+            return mesh;
+        }
+    function drawShape(){
+        var shape = new THREE.Shape();
+        shape.moveTo(10, 10);
+        shape.lineTo(10, 40);
+        shape.bezierCurveTo(15, 25, 25, 25, 30, 40);
+        shape.splineThru([
+            new THREE.Vector2(32, 30),
+            new THREE.Vector2(28, 20),
+            new THREE.Vector2(30, 10)
+        ]);
+
+        shape.quadraticCurveTo(20, 15, 10, 10);
+
+            // add 'eye' hole one
+            var hole1 = new THREE.Path();
+            hole1.absellipse(16, 24, 2, 3, 0, Math.PI * 2, true);
+            shape.holes.push(hole1);
+
+            // add 'eye hole 2'
+            var hole2 = new THREE.Path();
+            hole2.absellipse(23, 24, 2, 3, 0, Math.PI * 2, true);
+            shape.holes.push(hole2);
+
+            // add 'mouth'
+            var hole3 = new THREE.Path();
+            hole3.absarc(20, 16, 2, 0, Math.PI, true);
+            shape.holes.push(hole3);
+
+            // return the shape
+            return shape;
     }
 
     window.addEventListener('resize', onResize, false);
