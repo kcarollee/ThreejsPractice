@@ -1,5 +1,6 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 import {Reflector} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/objects/Reflector.js";
+import {SceneUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/SceneUtils.js";
 const mod = (x, n) => (x % n + n) % n;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
@@ -11,10 +12,14 @@ class Cell{
         this.sizeCoef = 1.0;
         this.size = size;
         this.geom = new THREE.BoxGeometry(this.size, this.size, this.size);
-        this.cellMesh = new THREE.Mesh(this.geom, Cell.mat);
+        //this.cellMesh = new THREE.Mesh(this.geom, Cell.standardMat);
+        this.cellMesh = new SceneUtils.createMultiMaterialObject(this.geom,
+            [Cell.standardMat, Cell.normalMat]);
         this.cellMesh.position.set(posx, posy, posz);
         this.prevSizeCoef = this.sizeCoef;
         this.noiseParams = {x:0, y: 0, z: 0};
+        
+        
     }
 
     setNoiseParameters(x, y, z){
@@ -86,7 +91,13 @@ class Cell{
     */
 
 }
-Cell.mat = new THREE.MeshNormalMaterial({color: 0xffccff});
+Cell.standardMat = new THREE.MeshStandardMaterial({
+    color: 0xEEEEEE,
+    roughness: 0.0,
+    transparent: true,
+    opacity: 1.0
+});
+Cell.normalMat = new THREE.MeshNormalMaterial();
 Cell.exponentialCutoff = true;
 Cell.cutoffExponent = 3.0;
 Cell.cutoffThreshold = 0.25;
@@ -117,10 +128,12 @@ function init() {
     var ambLight = new THREE.AmbientLight({color: 0xEEEEEE});
     //scene.add(ambLight);
 
-    var spotLight = new THREE.SpotLight({color: 0xffffff});
+    var spotLight = new THREE.SpotLight({color: 0xff0000});
     spotLight.position.set(0, 100, 500);
     scene.add(spotLight);
 
+    
+    
     
 
     camera.position.x = 0;
@@ -164,8 +177,7 @@ function init() {
     var boxSize = rowNum * cellSize;
     var planeGeo = new THREE.PlaneGeometry(boxSize * 1.5, boxSize * 8.0);
     var planeMat = new THREE.MeshBasicMaterial();
-    planeMat.transparent = true;
-    planeMat.alpha = 0.5;
+    
     var plane = new THREE.Mesh(planeGeo, planeMat);
     
     plane.rotation.x = -Math.PI *0.5;
