@@ -1,5 +1,5 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
-
+import {Reflector} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/objects/Reflector.js";
 const mod = (x, n) => (x % n + n) % n;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
@@ -86,7 +86,7 @@ class Cell{
     */
 
 }
-Cell.mat = new THREE.MeshStandardMaterial({color: 0xffccff});
+Cell.mat = new THREE.MeshNormalMaterial({color: 0xffccff});
 Cell.exponentialCutoff = true;
 Cell.cutoffExponent = 3.0;
 Cell.cutoffThreshold = 0.25;
@@ -95,7 +95,7 @@ Cell.hardCutoff = false;
 function init() {
     noise.seed(Math.random());
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
     var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
@@ -118,8 +118,10 @@ function init() {
     //scene.add(ambLight);
 
     var spotLight = new THREE.SpotLight({color: 0xffffff});
-    spotLight.position.set(0, 0, 500);
+    spotLight.position.set(0, 100, 500);
     scene.add(spotLight);
+
+    
 
     camera.position.x = 0;
     camera.position.y = 0;
@@ -159,7 +161,24 @@ function init() {
         c.addToScene(scene)
     });
 
+    var boxSize = rowNum * cellSize;
+    var planeGeo = new THREE.PlaneGeometry(boxSize * 1.5, boxSize * 8.0);
+    var planeMat = new THREE.MeshBasicMaterial();
+    planeMat.transparent = true;
+    planeMat.alpha = 0.5;
+    var plane = new THREE.Mesh(planeGeo, planeMat);
     
+    plane.rotation.x = -Math.PI *0.5;
+    plane.position.y = -boxSize;
+    //scene.add(plane);
+    
+    
+    var reflectivePlane = new Reflector(planeGeo);
+    reflectivePlane.color = 0x889999;
+    reflectivePlane.rotation.x = -Math.PI * 0.5;
+    reflectivePlane.position.y= -boxSize;
+   
+    scene.add(reflectivePlane);
 
 
     document.body.appendChild(renderer.domElement);
