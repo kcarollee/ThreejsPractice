@@ -18,7 +18,7 @@ class Cell{
         this.cellMesh.position.set(posx, posy, posz);
         this.prevSizeCoef = this.sizeCoef;
         this.noiseParams = {x:0, y: 0, z: 0};
-        
+        this.posx = posx; this.posy = posy; this.posz = posz;
         
     }
 
@@ -36,7 +36,7 @@ class Cell{
                 
             else {
                 this.cellMesh.visible = true;
-                mappedNoise = 0.9;
+                mappedNoise = 1.0;
             }
         }
         else if (Cell.exponentialCutoff){
@@ -45,6 +45,9 @@ class Cell{
             else  this.cellMesh.visible = true;
         }
         this.setNewSizeCoef(mappedNoise);
+        
+        //this.cellMesh.rotateX(step * 0.0001);
+        //this.cellMesh.translate(this.posx, this.posy, this.posz);
     }
     setNewSizeCoef(sizeCoef){
         this.sizeCoef = sizeCoef;
@@ -180,7 +183,9 @@ function init() {
     var planeGeo = new THREE.PlaneGeometry(boxSize * barrierSize * 2.0, boxSize * barrierSize * 2.0);
     var planeMat = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
     var shaderMat = createShaderMaterial("vert1", "frag1");
+    var shaderMat2 = createShaderMaterial("vert1", "frag2");
     var planeFloor = new THREE.Mesh(planeGeo, planeMat);
+    
     
     planeFloor.rotation.x = -Math.PI *0.5;
     planeFloor.position.y = -boxSize  * barrierSize;
@@ -189,7 +194,8 @@ function init() {
     var planeRight = new THREE.Mesh(planeGeo, shaderMat);
     var planeLeft = new THREE.Mesh(planeGeo, planeMat);
     var planeCeil = new THREE.Mesh(planeGeo, planeMat);
-
+    var planeBack = new THREE.Mesh(planeGeo, shaderMat2);
+    
     planeRight.rotation.y = Math.PI * 0.5;
     planeRight.position.x = boxSize * barrierSize
 
@@ -198,6 +204,10 @@ function init() {
 
     planeCeil.rotation.x = Math.PI *0.5;
     planeCeil.position.y = boxSize  * barrierSize;
+
+    
+    planeBack.position.z = -boxSize  * barrierSize;
+    scene.add(planeBack);
     
 
     scene.add(planeCeil);
@@ -205,15 +215,12 @@ function init() {
     //scene.add(planeLeft)
     
     
-    var reflectivePlane = new Reflector(planeGeo);
+    var reflectivePlane = new Reflector( new THREE.PlaneGeometry(boxSize * barrierSize * 6.0, boxSize * barrierSize * 6.0));
     reflectivePlane.color = 0x889999;
     reflectivePlane.rotation.x = -Math.PI * 0.5;
     reflectivePlane.position.y= -boxSize * barrierSize;
 
-    var reflectivePlane2 = new Reflector(planeGeo);
-    reflectivePlane2.color = 0x889999;
-    reflectivePlane2.rotation.y = Math.PI * 0.5;
-    reflectivePlane2.position.x= -boxSize * barrierSize;
+    
     
     scene.add(reflectivePlane);
     //scene.add(reflectivePlane2);
@@ -252,6 +259,8 @@ function init() {
     function animateScene() {
         step++;
         cellMeshObjects.arr.forEach(c => c.updateNoise(step * 0.01));
+        planeRight.material.uniforms.time.value = step * 0.01;
+        planeBack.material.uniforms.time.value = step * 0.01;
     }
 
     function renderScene() {
