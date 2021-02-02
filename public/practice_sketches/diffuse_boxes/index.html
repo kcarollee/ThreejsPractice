@@ -5,6 +5,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
     <script src="https://cdn.rawgit.com/mrdoob/stats.js/r17/build/stats.min.js"></script>
     <script src="perlin.js"></script>
+    <script id="vert1" type="x-shader/x-vertex">
+      uniform float time;
+      varying vec2 vUv;
+
+
+      void main()
+      {
+          vUv = uv;
+      vec3 posChanged = position;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(posChanged,1.0);
+      }
+
+  </script>
+
+  <script id="frag1" type="x-shader/x-fragment">
+      precision highp float;
+      uniform float time;
+      uniform float alpha;
+      uniform vec2 resolution;
+      varying vec2 vUv;
+
+      
+      float circle(vec2 uv, vec2 pos, float r){
+          return 1.0 - step(r, length(pos - uv));
+      }
+      void main(void)
+      {
+      vec2 uv = vUv ;
+      vec3 outCol = vec3(.0);
+      outCol += 1.0 - circle(uv, vec2(0.5), 0.1);  
+        if (outCol.x < 0.5) discard;
+      gl_FragColor = vec4(outCol, 1.0);
+      }
+
+      
+
+
+  </script>
     <link rel="stylesheet" type="text/css" href="style.css">
     <meta charset="utf-8" />
 

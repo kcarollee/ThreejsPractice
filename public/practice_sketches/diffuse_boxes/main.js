@@ -175,22 +175,48 @@ function init() {
     });
 
     var boxSize = rowNum * cellSize;
-    var planeGeo = new THREE.PlaneGeometry(boxSize * 1.5, boxSize * 8.0);
-    var planeMat = new THREE.MeshBasicMaterial();
+
+    var barrierSize = 1.0;
+    var planeGeo = new THREE.PlaneGeometry(boxSize * barrierSize * 2.0, boxSize * barrierSize * 2.0);
+    var planeMat = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
+    var shaderMat = createShaderMaterial("vert1", "frag1");
+    var planeFloor = new THREE.Mesh(planeGeo, planeMat);
     
-    var plane = new THREE.Mesh(planeGeo, planeMat);
+    planeFloor.rotation.x = -Math.PI *0.5;
+    planeFloor.position.y = -boxSize  * barrierSize;
+    //scene.add(planeFloor);
+
+    var planeRight = new THREE.Mesh(planeGeo, shaderMat);
+    var planeLeft = new THREE.Mesh(planeGeo, planeMat);
+    var planeCeil = new THREE.Mesh(planeGeo, planeMat);
+
+    planeRight.rotation.y = Math.PI * 0.5;
+    planeRight.position.x = boxSize * barrierSize
+
+    planeLeft.rotation.y = Math.PI * 0.5;
+    planeLeft.position.x = -boxSize * barrierSize;
+
+    planeCeil.rotation.x = Math.PI *0.5;
+    planeCeil.position.y = boxSize  * barrierSize;
     
-    plane.rotation.x = -Math.PI *0.5;
-    plane.position.y = -boxSize;
-    //scene.add(plane);
+
+    scene.add(planeCeil);
+    scene.add(planeRight);
+    //scene.add(planeLeft)
     
     
     var reflectivePlane = new Reflector(planeGeo);
     reflectivePlane.color = 0x889999;
     reflectivePlane.rotation.x = -Math.PI * 0.5;
-    reflectivePlane.position.y= -boxSize;
-   
+    reflectivePlane.position.y= -boxSize * barrierSize;
+
+    var reflectivePlane2 = new Reflector(planeGeo);
+    reflectivePlane2.color = 0x889999;
+    reflectivePlane2.rotation.y = Math.PI * 0.5;
+    reflectivePlane2.position.x= -boxSize * barrierSize;
+    
     scene.add(reflectivePlane);
+    //scene.add(reflectivePlane2);
 
 
     document.body.appendChild(renderer.domElement);
@@ -249,6 +275,30 @@ function init() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    function createShaderMaterial(vert, frag){
+        var vertShader = document.getElementById(vert).innerHTML;
+        var fragShader = document.getElementById(frag).innerHTML;
+        var attributes = {};
+        var uniforms = {
+            time: {type: 'f', value: 0.2},
+            scale: {type: 'f', value: 0.2},
+            alpha: {type: 'f', value: 0.6},
+            resolution: {type: "v2", value: new THREE.Vector2()}
+        }
+        uniforms.resolution.value.x = window.innerWidth;
+        uniforms.resolution.value.y = window.innerHeight;
+
+        var meshMaterial = new THREE.ShaderMaterial({
+            uniforms: uniforms,
+            //attributes: attributes,
+            vertexShader: vertShader,
+            fragmentShader: fragShader,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        return meshMaterial;
     }
 
     window.addEventListener('resize', onResize, false);
