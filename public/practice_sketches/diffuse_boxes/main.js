@@ -109,7 +109,7 @@ Cell.hardCutoff = false;
 function init() {
     noise.seed(Math.random());
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+    var camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 3000);
     var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
@@ -144,6 +144,19 @@ function init() {
     camera.position.z = 100;
     camera.lookAt(scene.position);
 
+    var composer = new THREE.EffectComposer(renderer);
+    var renderPass = new THREE.RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    var bokehPass = new THREE.BokehPass(scene, camera, {
+        focus: 0,
+        //aspect: camera.aspect,
+        aperture: 10.0,
+        maxblur: 0.01,
+        width: window.innerWidth,
+        height: window.innerHeight
+    });
+    composer.addPass(bokehPass);
     
 
     var depthNum = 15;
@@ -238,6 +251,10 @@ function init() {
         this.hardCutoff = false;
         this.cutoffExponent = 3.0;
         this.cutoffThreshold = 0.25;
+        this.focus = 100;
+        this.aperture = 0.025;
+        this.maxblur = 0.01;
+        
     }
     gui.add(controls, 'outputObj');
     gui.add(controls, 'hardCutoff').onChange(e => {
@@ -252,6 +269,13 @@ function init() {
     });
     gui.add(controls, 'cutoffExponent', 1.0, 6.0).onChange(e => Cell.cutoffExponent = e);
     gui.add(controls, 'cutoffThreshold', 0.0, 1.0).onChange(e => Cell.cutoffThreshold = e);
+    gui.add(controls, 'focus', 0, 1000).onChange(e => {
+        bokehPass.uniforms["focus"].value = controls.focus;
+    });
+    gui.add(controls, 'aperture', 0, 1).onChange(e => bokehPass.aperture = e);
+    gui.add(controls, 'maxblur', 0.0, 0.01).onChange(e => {
+        bokehPass.uniforms["maxblur"].value = controls.maxblur;
+    });
     var step = 0;
 
    
@@ -267,7 +291,8 @@ function init() {
         animateScene();
         stats.update();
         requestAnimationFrame(renderScene);
-        renderer.render(scene, camera);
+        //renderer.render(scene, camera);
+        composer.render(0.1);
     }
 
     function initStats() {
