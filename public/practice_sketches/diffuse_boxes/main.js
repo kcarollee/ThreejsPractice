@@ -13,24 +13,35 @@ class Cell{
         this.size = size;
         this.geom = new THREE.BoxGeometry(this.size, this.size, this.size);
         //this.cellMesh = new THREE.Mesh(this.geom, Cell.standardMat);
+        this.basicMat = new THREE.MeshBasicMaterial({color: 0xFFFFFF * Math.random()});
+        this.standardMat2 = new THREE.MeshStandardMaterial();
         this.cellMesh = new SceneUtils.createMultiMaterialObject(this.geom,
-            [Cell.standardMat, Cell.normalMat]);
+            [this.standardMat2]);
+        
         this.cellMesh.position.set(posx, posy, posz);
         this.prevSizeCoef = this.sizeCoef;
         this.noiseParams = {x:0, y: 0, z: 0};
         this.posx = posx; this.posy = posy; this.posz = posz;
         
+        Cell.cellGroupMesh.add(this.cellMesh);
     }
 
     setNoiseParameters(x, y, z){
         this.noiseParams.x = x;
         this.noiseParams.y = y;
         this.noiseParams.z = z;
+        
     }
 
     updateNoise(step){
         this.noiseVal = noise.simplex3(this.noiseParams.x + step, this.noiseParams.y + step, this.noiseParams.z + step);
+        
         var mappedNoise = mapLinear(this.noiseVal, -1, 1, 0, 1);
+
+        this.standardMat2.color.r = 0.5 + 0.5 * Math.sin(mappedNoise * 10.0);
+        this.standardMat2.color.g = 0.5 + 0.5 * Math.cos(mappedNoise * 20.0);
+        this.standardMat2.color.b = 0.5 + 0.5 * Math.cos(mappedNoise * 3.0);
+        
         if (Cell.hardCutoff){
             if (mappedNoise < Cell.cutoffThreshold) this.cellMesh.visible = false;
                 
@@ -95,7 +106,7 @@ class Cell{
 
 }
 Cell.standardMat = new THREE.MeshStandardMaterial({
-    color: 0xEEEEEE,
+    //color: 0xEEEEEE,
     roughness: 0.0,
     transparent: true,
     opacity: 1.0
@@ -105,6 +116,7 @@ Cell.exponentialCutoff = true;
 Cell.cutoffExponent = 3.0;
 Cell.cutoffThreshold = 0.25;
 Cell.hardCutoff = false;
+Cell.cellGroupMesh = new THREE.Mesh();
 
 function init() {
     noise.seed(Math.random());
@@ -141,22 +153,11 @@ function init() {
 
     camera.position.x = 0;
     camera.position.y = 0;
-    camera.position.z = 100;
+    camera.position.z = 200;
+    camera.updateProjectionMatrix();
     camera.lookAt(scene.position);
 
-    var composer = new THREE.EffectComposer(renderer);
-    var renderPass = new THREE.RenderPass(scene, camera);
-    composer.addPass(renderPass);
-
-    var bokehPass = new THREE.BokehPass(scene, camera, {
-        focus: 0,
-        //aspect: camera.aspect,
-        aperture: 10.0,
-        maxblur: 0.01,
-        width: window.innerWidth,
-        height: window.innerHeight
-    });
-    composer.addPass(bokehPass);
+    
     
 
     var depthNum = 15;
@@ -187,8 +188,11 @@ function init() {
         }
     }
     cellMeshObjects.arr.forEach(c => {
-        c.addToScene(scene)
+        //c.addToScene(scene)
     });
+
+    scene.add(Cell.cellGroupMesh);
+    
 
     var boxSize = rowNum * cellSize;
 
@@ -207,7 +211,7 @@ function init() {
     var planeRight = new THREE.Mesh(planeGeo, shaderMat);
     var planeLeft = new THREE.Mesh(planeGeo, planeMat);
     var planeCeil = new THREE.Mesh(planeGeo, planeMat);
-    var planeBack = new THREE.Mesh(planeGeo, shaderMat2);
+    var planeBack = new THREE.Mesh(new THREE.PlaneGeometry(boxSize * barrierSize * 2.0, boxSize * barrierSize * 8.0), shaderMat2);
     
     planeRight.rotation.y = Math.PI * 0.5;
     planeRight.position.x = boxSize * barrierSize
@@ -223,7 +227,7 @@ function init() {
     scene.add(planeBack);
     
 
-    scene.add(planeCeil);
+    //scene.add(planeCeil);
     scene.add(planeRight);
     //scene.add(planeLeft)
     
@@ -240,7 +244,8 @@ function init() {
 
 
     document.body.appendChild(renderer.domElement);
-
+    renderer.autoClear = false;
+    
     renderScene();
 
     var controls = new function() {
@@ -251,9 +256,7 @@ function init() {
         this.hardCutoff = false;
         this.cutoffExponent = 3.0;
         this.cutoffThreshold = 0.25;
-        this.focus = 100;
-        this.aperture = 0.025;
-        this.maxblur = 0.01;
+  
         
     }
     gui.add(controls, 'outputObj');
@@ -269,13 +272,7 @@ function init() {
     });
     gui.add(controls, 'cutoffExponent', 1.0, 6.0).onChange(e => Cell.cutoffExponent = e);
     gui.add(controls, 'cutoffThreshold', 0.0, 1.0).onChange(e => Cell.cutoffThreshold = e);
-    gui.add(controls, 'focus', 0, 1000).onChange(e => {
-        bokehPass.uniforms["focus"].value = controls.focus;
-    });
-    gui.add(controls, 'aperture', 0, 1).onChange(e => bokehPass.aperture = e);
-    gui.add(controls, 'maxblur', 0.0, 0.01).onChange(e => {
-        bokehPass.uniforms["maxblur"].value = controls.maxblur;
-    });
+    
     var step = 0;
 
    
@@ -285,14 +282,18 @@ function init() {
         cellMeshObjects.arr.forEach(c => c.updateNoise(step * 0.01));
         planeRight.material.uniforms.time.value = step * 0.01;
         planeBack.material.uniforms.time.value = step * 0.01;
+
+        Cell.cellGroupMesh.rotateX(0.01);
+        Cell.cellGroupMesh.rotateY(0.01);
+        Cell.cellGroupMesh.rotateZ(0.01);
     }
 
     function renderScene() {
         animateScene();
         stats.update();
         requestAnimationFrame(renderScene);
-        //renderer.render(scene, camera);
-        composer.render(0.1);
+        renderer.render(scene, camera);
+        
     }
 
     function initStats() {
@@ -310,6 +311,7 @@ function init() {
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
+
     
     function createShaderMaterial(vert, frag){
         var vertShader = document.getElementById(vert).innerHTML;

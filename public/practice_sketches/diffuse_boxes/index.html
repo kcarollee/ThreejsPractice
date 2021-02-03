@@ -173,7 +173,7 @@ float noise(vec2 x) {
       vec2 uv = vUv ;
       vec3 outCol = vec3(.0);
       vec2 cur = vec2(.0);
-      float t = time * 10.0;
+      float t = time * 3.0;
       float n1 = noise(vec2(uv.x * 10.0 + t, uv.y * 10.0 - t));
       float n2 = noise(vec2(uv.x * 10.0 + t * 2.0 + 13.0, uv.y * 10.0 + t * 3.0 + 10.0));
       float n3 = noise(vec2(uv.x * 10.0 - t - 14.2, uv.y * 10.0 - 1.5 * t - 90.0));
