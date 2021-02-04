@@ -5,6 +5,44 @@ const mod = (x, n) => (x % n + n) % n;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
+
+class Line{
+    constructor(size, posx, posy, posz, scene){
+        this.size = size;
+        this.posx = posx;
+        this.posy = posy;
+        this.posz = posz;
+        this.p1 = new THREE.Vector3(posx, posy + size * 0.5, posz);
+        this.p2 = new THREE.Vector3(posx, posy - size * 0.5, posz);
+        this.lineGeo = new THREE.BufferGeometry().setFromPoints([this.p1, this.p2]);
+        this.lineMat = new THREE.LineBasicMaterial({
+            color: 0xffffff * Math.random(),
+            linewidth: 1
+        });
+        this.line =  new THREE.Line(this.lineGeo, this.lineMat);
+        scene.add(this.line);
+
+        this.noiseParams = {x: 0, y: 0};
+        this.scaleCoef = 1.0;
+    }
+
+    setNoiseParameters(x, y){
+        this.noiseParams.x = x;
+        this.noiseParams.y = y;
+        var n = noise.simplex2(this.noiseParams.x, this.noiseParams.y);
+        this.scaleCoef = mapLinear(n, -1, 1, 0, 1);
+        
+        this.line.scale.y = this.scaleCoef;
+
+    }
+
+    updateNoise(step){
+        var n = noise.simplex2(this.noiseParams.x + step, this.noiseParams.y + step);
+        this.scaleCoef = mapLinear(n, -1, 1, 0, 1);
+        this.line.scale.y = this.scaleCoef;
+    }
+
+}
 class Cell{
     constructor(size, posx, posy, posz, index){
         this.index = index; // flat index
@@ -14,7 +52,8 @@ class Cell{
         this.geom = new THREE.BoxGeometry(this.size, this.size, this.size);
         //this.cellMesh = new THREE.Mesh(this.geom, Cell.standardMat);
         this.basicMat = new THREE.MeshBasicMaterial({color: 0xFFFFFF * Math.random()});
-        this.standardMat2 = new THREE.MeshStandardMaterial();
+        this.standardMat2 = new THREE.MeshStandardMaterial({roughness: 0.0});
+        
         this.cellMesh = new SceneUtils.createMultiMaterialObject(this.geom,
             [this.standardMat2]);
         
@@ -160,9 +199,9 @@ function init() {
     
     
 
-    var depthNum = 15;
-    var rowNum = 15;
-    var colNum = 15;
+    var depthNum = 12;
+    var rowNum = 12;
+    var colNum = 12;
     var cellSize = 10;
     var initposx = -cellSize * colNum * 0.5;
     var initposy = -cellSize * rowNum * 0.5;
@@ -191,6 +230,18 @@ function init() {
         //c.addToScene(scene)
     });
 
+    var gapWidth = 30;
+    var sideNum = 30;
+    var lineMeshObjects = [];
+    for (let i = 0; i < sideNum; i++){
+        for (let j = 0; j < sideNum; j++){
+            var l = new Line(10, -gapWidth * sideNum * 0.5 + gapWidth * i, 
+                -100, -gapWidth * sideNum * 0.5 + gapWidth * j, scene);
+            l.setNoiseParameters(i * 0.1, j * 0.1);
+            lineMeshObjects.push(l);
+        }
+    }
+
     scene.add(Cell.cellGroupMesh);
     
 
@@ -211,7 +262,7 @@ function init() {
     var planeRight = new THREE.Mesh(planeGeo, shaderMat);
     var planeLeft = new THREE.Mesh(planeGeo, planeMat);
     var planeCeil = new THREE.Mesh(planeGeo, planeMat);
-    var planeBack = new THREE.Mesh(new THREE.PlaneGeometry(boxSize * barrierSize * 2.0, boxSize * barrierSize * 8.0), shaderMat2);
+    var planeBack = new THREE.Mesh(planeGeo, shaderMat2);
     
     planeRight.rotation.y = Math.PI * 0.5;
     planeRight.position.x = boxSize * barrierSize
@@ -231,16 +282,21 @@ function init() {
     scene.add(planeRight);
     //scene.add(planeLeft)
     
-    
+    console.log(Cell.cellGroupMesh);
     var reflectivePlane = new Reflector( new THREE.PlaneGeometry(boxSize * barrierSize * 6.0, boxSize * barrierSize * 6.0));
     reflectivePlane.color = 0x889999;
     reflectivePlane.rotation.x = -Math.PI * 0.5;
     reflectivePlane.position.y= -boxSize * barrierSize;
 
+    var reflectivePlane2 = new Reflector( new THREE.PlaneGeometry(boxSize * barrierSize * 6.0, boxSize * barrierSize * 6.0));
+    reflectivePlane2.color = 0x889999;
+    reflectivePlane2.rotation.x = Math.PI * 0.5;
+    reflectivePlane2.position.y= boxSize * barrierSize;
+
     
     
     scene.add(reflectivePlane);
-    //scene.add(reflectivePlane2);
+    scene.add(reflectivePlane2);
 
 
     document.body.appendChild(renderer.domElement);
@@ -286,6 +342,8 @@ function init() {
         Cell.cellGroupMesh.rotateX(0.01);
         Cell.cellGroupMesh.rotateY(0.01);
         Cell.cellGroupMesh.rotateZ(0.01);
+
+        lineMeshObjects.forEach(l => l.updateNoise(step * 0.01));
     }
 
     function renderScene() {

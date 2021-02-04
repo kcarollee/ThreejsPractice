@@ -1,5 +1,7 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 import {SceneUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/SceneUtils.js";
+
+
 class Walker {
     constructor(trailNum, movementRadius, scene) {
         this.trailNum = trailNum;
