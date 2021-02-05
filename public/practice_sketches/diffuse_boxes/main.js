@@ -5,7 +5,89 @@ const mod = (x, n) => (x % n + n) % n;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
+THREE.FocusShader = {
 
+	uniforms: {
+
+		'tDiffuse': { value: null },
+		'screenWidth': { value: 1024 },
+		'screenHeight': { value: 1024 },
+		'sampleDistance': { value: 0.94 },
+		'waveFactor': { value: 0.00125 }
+
+	},
+
+	vertexShader: [
+
+		'varying vec2 vUv;',
+
+		'void main() {',
+
+		'	vUv = uv;',
+		'	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+
+		'}'
+
+	].join( '\n' ),
+
+	fragmentShader: [
+
+		'uniform float screenWidth;',
+		'uniform float screenHeight;',
+		'uniform float sampleDistance;',
+		'uniform float waveFactor;',
+
+		'uniform sampler2D tDiffuse;',
+
+		'varying vec2 vUv;',
+
+		'void main() {',
+
+		'	vec4 color, org, tmp, add;',
+		'	float sample_dist, f;',
+		'	vec2 vin;',
+		'	vec2 uv = vUv;',
+
+		'	add = color = org = texture2D( tDiffuse, uv );',
+
+		'	vin = ( uv - vec2( 0.5 ) ) * vec2( 1.4 );',
+		'	sample_dist = dot( vin, vin ) * 2.0;',
+
+		'	f = ( waveFactor * 100.0 + sample_dist ) * sampleDistance * 4.0;',
+
+		'	vec2 sampleSize = vec2(  1.0 / screenWidth, 1.0 / screenHeight ) * vec2( f );',
+
+		'	add += tmp = texture2D( tDiffuse, uv + vec2( 0.111964, 0.993712 ) * sampleSize );',
+		'	if( tmp.b < color.b ) color = tmp;',
+
+		'	add += tmp = texture2D( tDiffuse, uv + vec2( 0.846724, 0.532032 ) * sampleSize );',
+		'	if( tmp.b < color.b ) color = tmp;',
+
+		'	add += tmp = texture2D( tDiffuse, uv + vec2( 0.943883, -0.330279 ) * sampleSize );',
+		'	if( tmp.b < color.b ) color = tmp;',
+
+		'	add += tmp = texture2D( tDiffuse, uv + vec2( 0.330279, -0.943883 ) * sampleSize );',
+		'	if( tmp.b < color.b ) color = tmp;',
+
+		'	add += tmp = texture2D( tDiffuse, uv + vec2( -0.532032, -0.846724 ) * sampleSize );',
+		'	if( tmp.b < color.b ) color = tmp;',
+
+		'	add += tmp = texture2D( tDiffuse, uv + vec2( -0.993712, -0.111964 ) * sampleSize );',
+		'	if( tmp.b < color.b ) color = tmp;',
+
+		'	add += tmp = texture2D( tDiffuse, uv + vec2( -0.707107, 0.707107 ) * sampleSize );',
+		'	if( tmp.b < color.b ) color = tmp;',
+
+		'	color = color * vec4( 2.0 ) - ( add / vec4( 8.0 ) );',
+		'	color = color + ( add / vec4( 8.0 ) - color ) * ( vec4( 1.0 ) - vec4( sample_dist * 0.5 ) );',
+
+		'	gl_FragColor = vec4( color.rgb * color.rgb * vec3( 0.95 ) + color.rgb, 1.0 );',
+
+		'}'
+
+
+	].join( '\n' )
+};
 class Line{
     constructor(size, posx, posy, posz, scene){
         this.size = size;
@@ -16,8 +98,8 @@ class Line{
         this.p2 = new THREE.Vector3(posx, posy - size * 0.5, posz);
         this.lineGeo = new THREE.BufferGeometry().setFromPoints([this.p1, this.p2]);
         this.lineMat = new THREE.LineBasicMaterial({
-            color: 0xffffff * Math.random(),
-            linewidth: 1
+            color: 0xffffff,
+            linewidth: 2
         });
         this.line =  new THREE.Line(this.lineGeo, this.lineMat);
         scene.add(this.line);
@@ -32,7 +114,7 @@ class Line{
         var n = noise.simplex2(this.noiseParams.x, this.noiseParams.y);
         this.scaleCoef = mapLinear(n, -1, 1, 0, 1);
         
-        this.line.scale.y = this.scaleCoef;
+        this.line.scale.y = this.scaleCoef * 0.5;
 
     }
 
@@ -196,8 +278,25 @@ function init() {
     camera.updateProjectionMatrix();
     camera.lookAt(scene.position);
 
+    var focusPass = new THREE.ShaderPass(THREE.FocusShader);
+    console.log(THREE.FocusShader);
+    console.log(focusPass);
+   
+    focusPass.uniforms.waveFactor.value = 0.002;
+    /*
+    focusPass.enabled = true;
+    focusPass.uniforms.screenWidth = window.innerWidth;
+    focusPass.uniforms.screenHeight = window.innerHeight;
     
+    */
+    var composer = new THREE.EffectComposer(renderer);
+    var renderPass = new THREE.RenderPass(scene, camera);
     
+    composer.addPass(renderPass);
+    composer.addPass(focusPass);
+    
+    var smaaPass = new THREE.SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+    composer.addPass(smaaPass);
 
     var depthNum = 12;
     var rowNum = 12;
@@ -236,7 +335,7 @@ function init() {
     for (let i = 0; i < sideNum; i++){
         for (let j = 0; j < sideNum; j++){
             var l = new Line(10, -gapWidth * sideNum * 0.5 + gapWidth * i, 
-                -100, -gapWidth * sideNum * 0.5 + gapWidth * j, scene);
+                -150, -gapWidth * sideNum * 0.5 + gapWidth * j, scene);
             l.setNoiseParameters(i * 0.1, j * 0.1);
             lineMeshObjects.push(l);
         }
@@ -350,8 +449,8 @@ function init() {
         animateScene();
         stats.update();
         requestAnimationFrame(renderScene);
-        renderer.render(scene, camera);
-        
+        //renderer.render(scene, camera);
+        composer.render();
     }
 
     function initStats() {
