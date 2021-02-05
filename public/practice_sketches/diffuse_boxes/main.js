@@ -99,13 +99,16 @@ class Line{
         this.lineGeo = new THREE.BufferGeometry().setFromPoints([this.p1, this.p2]);
         this.lineMat = new THREE.LineBasicMaterial({
             color: 0xffffff,
-            linewidth: 2
+            linewidth: 1,
+            opacity: 0.5
         });
         this.line =  new THREE.Line(this.lineGeo, this.lineMat);
+        console.log(this.line);
         scene.add(this.line);
 
         this.noiseParams = {x: 0, y: 0};
         this.scaleCoef = 1.0;
+        console.log(this.line);
     }
 
     setNoiseParameters(x, y){
@@ -113,8 +116,7 @@ class Line{
         this.noiseParams.y = y;
         var n = noise.simplex2(this.noiseParams.x, this.noiseParams.y);
         this.scaleCoef = mapLinear(n, -1, 1, 0, 1);
-        
-        this.line.scale.y = this.scaleCoef * 0.5;
+        this.line.scale.y = this.scaleCoef;
 
     }
 
@@ -122,6 +124,7 @@ class Line{
         var n = noise.simplex2(this.noiseParams.x + step, this.noiseParams.y + step);
         this.scaleCoef = mapLinear(n, -1, 1, 0, 1);
         this.line.scale.y = this.scaleCoef;
+        
     }
 
 }
@@ -243,7 +246,7 @@ function init() {
     noise.seed(Math.random());
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 3000);
-    var stats = initStats();
+    //var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
     });
@@ -264,9 +267,13 @@ function init() {
     var ambLight = new THREE.AmbientLight({color: 0xEEEEEE});
     //scene.add(ambLight);
 
-    var spotLight = new THREE.SpotLight({color: 0xff0000});
+    var spotLight = new THREE.SpotLight();
     spotLight.position.set(0, 100, 500);
     scene.add(spotLight);
+
+    var spotLight2 = new THREE.SpotLight();
+    spotLight2.position.set(0, 100, -500);
+    scene.add(spotLight2);
 
     
     
@@ -278,30 +285,32 @@ function init() {
     camera.updateProjectionMatrix();
     camera.lookAt(scene.position);
 
+    
+    var composer = new THREE.EffectComposer(renderer);
+    var renderPass = new THREE.RenderPass(scene, camera);
+    
+    composer.addPass(renderPass);
+    
+    
+    var smaaPass = new THREE.SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+
+    
     var focusPass = new THREE.ShaderPass(THREE.FocusShader);
-    console.log(THREE.FocusShader);
-    console.log(focusPass);
-   
-    focusPass.uniforms.waveFactor.value = 0.002;
+    focusPass.uniforms.waveFactor.value = 0.003;
+    focusPass.uniforms.sampleDistance.value = 0.94;
     /*
     focusPass.enabled = true;
     focusPass.uniforms.screenWidth = window.innerWidth;
     focusPass.uniforms.screenHeight = window.innerHeight;
     
     */
-    var composer = new THREE.EffectComposer(renderer);
-    var renderPass = new THREE.RenderPass(scene, camera);
-    
-    composer.addPass(renderPass);
     composer.addPass(focusPass);
-    
-    var smaaPass = new THREE.SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
     composer.addPass(smaaPass);
 
     var depthNum = 12;
     var rowNum = 12;
     var colNum = 12;
-    var cellSize = 10;
+    var cellSize = 8;
     var initposx = -cellSize * colNum * 0.5;
     var initposy = -cellSize * rowNum * 0.5;
     var initposz = -cellSize * depthNum * 0.5;
@@ -330,7 +339,7 @@ function init() {
     });
 
     var gapWidth = 30;
-    var sideNum = 30;
+    var sideNum = 25;
     var lineMeshObjects = [];
     for (let i = 0; i < sideNum; i++){
         for (let j = 0; j < sideNum; j++){
@@ -411,8 +420,11 @@ function init() {
         this.hardCutoff = false;
         this.cutoffExponent = 3.0;
         this.cutoffThreshold = 0.25;
-  
         
+        
+        this.waveFactor = 0.003;
+        this.sampleDistance = 0.94;
+
     }
     gui.add(controls, 'outputObj');
     gui.add(controls, 'hardCutoff').onChange(e => {
@@ -427,7 +439,8 @@ function init() {
     });
     gui.add(controls, 'cutoffExponent', 1.0, 6.0).onChange(e => Cell.cutoffExponent = e);
     gui.add(controls, 'cutoffThreshold', 0.0, 1.0).onChange(e => Cell.cutoffThreshold = e);
-    
+    gui.add(controls, 'waveFactor', 0.00, 0.02).onChange(e => focusPass.uniforms.waveFactor.value = e);
+    gui.add(controls, 'sampleDistance', 0.00, 3.00).onChange(e => focusPass.uniforms.sampleDistance.value = e);
     var step = 0;
 
    
@@ -447,7 +460,7 @@ function init() {
 
     function renderScene() {
         animateScene();
-        stats.update();
+        //stats.update();
         requestAnimationFrame(renderScene);
         //renderer.render(scene, camera);
         composer.render();
