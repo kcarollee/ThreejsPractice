@@ -99,16 +99,16 @@ class Line{
         this.lineGeo = new THREE.BufferGeometry().setFromPoints([this.p1, this.p2]);
         this.lineMat = new THREE.LineBasicMaterial({
             color: 0xffffff,
-            linewidth: 1,
+            linewidth: 2,
             opacity: 0.5
         });
         this.line =  new THREE.Line(this.lineGeo, this.lineMat);
-        console.log(this.line);
+       
         scene.add(this.line);
 
         this.noiseParams = {x: 0, y: 0};
         this.scaleCoef = 1.0;
-        console.log(this.line);
+        
     }
 
     setNoiseParameters(x, y){
@@ -134,18 +134,24 @@ class Cell{
         this.noiseVal = 0;
         this.sizeCoef = 1.0;
         this.size = size;
+        this.scalex = 1.0;
+        this.scaley = 1.0;
+        this.scalez = 1.0;
         this.geom = new THREE.BoxGeometry(this.size, this.size, this.size);
         //this.cellMesh = new THREE.Mesh(this.geom, Cell.standardMat);
         this.basicMat = new THREE.MeshBasicMaterial({color: 0xFFFFFF * Math.random()});
         this.standardMat2 = new THREE.MeshStandardMaterial({roughness: 0.0});
         
-        this.cellMesh = new SceneUtils.createMultiMaterialObject(this.geom,
-            [this.standardMat2]);
+        this.cellMesh = new THREE.Mesh(this.geom,
+            this.standardMat2);
         
         this.cellMesh.position.set(posx, posy, posz);
         this.prevSizeCoef = this.sizeCoef;
         this.noiseParams = {x:0, y: 0, z: 0};
         this.posx = posx; this.posy = posy; this.posz = posz;
+        this.cellMesh.geometry.parameters.width  = 100.0;
+
+        
         
         Cell.cellGroupMesh.add(this.cellMesh);
     }
@@ -338,8 +344,8 @@ function init() {
         //c.addToScene(scene)
     });
 
-    var gapWidth = 30;
-    var sideNum = 25;
+    var gapWidth = 50;
+    var sideNum = 15;
     var lineMeshObjects = [];
     for (let i = 0; i < sideNum; i++){
         for (let j = 0; j < sideNum; j++){
@@ -385,6 +391,7 @@ function init() {
     planeBack.position.z = -boxSize  * barrierSize;
     scene.add(planeBack);
     
+    
 
     //scene.add(planeCeil);
     scene.add(planeRight);
@@ -425,13 +432,18 @@ function init() {
         this.waveFactor = 0.003;
         this.sampleDistance = 0.94;
 
+        this.scalex = 1.0;
+        this.scaley = 1.0;
+        this.scalez = 1.0;
+
     }
-    gui.add(controls, 'outputObj');
+    /*
     gui.add(controls, 'hardCutoff').onChange(e => {
         Cell.hardCutoff = e;
         Cell.exponentialCutoff = !Cell.hardCutoff;
         controls.exponentialCutoff = !controls.hardCutoff;
     });
+    */
     gui.add(controls, 'exponentialCutoff').onChange(e => {
         Cell.exponentialCutoff = e;
         Cell.hardCutoff = !Cell.exponentialCutoff;
@@ -441,9 +453,19 @@ function init() {
     gui.add(controls, 'cutoffThreshold', 0.0, 1.0).onChange(e => Cell.cutoffThreshold = e);
     gui.add(controls, 'waveFactor', 0.00, 0.02).onChange(e => focusPass.uniforms.waveFactor.value = e);
     gui.add(controls, 'sampleDistance', 0.00, 3.00).onChange(e => focusPass.uniforms.sampleDistance.value = e);
+    
+    gui.add(controls, 'scalex', 1.0, 10.0);
+    gui.add(controls, 'scaley', 1.0, 10.0);
+    gui.add(controls, 'scalez', 1.0, 10.0);
+    console.log(gui);
+    
     var step = 0;
-
-   
+    Cell.cellGroupMesh.children.forEach(c => {
+        c.scale.x *= 100.0;
+        console.log(c.scale.x);
+        
+    });
+    console.log(Cell.cellGroupMesh);
     
     function animateScene() {
         step++;
@@ -454,6 +476,16 @@ function init() {
         Cell.cellGroupMesh.rotateX(0.01);
         Cell.cellGroupMesh.rotateY(0.01);
         Cell.cellGroupMesh.rotateZ(0.01);
+        try{
+        Cell.cellGroupMesh.children.forEach(c => {
+            
+            c.scale.x *= controls.scalex;
+            c.scale.y *= controls.scaley;
+            c.scale.z *= controls.scalez;
+        
+        
+        });
+    } catch{}
 
         lineMeshObjects.forEach(l => l.updateNoise(step * 0.01));
     }
