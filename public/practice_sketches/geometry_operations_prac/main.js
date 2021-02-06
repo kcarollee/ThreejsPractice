@@ -30,6 +30,40 @@ function init() {
     camera.position.z = 30;
     camera.lookAt(scene.position);
 
+    var sg1 = new THREE.SphereGeometry(7, 60, 60);
+    var sg2 = new THREE.SphereGeometry(7, 60, 60);
+    var c1 = new THREE.BoxGeometry(10, 50, 10, 20, 20, 20);
+    var sm = new THREE.MeshStandardMaterial({color: 0xFF0000});
+    sm.side = THREE.DoubleSide;
+    var s1 = new THREE.Mesh(sg1, sm);
+    var s2 = new THREE.Mesh(sg2, sm);
+    var c1 = new THREE.Mesh(c1, sm);
+    s1.position.set(-5, 0, 0);
+    s2.position.set(0, 0, 0);
+    c1.position.set(5, 0, 0);
+    //scene.add(s1, s2);
+
+    var s1BSP = new ThreeBSP(s1);
+    var s2BSP = new ThreeBSP(s2);
+    var c1BSP = new ThreeBSP(c1);
+    var resultBSP;
+    var result;
+    resultBSP = c1BSP.subtract(s1BSP);
+    result = resultBSP.toMesh(new THREE.MeshLambertMaterial({
+        //wireframe: true,
+        flatShading: true
+    }));
+    result.geometry.computeFaceNormals();
+    result.geometry.computeVertexNormals();
+    
+
+    var pointLight = new THREE.PointLight();
+    pointLight.position.set(0, 0, 100);
+    scene.add(pointLight);
+    scene.add(result);
+    s2.visible = false;
+    s1.visible = false;
+    c1.visible = false;
     document.body.appendChild(renderer.domElement);
 
     renderScene();
