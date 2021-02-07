@@ -1,4 +1,3 @@
-// source: https://github.com/chandlerprall/ThreeCSG/blob/master/ThreeCSG.js
 'use strict';
 window.ThreeBSP = (function() {
 	
@@ -46,7 +45,7 @@ window.ThreeBSP = (function() {
 				
 				vertex = geometry.vertices[ face.b ];
                                 uvs = faceVertexUvs ? new THREE.Vector2( faceVertexUvs[1].x, faceVertexUvs[1].y ) : null;
-                                vertex = new ThreeBSP.Vertex( vertex.x, vertex.y, vertex.z, face.vertexNormals[1], uvs );
+                                vertex = new ThreeBSP.Vertex( vertex.x, vertex.y, vertex.z, face.vertexNormals[2], uvs );
 				vertex.applyMatrix4(this.matrix);
 				polygon.vertices.push( vertex );
 				
@@ -289,15 +288,15 @@ window.ThreeBSP = (function() {
 			}
 		}
 		
-        if ( num_positive === vertice_count && num_negative === 0 ) {
-            return FRONT;
-        } else if ( num_positive === 0 && num_negative === vertice_count ) {
-            return BACK;
-        } else if ( num_positive > 0 && num_negative > 0 ) {
-            return SPANNING;
-        } else {
-            return COPLANAR;
-        }
+		if ( num_positive > 0 && num_negative === 0 ) {
+			return FRONT;
+		} else if ( num_positive === 0 && num_negative > 0 ) {
+			return BACK;
+		} else if ( num_positive === 0 && num_negative === 0 ) {
+			return COPLANAR;
+		} else {
+			return SPANNING;
+		}
 	};
 	ThreeBSP.Polygon.prototype.splitPolygon = function( polygon, coplanar_front, coplanar_back, front, back ) {
 		var classification = this.classifySide( polygon );
