@@ -1,3 +1,4 @@
+// source: https://github.com/Wilt/ThreeCSG/blob/master/ThreeCSG.js
 'use strict';
 window.ThreeBSP = (function() {
 	

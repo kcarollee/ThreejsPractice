@@ -70,7 +70,7 @@ SubtractedBoxMesh.mat = SubtractedBoxMesh.matArr[0];
 
 function init() {
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+    var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
     var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
@@ -94,9 +94,9 @@ function init() {
     camera.position.z = 100;
     camera.lookAt(scene.position);
 
-    var pillarSideNum = 10;
+    var pillarSideNum = 6;
     var pillarArr = [];
-    var gap = 300;
+    var gap = 600;
     for(let i = 0; i < pillarSideNum; i++){
         for (let j = 0; j < pillarSideNum; j++){
             var p = new SubtractedBoxMesh(-pillarSideNum * gap * 0.5 + gap * i, 0, 

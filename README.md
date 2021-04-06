@@ -20,3 +20,5 @@ Learning Three.js
         var cube = new THREE.Mesh(cubeGeom, mats);
 
 - computeLineDistances() for THREE.Geometry has been remvoed.
+- THREE.PointCloudMaterial -> THREE.PointsMaterial
+- THREE.PointCloud -> THREE.Points
