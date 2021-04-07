@@ -22,3 +22,4 @@ Learning Three.js
 - computeLineDistances() for THREE.Geometry has been remvoed.
 - THREE.PointCloudMaterial -> THREE.PointsMaterial
 - THREE.PointCloud -> THREE.Points
+- THREE.CanvasRenderer has been removed!!
