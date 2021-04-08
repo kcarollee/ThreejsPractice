@@ -23,3 +23,10 @@ Learning Three.js
 - THREE.PointCloudMaterial -> THREE.PointsMaterial
 - THREE.PointCloud -> THREE.Points
 - THREE.CanvasRenderer has been removed!!
+- The .sortParticles property of Points has been removed.
+- THREE.ImageUtils.loadTexture has been deprecated. Use THREE.TextureLoader instead.
+        
+        // deprecated
+        var texture = THREE.ImageUtils.loadTexture("assets/raindrop-1.png");
+        // valid
+        var texture = new THREE.TextureLoader().load("assets/raindrop-1.png");
