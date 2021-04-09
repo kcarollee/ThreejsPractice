@@ -18,6 +18,7 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMapSoft = true;
 
+    
     var orbitControls = new OrbitControls(camera, renderer.domElement);
     orbitControls.target.copy(scene.position);
     orbitControls.update();
@@ -36,8 +37,8 @@ function init() {
         this.color = 0xffffff;
         this.sizeAttenuation = true;
         this.redraw = function(){
-            scene.remove(scene.getObjectByName("particles"));
-            scene.remove(scene.getObjectByName("particles2"));
+            //scene.remove(scene.getObjectByName("particles"));
+            //scene.remove(scene.getObjectByName("particles2"));
             createPoints(controls.size, controls.transparent,
                 controls.opacity, controls.sizeAttenuation, controls.color);
         }
@@ -70,7 +71,7 @@ function init() {
             color: color
         });
 
-        var range = 60;
+        var range = 40;
         for (var i = 0; i < 1500; i++){
             var particle = new THREE.Vector3(
                 Math.random() * range - range / 2,
@@ -89,9 +90,11 @@ function init() {
     function animateScene() {
         step++;
         var vertices = cloud.geometry.vertices;
+        cloud.geometry.verticesNeedUpdate = true;
+        console.log(vertices);
         vertices.forEach(function (v){
-            v.y = v.y + 0.5;
-            v.x = v.x - (v.velocityX);
+            v.y = v.y - v.velocityY;
+            v.x = v.x - v.velocityX;
             
             if (v.y <= 0) {
 
