@@ -8,53 +8,57 @@ class CurvedTree{
         this.pointsNum = trunkPointsNum;
         this.tubeGroup = new THREE.Group();
         this.mat = new THREE.MeshNormalMaterial();
-        console.log(trunkPosVec);
+        //console.log(trunkPosVec);
         for (let i = 0; i < this.pointsNum; i++){
-            var x = this.trunkPos.x + 30 * Math.cos(i * 0.1);
-            var y = this.trunkPos.y + i * 2;
-            var z = this.trunkPos.z + 30 * Math.sin(i * 0.1);
+            var x = this.trunkPos.x + 30 * Math.cos(i * 0.15);
+            var y = this.trunkPos.y + i * 5;
+            var z = this.trunkPos.z + 30 * Math.sin(i * 0.15);
             this.points.push(new THREE.Vector3(x, y, z));
 
-            if (i % 5 == 1){
-                this.generateBranchPoints(this.points[i], 20, 3, 10);
+            if (Math.random() > 0.5 && i > this.pointsNum * 0.25){
+                this.generateBranchPoints(this.points[i], 40, 10, 0.75, 1, 3);
             }
         }
 
         this.trunkPath = new THREE.CatmullRomCurve3(this.points);
-        this.geom = new THREE.TubeGeometry(this.trunkPath, 100, 0.5, 4, false);
+        this.geom = new THREE.TubeGeometry(this.trunkPath, 30, 1, 4, false);
         
         this.mesh = new THREE.Mesh(this.geom, this.mat);
 
         this.tubeGroup.add(this.mesh);
     }
 
-    generateBranchPoints(basePos, pointsNum, iterNum, spiralRadius){
+    generateBranchPoints(basePos, pointsNum, spiralRadius, thickness, heightCoef, iterNum){
         if (iterNum == 0 || pointsNum < 1 || spiralRadius < 1) return;
-
         iterNum--;
         var self = this;
         var branchPoints = [];
         var branchPos = basePos;
-        var randomAngle = (Math.random() * (Math.PI) - 1.5 * Math.PI);
+        var randomAngle = (Math.random() * Math.PI - 1.5 * Math.PI);
         var centerX = branchPos.x + spiralRadius * 0.5 * Math.cos(randomAngle);
         var centerZ = branchPos.z + spiralRadius * 0.5 * Math.sin(randomAngle);
         var theta = Math.atan((branchPos.z - centerZ) / (branchPos.x - centerX));
-        console.log(branchPos.x + " " + (centerX + spiralRadius * 0.5 * Math.cos(theta)));
+        //console.log(branchPos.x + " " + (centerX + spiralRadius * 0.5 * Math.cos(theta)));
         //console.log(iterNum);
         for (let i = 0; i < pointsNum; i++){
-            var x = centerX + spiralRadius * 0.5 * Math.cos(theta + i * 0.2);
-            var y = branchPos.y + i * 2;
-            var z = centerZ + spiralRadius * 0.5 * Math.sin(theta + i * 0.2);
+            var x = centerX + spiralRadius * 0.5 * Math.cos(theta + i * 0.1);
+            var y = branchPos.y + i * heightCoef;
+            var z = centerZ + spiralRadius * 0.5 * Math.sin(theta + i * 0.1);
             branchPoints.push(new THREE.Vector3(x, y, z));
            // console.log(pointsNum/2);
-            if (i % 2 == 1) self.generateBranchPoints(branchPoints[i], pointsNum / 2, iterNum, spiralRadius);
+            if (Math.random() > 0.5 && i > pointsNum * 0.25) self.generateBranchPoints(branchPoints[i], Math.floor(pointsNum / 2),
+             spiralRadius * 1.2, thickness * 0.5, heightCoef * 0.5, iterNum);
         }
 
         var branchPath = new THREE.CatmullRomCurve3(branchPoints);
-        var branchGeom = new THREE.TubeGeometry(branchPath, 100, 0.1, 4, false);
+        var branchGeom = new THREE.TubeGeometry(branchPath, pointsNum, thickness, 4, false);
         var branchMesh = new THREE.Mesh(branchGeom, self.mat);
 
         self.tubeGroup.add(branchMesh);
+    }
+
+    scale(s){
+
     }
 
     getMesh(){ 
@@ -87,10 +91,10 @@ function init() {
 
     camera.position.x = 0;
     camera.position.y = 0;
-    camera.position.z = 100;
+    camera.position.z = 300;
     camera.lookAt(scene.position);
 
-    var testTree = new CurvedTree(new THREE.Vector3(0, -window.innerHeight * 0.03, 0), 30);
+    var testTree = new CurvedTree(new THREE.Vector3(0, -window.innerHeight * 0.06, 0), 30);
     scene.add(testTree.getMesh());
 
     document.body.appendChild(renderer.domElement);
@@ -102,11 +106,13 @@ function init() {
     }
     gui.add(controls, 'outputObj');
 
-
+    console.log(testTree.tubeGroup);
     renderScene();
     var step = 0;
     function animateScene() {
         step++;
+        testTree.tubeGroup.rotation.y = step * 0.01;
+        testTree.scale(10);
     }
 
     function renderScene() {
