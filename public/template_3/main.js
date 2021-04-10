@@ -28,8 +28,6 @@ function init() {
 
     document.body.appendChild(renderer.domElement);
 
-    renderScene();
-
     var controls = new function() {
         this.outputObj = function() {
             console.log(scene.children);
@@ -37,6 +35,8 @@ function init() {
     }
     gui.add(controls, 'outputObj');
 
+
+    renderScene();
     var step = 0;
     function animateScene() {
         step++;
