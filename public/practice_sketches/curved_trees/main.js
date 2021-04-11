@@ -1,9 +1,10 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
-
+let scene;
 
 class CurvedTree{
     constructor(trunkPosVec, trunkPointsNum){
         this.points = [];
+        this.leaves = [];
         this.trunkPos = trunkPosVec;
         this.pointsNum = trunkPointsNum;
         this.tubeGroup = new THREE.Group();
@@ -16,9 +17,11 @@ class CurvedTree{
             this.points.push(new THREE.Vector3(x, y, z));
 
             if (Math.random() > 0.5 && i > this.pointsNum * 0.25){
-                this.generateBranchPoints(this.points[i], 40, 10, 0.75, 1, 3);
+                this.generateBranchPoints(this.points[i], 40, 10, 0.75, 1, 2);
             }
         }
+        console.log(this.leaves);
+        this.generateLeaveSprites();
 
         this.trunkPath = new THREE.CatmullRomCurve3(this.points);
         this.geom = new THREE.TubeGeometry(this.trunkPath, 30, 1, 4, false);
@@ -26,6 +29,23 @@ class CurvedTree{
         this.mesh = new THREE.Mesh(this.geom, this.mat);
 
         this.tubeGroup.add(this.mesh);
+    }
+
+    generateLeaveSprites(){
+        var self = this;
+        this.leaves.forEach(function (p){
+            var spriteMat = new THREE.SpriteMaterial({
+                opacity: 0.25,
+                color: 0xFFFFFF,
+                transparent: false,
+                blending: THREE.AdditiveBlending
+            });
+
+            var sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(5, 5, 5);
+            sprite.position.set(p.x, p.y, p.z);
+            scene.add(sprite);
+        });
     }
 
     generateBranchPoints(basePos, pointsNum, spiralRadius, thickness, heightCoef, iterNum){
@@ -45,6 +65,7 @@ class CurvedTree{
             var y = branchPos.y + i * heightCoef;
             var z = centerZ + spiralRadius * 0.5 * Math.sin(theta + i * 0.1);
             branchPoints.push(new THREE.Vector3(x, y, z));
+            if (iterNum == 0 && i == pointsNum - 1) self.leaves.push(new THREE.Vector3(x, y, z));
            // console.log(pointsNum/2);
             if (Math.random() > 0.5 && i > pointsNum * 0.25) self.generateBranchPoints(branchPoints[i], Math.floor(pointsNum / 2),
              spiralRadius * 1.2, thickness * 0.5, heightCoef * 0.5, iterNum);
@@ -67,7 +88,7 @@ class CurvedTree{
 
 }
 function init() {
-    var scene = new THREE.Scene();
+    scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
@@ -94,7 +115,7 @@ function init() {
     camera.position.z = 300;
     camera.lookAt(scene.position);
 
-    var testTree = new CurvedTree(new THREE.Vector3(0, -window.innerHeight * 0.06, 0), 30);
+    var testTree = new CurvedTree(new THREE.Vector3(0, -window.innerHeight * 0.1, 0), 30);
     scene.add(testTree.getMesh());
 
     document.body.appendChild(renderer.domElement);
@@ -111,8 +132,8 @@ function init() {
     var step = 0;
     function animateScene() {
         step++;
-        testTree.tubeGroup.rotation.y = step * 0.01;
-        testTree.scale(10);
+        //testTree.tubeGroup.rotation.y = step * 0.01;
+        //testTree.scale(10);
     }
 
     function renderScene() {
