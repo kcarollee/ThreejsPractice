@@ -1,6 +1,10 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 let scene;
 
+function mapLinear(x, a1, a2, b1, b2){
+    return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
+}
+
 class CurvedTree{
     constructor(trunkPosVec, trunkPointsNum){
         this.points = [];
@@ -8,21 +12,22 @@ class CurvedTree{
         this.trunkPos = trunkPosVec;
         this.pointsNum = trunkPointsNum;
         this.tubeGroup = new THREE.Group();
+        this.leaveGroup = new THREE.Object3D();
         this.mat = new THREE.MeshNormalMaterial();
         //console.log(trunkPosVec);
         for (let i = 0; i < this.pointsNum; i++){
             var x = this.trunkPos.x + 30 * Math.cos(i * 0.15);
-            var y = this.trunkPos.y + i * 5;
             var z = this.trunkPos.z + 30 * Math.sin(i * 0.15);
+            var n = mapLinear(noise.simplex2(x  * 0.01, z * 0.01), -1, 1, 0, 1);
+            //console.log(n);
+            var y = this.trunkPos.y + i * 5 * n;
             this.points.push(new THREE.Vector3(x, y, z));
 
-            if (Math.random() > 0.5 && i > this.pointsNum * 0.25){
-                this.generateBranchPoints(this.points[i], 40, 10, 0.75, 1, 2);
+            if (i != this.pointsNum - 1 && Math.random() > 0.5 && i > this.pointsNum * 0.25){
+                this.generateBranchPoints(this.points[i], 30, 30, 0.75, 1, 0.01, 2);
             }
         }
-        console.log(this.leaves);
         this.generateLeaveSprites();
-
         this.trunkPath = new THREE.CatmullRomCurve3(this.points);
         this.geom = new THREE.TubeGeometry(this.trunkPath, 30, 1, 4, false);
         
@@ -35,20 +40,22 @@ class CurvedTree{
         var self = this;
         this.leaves.forEach(function (p){
             var spriteMat = new THREE.SpriteMaterial({
-                opacity: 0.25,
-                color: 0xFFFFFF,
+                opacity: 0.1,
+                color: 0x008800,
                 transparent: false,
                 blending: THREE.AdditiveBlending
             });
 
             var sprite = new THREE.Sprite(spriteMat);
-            sprite.scale.set(5, 5, 5);
+            sprite.scale.set(10, 10, 10);
             sprite.position.set(p.x, p.y, p.z);
-            scene.add(sprite);
+            sprite.initPos = {x: p.x, y: p.y, z: p.z};
+            self.leaveGroup.add(sprite);
         });
     }
 
-    generateBranchPoints(basePos, pointsNum, spiralRadius, thickness, heightCoef, iterNum){
+
+    generateBranchPoints(basePos, pointsNum, spiralRadius, thickness, heightCoef, noiseCoef, iterNum){
         if (iterNum == 0 || pointsNum < 1 || spiralRadius < 1) return;
         iterNum--;
         var self = this;
@@ -62,13 +69,14 @@ class CurvedTree{
         //console.log(iterNum);
         for (let i = 0; i < pointsNum; i++){
             var x = centerX + spiralRadius * 0.5 * Math.cos(theta + i * 0.1);
-            var y = branchPos.y + i * heightCoef;
             var z = centerZ + spiralRadius * 0.5 * Math.sin(theta + i * 0.1);
+            var n = mapLinear(noise.simplex2(x  * noiseCoef, z * noiseCoef), -1, 1, 0, 1);
+            var y = branchPos.y + i * heightCoef * n;
             branchPoints.push(new THREE.Vector3(x, y, z));
             if (iterNum == 0 && i == pointsNum - 1) self.leaves.push(new THREE.Vector3(x, y, z));
            // console.log(pointsNum/2);
             if (Math.random() > 0.5 && i > pointsNum * 0.25) self.generateBranchPoints(branchPoints[i], Math.floor(pointsNum / 2),
-             spiralRadius * 1.2, thickness * 0.5, heightCoef * 0.5, iterNum);
+             spiralRadius * 1.2, thickness * 0.5, heightCoef * 0.85, noiseCoef * 4.0, iterNum);
         }
 
         var branchPath = new THREE.CatmullRomCurve3(branchPoints);
@@ -82,12 +90,27 @@ class CurvedTree{
 
     }
 
-    getMesh(){ 
+    getTreeMesh(){ 
         return this.tubeGroup; 
+    }
+
+    getLeaveSprites(){
+        return this.leaveGroup;
+    }
+
+    getGroup(){
+
+    }
+
+    animateLeaves(step){
+        this.leaveGroup.children.forEach(function(p){
+            p.position.x = p.initPos.x + Math.sin(step + p.initPos.x);
+        });
     }
 
 }
 function init() {
+    noise.seed(Math.random());
     scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     var stats = initStats();
@@ -106,17 +129,28 @@ function init() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMapSoft = true;
 
+    /*
     var orbitControls = new OrbitControls(camera, renderer.domElement);
     orbitControls.target.copy(scene.position);
     orbitControls.update();
-
+*/
     camera.position.x = 0;
     camera.position.y = 0;
     camera.position.z = 300;
     camera.lookAt(scene.position);
 
-    var testTree = new CurvedTree(new THREE.Vector3(0, -window.innerHeight * 0.1, 0), 30);
-    scene.add(testTree.getMesh());
+    var treeArr = [];
+    var initTreeNum = 12;
+    for (var i = 0; i < initTreeNum; i++){
+        var gap = 75;
+        var x = i % 2 == 0 ? gap : -gap;
+        var tree = new CurvedTree(new THREE.Vector3(x, -window.innerHeight * 0.05, -gap * i), 20);
+        tree.name = "tree";
+        scene.add(tree.getTreeMesh());
+        scene.add(tree.getLeaveSprites());
+        treeArr.push(tree);
+    }
+    
 
     document.body.appendChild(renderer.domElement);
 
@@ -127,13 +161,25 @@ function init() {
     }
     gui.add(controls, 'outputObj');
 
-    console.log(testTree.tubeGroup);
+    
     renderScene();
     var step = 0;
     function animateScene() {
         step++;
         //testTree.tubeGroup.rotation.y = step * 0.01;
+        //testTree.leaveGroup.rotation.y = step * 0.01;
         //testTree.scale(10);
+        //testTree.animateLeaves(step * 0.1);
+
+        treeArr.forEach(t => t.animateLeaves(step * 0.1));
+        camera.position.z -= 1;
+        if (-camera.position.z % 75 == 0) {
+            //console.log(scene.children);
+            for (var i = 0; i < 3; i++){
+                scene.remove(scene.children[i]);
+            }
+        }
+        //console.log(camera.position.z);
     }
 
     function renderScene() {
