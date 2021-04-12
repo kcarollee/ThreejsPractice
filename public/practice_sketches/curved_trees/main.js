@@ -13,10 +13,10 @@ class CurvedTree{
         this.pointsNum = trunkPointsNum;
         this.tubeGroup = new THREE.Group();
         this.leafGroup = new THREE.Object3D();
-        this.mat = new THREE.MeshBasicMaterial({color: 0xffffff});
+        this.mat = new THREE.MeshNormalMaterial();
         this.indexCount = 0;
         this.genComplete = false;
-        this.rand = Math.random();
+        this.rand = Math.random() * 10;
         //console.log(trunkPosVec);
         /*
         for (let i = 0; i < this.pointsNum; i++){
@@ -41,7 +41,31 @@ class CurvedTree{
         */
         // generateBranchPoints(basePos, pointsNum, spiralRadius, thickness, heightCoef, noiseCoef, iterNum)
         
+        this.evalStack = [];
+        this.evalComplete = false;
+        var firstPointsOnStack;
+        for (let i = 0; i < this.pointsNum; i++){
+            var x = this.trunkPos.x + 30 * Math.cos(i * 0.15 + this.rand);
+            var z = this.trunkPos.z + 30 * Math.sin(i * 0.15 + this.rand);
+            var n = mapLinear(noise.simplex2(x  * 0.005, z * 0.005), -1, 1, 0, 1);
+                //console.log(n);
+            var y = this.trunkPos.y + i * 5 * n;
+            this.points.push(new THREE.Vector3(x, y, z));
 
+            if (i != this.pointsNum - 1 && Math.random() > 0.1 && i > this.pointsNum * 0.25){
+                var firstPointsOnStack = {
+                    pointsNum: Math.floor(this.pointsNum * 0.5),
+                    pos: new THREE.Vector3(x, y, z)
+                };
+                this.evalStack.push(firstPointsOnStack);
+            }
+        }
+
+        var branchPath = new THREE.CatmullRomCurve3(this.points);
+        var branchGeom = new THREE.TubeGeometry(branchPath, this.pointsNum, 1, 10, false);
+        var branchMesh = new THREE.Mesh(branchGeom, this.mat);
+
+        this.tubeGroup.add(branchMesh);
     }
 
     generateWhole(){
@@ -85,8 +109,8 @@ class CurvedTree{
         this.points.push(new THREE.Vector3(x, y, z));
 
 
-        if (i != this.pointsNum - 1 && Math.random() > 0.5 && i > this.pointsNum * 0.5){
-            this.generateBranchPoints(this.points[i], this.pointsNum, 20, 0.5, 1, 0.01, 3);
+        if (i != this.pointsNum - 1 && Math.random() > 0.75 && i > this.pointsNum * 0.5){
+            this.generateBranchPoints(this.points[i], this.pointsNum, 20, 0.5, 1, 0.01, 2);
         }
     }
 
@@ -112,7 +136,7 @@ class CurvedTree{
             });
 
             var sprite = new THREE.Sprite(spriteMat);
-            sprite.scale.set(10, 10, 10);
+            sprite.scale.set(100, 10, 10);
             sprite.position.set(p.x, p.y, p.z);
             sprite.initPos = {x: p.x, y: p.y, z: p.z};
             self.leafGroup.add(sprite);
@@ -157,6 +181,46 @@ class CurvedTree{
         var branchMesh = new THREE.Mesh(branchGeom, self.mat);
 
         self.tubeGroup.add(branchMesh);
+    }
+
+    generatePointsIncrementally(){
+        if (!this.evalStack.length == 0){
+            var branchPoints = [];
+            var r = Math.random();
+            var branchPos = this.evalStack[0].pos;
+            var randomAngle = (Math.random() * Math.PI - 1.5 * Math.PI);
+            var centerX = branchPos.x + 30 * 0.5 * Math.cos(randomAngle);
+            var centerZ = branchPos.z + 30 * 0.5 * Math.sin(randomAngle);
+            var theta = Math.atan((branchPos.z - centerZ) / (branchPos.x - centerX));
+            for (let i = 0; i < this.evalStack[0].pointsNum; i++){
+                var x = centerX + 30 * 0.5 * Math.cos(theta + i * 0.1);
+                var z = centerZ + 30 * 0.5 * Math.sin(theta + i * 0.1);
+                var n = mapLinear(noise.simplex2(x  * 0.01, z * 0.01), -1, 1, 0, 1);
+                //console.log(n);
+                var y = this.evalStack[0].pos.y + i * 2.5 * n;
+                branchPoints.push(new THREE.Vector3(x, y, z));
+
+                if (this.evalStack[0].pointsNum > 10 && i !=  this.evalStack[0].pointsNum - 1 && 
+                    Math.random() > 0.7 && 
+                    i > this.pointsNum * 0.25){
+                    var firstPointsOnStack = {
+                        pointsNum: Math.floor(this.evalStack[0].pointsNum * 0.5),
+                        pos: new THREE.Vector3(x, y, z)
+                    };
+                    console.log(firstPointsOnStack.pointsNum);
+                    this.evalStack.push(firstPointsOnStack);
+                }
+                else this.leaves.push(new THREE.Vector3(x, y, z));
+            }
+
+            var branchPath = new THREE.CatmullRomCurve3(branchPoints);
+            var branchGeom = new THREE.TubeGeometry(branchPath, this.evalStack[0].pointsNum, 0.25, 10, false);
+            var branchMesh = new THREE.Mesh(branchGeom, this.mat);
+
+            this.tubeGroup.add(branchMesh);
+            this.evalStack.splice(0, 1);
+        }
+        else this.evalComplete = true;
     }
 
     scale(s){
@@ -218,7 +282,7 @@ function init() {
     var tree = new CurvedTree(new THREE.Vector3(0, -70, 0), 60);
     //tree.generateWhole();
     scene.add(tree.getTreeMesh());
-    scene.add(tree.getLeaveSprites());
+    //scene.add(tree.getLeaveSprites());
     
     
 
@@ -245,6 +309,7 @@ function init() {
         step++;
         tree.animateLeaves(step * 0.01);
 
+        /*
         if (!tree.genComplete){
             if (tree.indexCount < tree.pointsNum){
                 tree.generateIncrementally(tree.indexCount);
@@ -253,6 +318,12 @@ function init() {
             else tree.completeMeshAfterGen();
                 
         }
+        */
+
+        if (!tree.evalComplete){
+            tree.generatePointsIncrementally();
+        }
+        //else tree.completeMeshAfterGen();
     }
 
     
