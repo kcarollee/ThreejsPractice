@@ -51,7 +51,7 @@ class CurvedTree{
         this.tubeGroup.add(branchMesh);
     }
 
-    updateOpacity(){
+    increaseOpacity(){
         if (this.mat.opacity < 1.0) this.mat.opacity += 0.01;
     }
 
@@ -302,7 +302,7 @@ function init() {
     //scene.add(tree.getLeafSprites());
 
     var treeArr = [];
-    var treeNum = 6;
+    var treeNum = 8;
     var growthRadius = 200;
     for (let i = 0; i < treeNum; i++){
         var randr = Math.random() * growthRadius;
@@ -364,8 +364,27 @@ function init() {
             if (!tree.evalComplete) tree.generatePointsIncrementally();
             tree.tubeGroup.rotation.y = step * 0.01;
             tree.leafGroup.rotation.y = step * 0.01;   
-            tree.updateOpacity();
+            tree.increaseOpacity();
         });
+
+        if (step % 50 == 0){
+            scene.remove(scene.getObjectByName("leafGroup"));
+            scene.remove(scene.getObjectByName("tubeGroup"));
+            var growthRadius = 300;
+            var randr = Math.random() * growthRadius;
+            var randt = Math.random() * Math.PI * 2.0;
+            var tp = new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60, {
+                pointsNum: 60,
+                spiralRadius: 30,
+                thickness: 2.0,
+                heightCoef: 1,
+                noiseCoef: 0.01
+            });
+            scene.add(tp.getTreeMesh());
+            scene.add(tp.getLeafSprites());
+            treeArr.push(tp);
+            treeArr.splice(0, 1);
+        }
         
     }
 
