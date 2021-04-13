@@ -13,9 +13,10 @@ class CurvedTree{
         this.pointsNum = trunkPointsNum;
         this.tubeGroup = new THREE.Group();
         this.leafGroup = new THREE.Object3D();
-        this.mat = new THREE.MeshNormalMaterial({opacity: 0.0, transparent: true});
+        this.mat = new THREE.MeshBasicMaterial({opacity: 0.0, transparent: true});
         this.indexCount = 0;
         this.genComplete = false;
+        this.deleteFlag = false;
         this.rand = Math.random() * 10;
         
         this.evalStack = [];
@@ -52,7 +53,19 @@ class CurvedTree{
     }
 
     increaseOpacity(){
+        //console.log(this.mat.opacity);
         if (this.mat.opacity < 1.0) this.mat.opacity += 0.01;
+        else this.genComplete = true;
+    }
+
+    decreaseOpacity(){
+        //console.log(this.mat.opacity);
+        if (this.mat.opacity > 0) this.mat.opacity -= 0.05;
+        else this.deleteFlag = true;
+    }
+
+    dropLeaves(){
+
     }
 
     generatePointsIncrementally(){
@@ -75,7 +88,7 @@ class CurvedTree{
                 var pos = new THREE.Vector3(x, y, z);
                 branchPoints.push(pos);
 
-                if (evalTarget.pointsNum > 10 && i !=  evalTarget.pointsNum - 1 && 
+                if (evalTarget.pointsNum > 20 && i !=  evalTarget.pointsNum - 1 && 
                     Math.random() > 0.75 && 
                     i > this.pointsNum * 0.25){
                     
@@ -110,7 +123,7 @@ class CurvedTree{
 
     generateLeafSprite(pos){
         var spriteMat = new THREE.SpriteMaterial({
-            opacity: 0.2,
+            opacity: 0.1,
             color: 0xFFFFFF,
             transparent: true,
             blending: THREE.AdditiveBlending
@@ -297,12 +310,15 @@ function init() {
         heightCoef: 1,
         noiseCoef: 0.01
     });
+    var deleteTargetLeaf;
+    var deleteTargetTube;
+    var deleteTarget;
     //tree.generateWhole();
     //scene.add(tree.getTreeMesh());
     //scene.add(tree.getLeafSprites());
 
     var treeArr = [];
-    var treeNum = 8;
+    var treeNum = 6;
     var growthRadius = 200;
     for (let i = 0; i < treeNum; i++){
         var randr = Math.random() * growthRadius;
@@ -345,6 +361,9 @@ function init() {
     gui.add(controls, 'createNewTree');
     
     renderScene();
+    console.log(treeArr);
+    deleteTarget = treeArr[0];
+    console.log(deleteTarget);
     var step = 0;
     function animateScene() {
         step++;
@@ -364,27 +383,41 @@ function init() {
             if (!tree.evalComplete) tree.generatePointsIncrementally();
             tree.tubeGroup.rotation.y = step * 0.01;
             tree.leafGroup.rotation.y = step * 0.01;   
-            tree.increaseOpacity();
-        });
 
-        if (step % 50 == 0){
-            scene.remove(scene.getObjectByName("leafGroup"));
-            scene.remove(scene.getObjectByName("tubeGroup"));
-            var growthRadius = 300;
-            var randr = Math.random() * growthRadius;
-            var randt = Math.random() * Math.PI * 2.0;
-            var tp = new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60, {
-                pointsNum: 60,
-                spiralRadius: 30,
-                thickness: 2.0,
-                heightCoef: 1,
-                noiseCoef: 0.01
-            });
-            scene.add(tp.getTreeMesh());
-            scene.add(tp.getLeafSprites());
-            treeArr.push(tp);
-            treeArr.splice(0, 1);
-        }
+            if (tree == deleteTarget){
+                if (!tree.genComplete) tree.increaseOpacity();
+            }
+            else tree.increaseOpacity();
+        });
+        //console.log(deleteTarget);
+        
+        try{
+            if (deleteTarget.genComplete){
+                deleteTarget.decreaseOpacity();
+                //console.log(deleteTarget.deleteFlag);
+            }
+            if (deleteTarget.deleteFlag){
+                treeArr.splice(0, 1);
+                scene.remove(scene.getObjectByName("leafGroup"));
+                scene.remove(scene.getObjectByName("tubeGroup"));
+
+                var growthRadius = 400;
+                var randr = Math.random() * growthRadius;
+                var randt = Math.random() * Math.PI * 2.0;
+                var tree = new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60, {
+                    pointsNum: 100,
+                    spiralRadius: 20,
+                    thickness: 1.0,
+                    heightCoef: 1,
+                    noiseCoef: 0.01
+                });
+                treeArr.push(tree);
+                scene.add(tree.getTreeMesh());
+                scene.add(tree.getLeafSprites());
+                console.log(scene.children.length);
+                deleteTarget = treeArr[0];
+            }
+        } catch{}
         
     }
 
