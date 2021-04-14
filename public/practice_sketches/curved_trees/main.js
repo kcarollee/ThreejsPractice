@@ -1,5 +1,6 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 let scene;
+let p5Canvas;
 
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
@@ -137,7 +138,7 @@ class CurvedTree{
         });
 
         var sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(100, 0.2, 0.2);
+        sprite.scale.set(10, 10, 10);
         sprite.position.set(pos.x, pos.y, pos.z);
         sprite.initPos = {x: pos.x, y: pos.y, z: pos.z};
         var r = Math.random() * 10;
@@ -285,7 +286,21 @@ class CurvedTree{
     */
 
 }
+
 function init() {
+    const p5Sketch = (sketch) => {
+        let x = 100;
+        let y = 100;
+        sketch.setup = () => {
+            sketch.createCanvas(200, 200);
+        }
+        sketch.draw = () => {
+            sketch.background(100);
+            sketch.rectMode(sketch.CENTER);
+            sketch.rect(sketch.width * 0.5, sketch.height * 0.5, 100, 100);
+        }
+    };
+    p5Canvas = new p5(p5Sketch);
     noise.seed(Math.random());
     scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
