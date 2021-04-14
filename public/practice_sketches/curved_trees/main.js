@@ -1,7 +1,4 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
-let scene;
-let p5Canvas;
-let leafTexture;
 
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
@@ -62,7 +59,7 @@ class CurvedTree{
 
     decreaseOpacity(){
         //console.log(this.mat.opacity);
-        if (this.mat.opacity > 0) this.mat.opacity -= 0.005;
+        if (this.mat.opacity > 0) this.mat.opacity -= 0.01;
         else this.deleteFlag = true;
     }
 
@@ -73,7 +70,7 @@ class CurvedTree{
             c.position.y -= Math.abs(c.dropVec.y);
             c.position.z -= c.dropVec.z;
             //c.updateMatrixWorld(true);
-            c.material.opacity -= 0.001;
+            c.material.opacity -= 0.005;
         });
     }
 
@@ -132,9 +129,9 @@ class CurvedTree{
 
     generateLeafSprite(pos){
         var spriteMat = new THREE.SpriteMaterial({
-            opacity: 1.0,
-            //color: 0xFFFFFF,
-            transparent: false,
+            opacity: 0.2,
+            color: 0xFFFFFF,
+            transparent: true,
             blending: THREE.AdditiveBlending,
             map: leafTexture
         });
@@ -290,22 +287,40 @@ class CurvedTree{
 
 }
 
+let scene;
+let p5Canvas;
+let leafTexture;
+let leafShader;
+let shaderLoaded = false;
 function init() {
     const p5Sketch = (sketch) => {
+        /*
+        sketch.preload = () => {
+            leafShader = sketch.loadShader('./assets/leafShader.vert',
+                './assets/leafShader.frag');
+                console.log(leafShader);
+            shaderLoaded = true;
+        }
+        */
         sketch.setup = () => {
+            console.log("SETUP");
+            //sketch.createCanvas(50, 50, sketch.WEBGL);
             sketch.createCanvas(50, 50);
         }
         sketch.draw = () => {
-            sketch.background(100);
-            sketch.rectMode(sketch.CENTER);
-            sketch.rect(sketch.width * 0.5, sketch.height * 0.5, sketch.width * 0.25, sketch.height * 0.25);
+            sketch.background(255, 0, 0);
+            //sketch.shader(leafShader);
+            sketch.rect(10, 10, 10, 10);
             if (leafTexture) leafTexture.needsUpdate = true;
         }
     };
     p5Canvas = new p5(p5Sketch);
     //console.log(p5Canvas.canvas);
-    leafTexture = new THREE.Texture(p5Canvas.canvas);
+
+    
+    leafTexture = new THREE.CanvasTexture(p5Canvas.canvas);
     leafTexture.needsUpdate = true;
+    
     noise.seed(Math.random());
     scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -398,6 +413,7 @@ function init() {
     deleteTarget = treeArr[0];
     console.log(deleteTarget);
     var step = 0;
+
     function animateScene() {
         step++;
 
