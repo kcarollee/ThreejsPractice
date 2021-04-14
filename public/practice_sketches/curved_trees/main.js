@@ -60,12 +60,19 @@ class CurvedTree{
 
     decreaseOpacity(){
         //console.log(this.mat.opacity);
-        if (this.mat.opacity > 0) this.mat.opacity -= 0.05;
+        if (this.mat.opacity > 0) this.mat.opacity -= 0.005;
         else this.deleteFlag = true;
     }
 
     dropLeaves(){
-
+        //console.log(this.leafGroup);
+        this.leafGroup.children.forEach(function (c){
+            c.position.x -= c.dropVec.x;
+            c.position.y -= Math.abs(c.dropVec.y);
+            c.position.z -= c.dropVec.z;
+            //c.updateMatrixWorld(true);
+            c.material.opacity -= 0.001;
+        });
     }
 
     generatePointsIncrementally(){
@@ -123,16 +130,22 @@ class CurvedTree{
 
     generateLeafSprite(pos){
         var spriteMat = new THREE.SpriteMaterial({
-            opacity: 0.1,
+            opacity: 0.2,
             color: 0xFFFFFF,
             transparent: true,
             blending: THREE.AdditiveBlending
         });
 
         var sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(10, 10, 10);
+        sprite.scale.set(100, 0.2, 0.2);
         sprite.position.set(pos.x, pos.y, pos.z);
         sprite.initPos = {x: pos.x, y: pos.y, z: pos.z};
+        var r = Math.random() * 10;
+        var c = 10;
+        var nx = noise.simplex2(pos.x * c, pos.y * c);
+        var ny = noise.simplex2(pos.x * c + r, pos.y * c);
+        var nz = noise.simplex2(pos.x * c, pos.y * c + r);
+        sprite.dropVec = new THREE.Vector3(nx, ny, nz);
         this.leafGroup.add(sprite);
     }
 
@@ -275,7 +288,7 @@ class CurvedTree{
 function init() {
     noise.seed(Math.random());
     scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
@@ -318,8 +331,8 @@ function init() {
     //scene.add(tree.getLeafSprites());
 
     var treeArr = [];
-    var treeNum = 6;
-    var growthRadius = 200;
+    var treeNum = 12;
+    var growthRadius = 400;
     for (let i = 0; i < treeNum; i++){
         var randr = Math.random() * growthRadius;
         var randt = Math.random() * Math.PI * 2.0;
@@ -381,8 +394,8 @@ function init() {
         treeArr.forEach(function(tree){
             tree.animateLeaves(step * 0.01);
             if (!tree.evalComplete) tree.generatePointsIncrementally();
-            tree.tubeGroup.rotation.y = step * 0.01;
-            tree.leafGroup.rotation.y = step * 0.01;   
+            tree.tubeGroup.rotation.y = step * 0.001;
+            tree.leafGroup.rotation.y = step * 0.001;   
 
             if (tree == deleteTarget){
                 if (!tree.genComplete) tree.increaseOpacity();
@@ -394,6 +407,7 @@ function init() {
         try{
             if (deleteTarget.genComplete){
                 deleteTarget.decreaseOpacity();
+                deleteTarget.dropLeaves();
                 //console.log(deleteTarget.deleteFlag);
             }
             if (deleteTarget.deleteFlag){
