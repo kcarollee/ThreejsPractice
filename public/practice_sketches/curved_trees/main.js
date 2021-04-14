@@ -1,6 +1,7 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 let scene;
 let p5Canvas;
+let leafTexture;
 
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
@@ -131,10 +132,11 @@ class CurvedTree{
 
     generateLeafSprite(pos){
         var spriteMat = new THREE.SpriteMaterial({
-            opacity: 0.2,
-            color: 0xFFFFFF,
-            transparent: true,
-            blending: THREE.AdditiveBlending
+            opacity: 1.0,
+            //color: 0xFFFFFF,
+            transparent: false,
+            blending: THREE.AdditiveBlending,
+            map: leafTexture
         });
 
         var sprite = new THREE.Sprite(spriteMat);
@@ -163,6 +165,7 @@ class CurvedTree{
     animateLeaves(step){
         this.leafGroup.children.forEach(function(p){
             p.position.x = p.initPos.x + 3.0 * Math.sin(step + p.initPos.x);
+            p.map = leafTexture;
         });
     }
 
@@ -289,18 +292,20 @@ class CurvedTree{
 
 function init() {
     const p5Sketch = (sketch) => {
-        let x = 100;
-        let y = 100;
         sketch.setup = () => {
-            sketch.createCanvas(200, 200);
+            sketch.createCanvas(50, 50);
         }
         sketch.draw = () => {
             sketch.background(100);
             sketch.rectMode(sketch.CENTER);
-            sketch.rect(sketch.width * 0.5, sketch.height * 0.5, 100, 100);
+            sketch.rect(sketch.width * 0.5, sketch.height * 0.5, sketch.width * 0.25, sketch.height * 0.25);
+            if (leafTexture) leafTexture.needsUpdate = true;
         }
     };
     p5Canvas = new p5(p5Sketch);
+    //console.log(p5Canvas.canvas);
+    leafTexture = new THREE.Texture(p5Canvas.canvas);
+    leafTexture.needsUpdate = true;
     noise.seed(Math.random());
     scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
