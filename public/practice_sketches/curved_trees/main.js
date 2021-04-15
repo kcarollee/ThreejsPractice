@@ -303,14 +303,23 @@ function init() {
         }
         */
         sketch.setup = () => {
+            console.log(sketch);
             console.log("SETUP");
             //sketch.createCanvas(50, 50, sketch.WEBGL);
-            sketch.createCanvas(50, 50);
+            sketch.createCanvas(30, 30);
+            console.log(sketch.canvas);
         }
         sketch.draw = () => {
-            sketch.background(255, 0, 0);
+            sketch.background(255);
             //sketch.shader(leafShader);
-            sketch.rect(10, 10, 10, 10);
+            sketch.noFill();
+            sketch.strokeWeight(2);
+            sketch.stroke(255, 0, 0);
+            sketch.rectMode(sketch.CENTER);
+            for (var i = 0; i < 5; i++){
+                sketch.rect(sketch.width * 0.5, sketch.height * 0.5,
+                    (sketch.frameCount + i * 10) % 30, (sketch.frameCount + i * 10) % 30);
+            }
             if (leafTexture) leafTexture.needsUpdate = true;
         }
     };
@@ -324,7 +333,7 @@ function init() {
     noise.seed(Math.random());
     scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    var stats = initStats();
+   // var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
     });
@@ -366,7 +375,7 @@ function init() {
     //scene.add(tree.getLeafSprites());
 
     var treeArr = [];
-    var treeNum = 12;
+    var treeNum = 8;
     var growthRadius = 400;
     for (let i = 0; i < treeNum; i++){
         var randr = Math.random() * growthRadius;
@@ -430,8 +439,8 @@ function init() {
         treeArr.forEach(function(tree){
             tree.animateLeaves(step * 0.01);
             if (!tree.evalComplete) tree.generatePointsIncrementally();
-            tree.tubeGroup.rotation.y = step * 0.001;
-            tree.leafGroup.rotation.y = step * 0.001;   
+            tree.tubeGroup.rotation.y = step * 0.01;
+            tree.leafGroup.rotation.y = step * 0.01;   
 
             if (tree == deleteTarget){
                 if (!tree.genComplete) tree.increaseOpacity();
@@ -468,13 +477,19 @@ function init() {
                 deleteTarget = treeArr[0];
             }
         } catch{}
+
+        //document.getElementById("wall").innerHTML = Math.random()
+        document.getElementById("wall").innerHTML = "";
+        treeArr.forEach(function(tree){
+            document.getElementById("wall").innerHTML += tree.evalStack.length.toString() + "<br/>";
+        });
         
     }
 
     
     function renderScene() {
         animateScene();
-        stats.update();
+        //stats.update();
         requestAnimationFrame(renderScene);
         renderer.render(scene, camera);
     }
