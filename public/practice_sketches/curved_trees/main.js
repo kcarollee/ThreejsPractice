@@ -51,6 +51,14 @@ class CurvedTree{
         this.tubeGroup.add(branchMesh);
     }
 
+    getTopOfStackString(){
+        var t = this.evalStack[0];
+        return "points num: " + t.pointsNum + "<br>" + 
+        "spiralRadius: " + t.spiralRadius + "<br>" +
+        "height coef: " + t.heightCoef + "<br>" +
+        "thickness: " + t.thickness + "<br>" ;
+    }
+
     increaseOpacity(){
         //console.log(this.mat.opacity);
         if (this.mat.opacity < 1.0) this.mat.opacity += 0.01;
@@ -107,6 +115,7 @@ class CurvedTree{
                         thickness: evalTarget.thickness * 0.5
                     };
                     //console.log(firstPointsOnStack.pointsNum);
+                    //console.log(firstPointsOnStack.pointsNum);
                     this.evalStack.push(firstPointsOnStack);
                 }
                 else {
@@ -129,7 +138,7 @@ class CurvedTree{
 
     generateLeafSprite(pos){
         var spriteMat = new THREE.SpriteMaterial({
-            opacity: 0.2,
+            opacity: 0.5,
             color: 0xFFFFFF,
             transparent: true,
             blending: THREE.AdditiveBlending,
@@ -137,7 +146,8 @@ class CurvedTree{
         });
 
         var sprite = new THREE.Sprite(spriteMat);
-        sprite.scale.set(10, 10, 10);
+        var rs = Math.random() * 5 + 5;
+        sprite.scale.set(rs, rs, rs);
         sprite.position.set(pos.x, pos.y, pos.z);
         sprite.initPos = {x: pos.x, y: pos.y, z: pos.z};
         var r = Math.random() * 10;
@@ -325,6 +335,17 @@ function init() {
     };
     p5Canvas = new p5(p5Sketch);
     //console.log(p5Canvas.canvas);
+    var text2 = document.createElement('div');
+text2.style.position = 'absolute';
+//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+
+//text2.style.backgroundColor = "white";
+text2.innerHTML = "hi there!";
+text2.style.top = 60 + 'px';
+text2.style.left = 20 + 'px';
+text2.style.color = "red";
+text2.style.fontFamily = "Courier";
+document.body.appendChild(text2);
 
     
     leafTexture = new THREE.CanvasTexture(p5Canvas.canvas);
@@ -339,6 +360,7 @@ function init() {
     });
     var gui = new dat.GUI();
     var axesHelper = new THREE.AxesHelper(5);
+    var newTreeRef;
     scene.add(axesHelper);
 
     scene.add(camera);
@@ -439,8 +461,8 @@ function init() {
         treeArr.forEach(function(tree){
             tree.animateLeaves(step * 0.01);
             if (!tree.evalComplete) tree.generatePointsIncrementally();
-            tree.tubeGroup.rotation.y = step * 0.01;
-            tree.leafGroup.rotation.y = step * 0.01;   
+            tree.tubeGroup.rotation.y = step * 0.0025;
+            tree.leafGroup.rotation.y = step * 0.0025;   
 
             if (tree == deleteTarget){
                 if (!tree.genComplete) tree.increaseOpacity();
@@ -470,19 +492,43 @@ function init() {
                     heightCoef: 1,
                     noiseCoef: 0.01
                 });
+                newTreeRef = tree;
                 treeArr.push(tree);
                 scene.add(tree.getTreeMesh());
                 scene.add(tree.getLeafSprites());
-                console.log(scene.children.length);
                 deleteTarget = treeArr[0];
             }
         } catch{}
 
+        /*
+        if (newTreeRef != undefined){
+            if (!newTreeRef.genComplete){
+                text2.innerHTML = "new tree's evaluation stack: <br>" + 
+                "size: " + newTreeRef.evalStack.length + "<br>" +
+                newTreeRef.getTopOfStackString();
+            }
+        }
+*/
         //document.getElementById("wall").innerHTML = Math.random()
-        document.getElementById("wall").innerHTML = "";
-        treeArr.forEach(function(tree){
-            document.getElementById("wall").innerHTML += tree.evalStack.length.toString() + "<br/>";
+        /*
+        if (newTreeRef){
+            document.getElementById("wall").innerHTML = "evaluation stack of new tree:<br>";
+        }
+        */
+
+        
+        /*
+        treeArr[treeArr.length - 1].evalStack.forEach(function (elem){
+            text2.innerHTML += elem.pos.x + "<br>";
         });
+        */
+       /*
+        for (let i = 0; i < treeArr.length; i++){
+            text2.innerHTML += "tree in index " + i.toString() + "<br>";
+        }
+        */
+
+         //if (treeArr[treeArr.length-1].evalStack.length>1)document.getElementById("wall").innerHTML += treeArr[treeArr.length - 1].evalStack[0].pos.x;
         
     }
 
