@@ -4,6 +4,29 @@ function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
 
+function createShaderMaterial(vert, frag){
+    var vertShader = document.getElementById(vert).innerHTML;
+    var fragShader = document.getElementById(frag).innerHTML;
+    var attributes = {};
+    var uniforms = {
+        time: {type: 'f', value: 0.2},
+        scale: {type: 'f', value: 0.2},
+        alpha: {type: 'f', value: 0.0},
+        resolution: {type: "v2", value: new THREE.Vector2()}
+    }
+    uniforms.resolution.value.x = window.innerWidth;
+    uniforms.resolution.value.y = window.innerHeight;
+
+    var meshMaterial = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        //attributes: attributes,
+        vertexShader: vertShader,
+        fragmentShader: fragShader,
+        transparent: true
+    });
+    return meshMaterial;
+}
+
 class CurvedTree{
     constructor(trunkPosVec, trunkPointsNum, branchParams){
         this.points = [];
@@ -12,6 +35,8 @@ class CurvedTree{
         this.pointsNum = trunkPointsNum;
         this.tubeGroup = new THREE.Group();
         this.leafGroup = new THREE.Object3D();
+        this.shaderMat = createShaderMaterial("vertex-shader",
+    "fragment-shader-1");
         this.mat = new THREE.MeshBasicMaterial({opacity: 0.0, transparent: true});
         this.indexCount = 0;
         this.genComplete = false;
@@ -28,7 +53,7 @@ class CurvedTree{
             var z = this.trunkPos.z + this.branchParams.spiralRadius * Math.sin(i * 0.15 + this.rand);
             var n = mapLinear(noise.simplex2(x  * 0.0025, z * 0.0025), -1, 1, 0, 1);
                 //console.log(n);
-            var y = this.trunkPos.y + i * 5 * n;
+            var y = this.trunkPos.y + i * 10 * n;
             this.points.push(new THREE.Vector3(x, y, z));
 
             if (i != this.pointsNum - 1 && Math.random() > 0.1 && i > this.pointsNum * 0.25){
@@ -46,28 +71,28 @@ class CurvedTree{
 
         var branchPath = new THREE.CatmullRomCurve3(this.points);
         var branchGeom = new THREE.TubeGeometry(branchPath, this.pointsNum, this.branchParams.thickness, 10, false);
-        var branchMesh = new THREE.Mesh(branchGeom, this.mat);
+        var branchMesh = new THREE.Mesh(branchGeom, this.shaderMat);
 
         this.tubeGroup.add(branchMesh);
     }
 
     getTopOfStackString(){
         var t = this.evalStack[0];
-        return "points num: " + t.pointsNum + "<br>" + 
+        return "top of stack: " + t.pos.x + " " + t.pos.y + " " + t.pos.z + "<br>" + 
         "spiralRadius: " + t.spiralRadius + "<br>" +
         "height coef: " + t.heightCoef + "<br>" +
         "thickness: " + t.thickness + "<br>" ;
     }
 
     increaseOpacity(){
-        //console.log(this.mat.opacity);
-        if (this.mat.opacity < 1.0) this.mat.opacity += 0.01;
+        //console.log(this.shaderMat.uniforms.alpha.value);
+        if (this.shaderMat.uniforms.alpha.value < 1.0) this.shaderMat.uniforms.alpha.value += 0.01;
         else this.genComplete = true;
     }
 
     decreaseOpacity(){
-        //console.log(this.mat.opacity);
-        if (this.mat.opacity > 0) this.mat.opacity -= 0.01;
+        //console.log(this.shaderMat.uniforms.alpha.value);
+        if (this.shaderMat.uniforms.alpha.value > 0) this.shaderMat.uniforms.alpha.value -= 0.01;
         else this.deleteFlag = true;
     }
 
@@ -94,15 +119,22 @@ class CurvedTree{
             var centerZ = branchPos.z + evalTarget.spiralRadius * 0.5 * Math.sin(randomAngle);
            
             var theta = Math.atan((branchPos.z - centerZ) / (branchPos.x - centerX));
+
+            var determineNextPos = (c, i) => {
+                var x = centerX + evalTarget.spiralRadius * 0.5 * Math.cos(theta + c * i * 0.1);
+                var z = centerZ + evalTarget.spiralRadius * 0.5 * Math.sin(theta + c * i * 0.1);
+                return [x, z];
+            };
+            var dr = Math.random() > 0.5 ? 1 : -1;
             for (let i = 0; i < evalTarget.pointsNum; i++){
-                var x = centerX + evalTarget.spiralRadius * 0.5 * Math.cos(theta + i * 0.1);
-                var z = centerZ + evalTarget.spiralRadius * 0.5 * Math.sin(theta + i * 0.1);
+                var x, z;
+                [x, z] = determineNextPos(dr, i);
                 var n = mapLinear(noise.simplex2(x  * evalTarget.noiseCoef, z * evalTarget.noiseCoef), -1, 1, 0, 1);
                 var y = evalTarget.pos.y + i * evalTarget.heightCoef * n;
                 var pos = new THREE.Vector3(x, y, z);
                 branchPoints.push(pos);
 
-                if (evalTarget.pointsNum > 20 && i !=  evalTarget.pointsNum - 1 && 
+                if (evalTarget.pointsNum > 10 && i !=  evalTarget.pointsNum - 1 && 
                     Math.random() > 0.75 && 
                     i > this.pointsNum * 0.25){
                     
@@ -128,7 +160,7 @@ class CurvedTree{
 
             var branchPath = new THREE.CatmullRomCurve3(branchPoints);
             var branchGeom = new THREE.TubeGeometry(branchPath, evalTarget.pointsNum, evalTarget.thickness, 3, false);
-            var branchMesh = new THREE.Mesh(branchGeom, this.mat);
+            var branchMesh = new THREE.Mesh(branchGeom, this.shaderMat);
 
             this.tubeGroup.add(branchMesh);
             this.evalStack.splice(0, 1);
@@ -146,7 +178,7 @@ class CurvedTree{
         });
 
         var sprite = new THREE.Sprite(spriteMat);
-        var rs = Math.random() * 5 + 5;
+        var rs = Math.random() * 10 + 5;
         sprite.scale.set(rs, rs, rs);
         sprite.position.set(pos.x, pos.y, pos.z);
         sprite.initPos = {x: pos.x, y: pos.y, z: pos.z};
@@ -335,17 +367,20 @@ function init() {
     };
     p5Canvas = new p5(p5Sketch);
     //console.log(p5Canvas.canvas);
-    var text2 = document.createElement('div');
-text2.style.position = 'absolute';
-//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+    var text = document.createElement('div');
+    text.style.position = 'absolute';
+    //text.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
 
-//text2.style.backgroundColor = "white";
-text2.innerHTML = "hi there!";
-text2.style.top = 60 + 'px';
-text2.style.left = 20 + 'px';
-text2.style.color = "red";
-text2.style.fontFamily = "Courier";
-document.body.appendChild(text2);
+    text.style.backgroundColor = "white";
+    text.innerHTML = "creating trees......................................";
+    text.style.top = 60 + 'px';
+    text.style.left = 20 + 'px';
+    text.style.color = "red";
+    text.style.fontSize = "10px";
+    text.style.fontFamily = "Courier";
+    text.style.fontWeight = "400";
+    text.style.opacity = "0.75";
+    document.body.appendChild(text);
 
     
     leafTexture = new THREE.CanvasTexture(p5Canvas.canvas);
@@ -382,6 +417,14 @@ document.body.appendChild(text2);
     camera.position.z = 300;
     camera.lookAt(scene.position);
 
+    var shaderMat = new THREE.ShaderMaterial({
+        uniforms:{
+            time: {value: 1.0},
+            resolution: {value: new THREE.Vector2()}
+        }
+    });
+
+  
     var tree = new CurvedTree(new THREE.Vector3(0, -70, 0), 60,{
         pointsNum: 60,
         spiralRadius: 30,
@@ -404,7 +447,7 @@ document.body.appendChild(text2);
         var randt = Math.random() * Math.PI * 2.0;
         var tree = new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60, {
             pointsNum: 100,
-            spiralRadius: 20,
+            spiralRadius: mapLinear(Math.random() * 50, 0, 50, 20, 50),
             thickness: 1.0,
             heightCoef: 1,
             noiseCoef: 0.01
@@ -486,9 +529,9 @@ document.body.appendChild(text2);
                 var randr = Math.random() * growthRadius;
                 var randt = Math.random() * Math.PI * 2.0;
                 var tree = new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60, {
-                    pointsNum: 100,
-                    spiralRadius: 20,
-                    thickness: 1.0,
+                    pointsNum: 120,
+                    spiralRadius: mapLinear(Math.random() * 50, 0, 50, 20, 50),
+                    thickness: 2.0,
                     heightCoef: 1,
                     noiseCoef: 0.01
                 });
@@ -500,15 +543,15 @@ document.body.appendChild(text2);
             }
         } catch{}
 
-        /*
+        
         if (newTreeRef != undefined){
             if (!newTreeRef.genComplete){
-                text2.innerHTML = "new tree's evaluation stack: <br>" + 
+                text.innerHTML = "new tree's evaluation stack: <br>" + 
                 "size: " + newTreeRef.evalStack.length + "<br>" +
                 newTreeRef.getTopOfStackString();
             }
         }
-*/
+
         //document.getElementById("wall").innerHTML = Math.random()
         /*
         if (newTreeRef){
@@ -519,17 +562,16 @@ document.body.appendChild(text2);
         
         /*
         treeArr[treeArr.length - 1].evalStack.forEach(function (elem){
-            text2.innerHTML += elem.pos.x + "<br>";
+            text.innerHTML += elem.pos.x + "<br>";
         });
         */
        /*
         for (let i = 0; i < treeArr.length; i++){
-            text2.innerHTML += "tree in index " + i.toString() + "<br>";
+            text.innerHTML += "tree in index " + i.toString() + "<br>";
         }
         */
 
          //if (treeArr[treeArr.length-1].evalStack.length>1)document.getElementById("wall").innerHTML += treeArr[treeArr.length - 1].evalStack[0].pos.x;
-        
     }
 
     
