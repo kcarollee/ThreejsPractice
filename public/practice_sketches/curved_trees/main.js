@@ -12,8 +12,10 @@ function createShaderMaterial(vert, frag){
         time: {type: 'f', value: 0.2},
         scale: {type: 'f', value: 0.2},
         alpha: {type: 'f', value: 0.0},
-        resolution: {type: "v2", value: new THREE.Vector2()}
+        resolution: {type: "v2", value: new THREE.Vector2()},
+        cameraPos: {type: "v3", value: camera.getWorldPosition(new THREE.Vector3())}
     }
+
     uniforms.resolution.value.x = window.innerWidth;
     uniforms.resolution.value.y = window.innerHeight;
 
@@ -330,6 +332,7 @@ class CurvedTree{
 }
 
 let scene;
+let camera;
 let p5Canvas;
 let leafTexture;
 let leafShader;
@@ -388,7 +391,7 @@ function init() {
     
     noise.seed(Math.random());
     scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
    // var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
@@ -504,14 +507,18 @@ function init() {
         treeArr.forEach(function(tree){
             tree.animateLeaves(step * 0.01);
             if (!tree.evalComplete) tree.generatePointsIncrementally();
-            tree.tubeGroup.rotation.y = step * 0.0025;
-            tree.leafGroup.rotation.y = step * 0.0025;   
+            //tree.tubeGroup.rotation.y = step * 0.0025;
+           // tree.leafGroup.rotation.y = step * 0.0025;   
 
             if (tree == deleteTarget){
                 if (!tree.genComplete) tree.increaseOpacity();
             }
             else tree.increaseOpacity();
+
+            tree.shaderMat.uniforms.cameraPos.value = camera.getWorldPosition(new THREE.Vector3());
         });
+       // console.log(treeArr[0].shaderMat.uniforms.cameraPos.value);
+
         //console.log(deleteTarget);
         
         try{
