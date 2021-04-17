@@ -180,7 +180,7 @@ class CurvedTree{
         });
 
         var sprite = new THREE.Sprite(spriteMat);
-        var rs = Math.random() * 10 + 5;
+        var rs = Math.random() * 10 + 10;
         sprite.scale.set(rs, rs, rs);
         sprite.position.set(pos.x, pos.y, pos.z);
         sprite.initPos = {x: pos.x, y: pos.y, z: pos.z};
@@ -205,7 +205,7 @@ class CurvedTree{
 
     animateLeaves(step){
         this.leafGroup.children.forEach(function(p){
-            p.position.x = p.initPos.x + 3.0 * Math.sin(step + p.initPos.x);
+            p.position.x = p.initPos.x + 10.0 * Math.sin(step + p.initPos.x);
             p.map = leafTexture;
         });
     }
@@ -391,15 +391,15 @@ function init() {
     
     noise.seed(Math.random());
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-   // var stats = initStats();
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+    //var stats = initStats();
     var renderer = new THREE.WebGLRenderer({
         antialias: true
     });
-    var gui = new dat.GUI();
-    var axesHelper = new THREE.AxesHelper(5);
+   
     var newTreeRef;
-    scene.add(axesHelper);
+
 
     scene.add(camera);
 
@@ -428,13 +428,6 @@ function init() {
     });
 
   
-    var tree = new CurvedTree(new THREE.Vector3(0, -70, 0), 60,{
-        pointsNum: 60,
-        spiralRadius: 30,
-        thickness: 2.0,
-        heightCoef: 1,
-        noiseCoef: 0.01
-    });
     var deleteTargetLeaf;
     var deleteTargetTube;
     var deleteTarget;
@@ -464,31 +457,8 @@ function init() {
 
     document.body.appendChild(renderer.domElement);
 
-    var controls = new function() {
-        this.outputObj = function() {
-            console.log(scene.children);
-        }
-        this.createNewTree = function(){
-            scene.remove(scene.getObjectByName("leafGroup"));
-            scene.remove(scene.getObjectByName("tubeGroup"));
-            tree = new CurvedTree(new THREE.Vector3(0, -70, 0), 60, {
-                pointsNum: 60,
-                spiralRadius: 30,
-                thickness: 2.0,
-                heightCoef: 1,
-                noiseCoef: 0.01
-            });
-            scene.add(tree.getTreeMesh());
-            scene.add(tree.getLeafSprites());
-        }
-    }
-    gui.add(controls, 'outputObj');
-    gui.add(controls, 'createNewTree');
-    
     renderScene();
-    console.log(treeArr);
     deleteTarget = treeArr[0];
-    console.log(deleteTarget);
     var step = 0;
 
     function animateScene() {
@@ -507,8 +477,8 @@ function init() {
         treeArr.forEach(function(tree){
             tree.animateLeaves(step * 0.01);
             if (!tree.evalComplete) tree.generatePointsIncrementally();
-            //tree.tubeGroup.rotation.y = step * 0.0025;
-           // tree.leafGroup.rotation.y = step * 0.0025;   
+            tree.tubeGroup.rotation.y = step * 0.0025;
+            tree.leafGroup.rotation.y = step * 0.0025;   
 
             if (tree == deleteTarget){
                 if (!tree.genComplete) tree.increaseOpacity();
@@ -525,7 +495,7 @@ function init() {
             if (deleteTarget.genComplete){
                 deleteTarget.decreaseOpacity();
                 deleteTarget.dropLeaves();
-                //console.log(deleteTarget.deleteFlag);
+                console.log(deleteTarget.deleteFlag);
             }
             if (deleteTarget.deleteFlag){
                 treeArr.splice(0, 1);
@@ -536,9 +506,9 @@ function init() {
                 var randr = Math.random() * growthRadius;
                 var randt = Math.random() * Math.PI * 2.0;
                 var tree = new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60, {
-                    pointsNum: 120,
+                    pointsNum: 200,
                     spiralRadius: mapLinear(Math.random() * 50, 0, 50, 20, 50),
-                    thickness: 2.0,
+                    thickness: mapLinear(Math.random(), 0, 1, 2, 3),
                     heightCoef: 1,
                     noiseCoef: 0.01
                 });
@@ -555,7 +525,10 @@ function init() {
             if (!newTreeRef.genComplete){
                 text.innerHTML = "new tree's evaluation stack: <br>" + 
                 "size: " + newTreeRef.evalStack.length + "<br>" +
-                newTreeRef.getTopOfStackString();
+                newTreeRef.getTopOfStackString() + "<br>";
+            }
+            if (deleteTarget.genComplete){
+                text.innerHTML += "deleting tree..";
             }
         }
 

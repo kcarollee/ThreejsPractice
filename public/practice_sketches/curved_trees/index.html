@@ -12,13 +12,15 @@
       varying vec3 pos;
       varying vec3 normalVec;
       varying mat4 mv;
+      varying mat4 pm;
       void main()
       {
           vUv = uv;
-          vec4 worldPos = modelViewMatrix * vec4(position,1.0); 
+          vec4 worldPos = projectionMatrix * modelViewMatrix * vec4(position,1.0); 
           mv = modelViewMatrix;
-          pos = worldPos.xyz;
-          normalVec = vec4(modelViewMatrix * vec4(normal, 1.0)).xyz;
+          pos = worldPos.xyz * 0.001;
+          normalVec = vec4(vec4(normal, 1.0)).xyz;
+          pm = projectionMatrix;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
       }
 
@@ -35,18 +37,19 @@
       varying vec3 pos;
       varying vec3 normalVec;
       varying mat4 mv;
+      varying mat4 pm;
 
       float circle(vec2 uv, vec2 pos, float r){
           return 1.0 - step(r, length(pos - uv));
       }
       void main(void)
       {
-      vec2 uv = vUv ;
-      vec4 campos = mv * vec4(cameraPos, 1.0);
-      vec3 cpos = campos.xyz;
-      vec3 camDir = normalize(cpos - pos);
-      float d = dot(camDir, normalVec);
-      gl_FragColor = vec4(normalVec, alpha);
+        vec2 uv = vUv ;
+        vec4 campos = vec4(cameraPos * 0.001, 1.0);
+        vec3 cpos = campos.xyz;
+        vec3 camDir = normalize(cpos - pos);
+        float d = max(.0, dot(camDir, normalVec));
+        gl_FragColor = vec4(vec3(camDir.x, camDir.y, d * 5.0), alpha);
       }
 
       
