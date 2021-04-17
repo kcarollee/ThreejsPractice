@@ -13,7 +13,8 @@ function createShaderMaterial(vert, frag){
         scale: {type: 'f', value: 0.2},
         alpha: {type: 'f', value: 0.0},
         resolution: {type: "v2", value: new THREE.Vector2()},
-        cameraPos: {type: "v3", value: camera.getWorldPosition(new THREE.Vector3())}
+        cameraPos: {type: "v3", value: camera.getWorldPosition(new THREE.Vector3())},
+        distanceFromCamera: {type: 'f', value: 1.0}
     }
 
     uniforms.resolution.value.x = window.innerWidth;
@@ -37,8 +38,7 @@ class CurvedTree{
         this.pointsNum = trunkPointsNum;
         this.tubeGroup = new THREE.Group();
         this.leafGroup = new THREE.Object3D();
-        this.shaderMat = createShaderMaterial("vertex-shader",
-    "fragment-shader-1");
+        this.shaderMat = createShaderMaterial("vertex-shader", "fragment-shader-1");
         this.mat = new THREE.MeshBasicMaterial({opacity: 0.0, transparent: true});
         this.indexCount = 0;
         this.genComplete = false;
@@ -50,9 +50,21 @@ class CurvedTree{
         this.branchParams = branchParams;
 
         var firstPointsOnStack;
+        var randomAngle = (Math.random() * Math.PI - 1.5 * Math.PI);
+            
+        var centerX = this.trunkPos.x + this.branchParams.spiralRadius  * Math.cos(randomAngle);
+        var centerZ = this.trunkPos.z + this.branchParams.spiralRadius  * Math.sin(randomAngle);
+           
+        var theta = Math.atan((this.trunkPos.z - centerZ) / (this.trunkPos.x - centerX));
+        var determineNextPos = (c, i) => {
+            var x = centerX + this.branchParams.spiralRadius  * Math.cos(theta + c * i * 0.15);
+            var z = centerZ + this.branchParams.spiralRadius  * Math.sin(theta + c * i * 0.15);
+            return [x, z];
+        };
+        var dr = Math.random() > 0.5 ? 1 : -1;
         for (let i = 0; i < this.pointsNum; i++){
-            var x = this.trunkPos.x + this.branchParams.spiralRadius * Math.cos(i * 0.15 + this.rand);
-            var z = this.trunkPos.z + this.branchParams.spiralRadius * Math.sin(i * 0.15 + this.rand);
+            var x, z;
+            [x, z] = determineNextPos(dr, i);
             var n = mapLinear(noise.simplex2(x  * 0.0025, z * 0.0025), -1, 1, 0, 1);
                 //console.log(n);
             var y = this.trunkPos.y + i * 10 * n;
@@ -70,7 +82,13 @@ class CurvedTree{
                 this.evalStack.push(firstPointsOnStack);
             }
         }
-
+        /*
+        var g = new THREE.BoxGeometry(10, 10, 10);
+        var gm = new THREE.Mesh(g, new THREE.MeshBasicMaterial());
+        gm.position.set(this.trunkPos.x, this.trunkPos.y, this.trunkPos.z);
+        console.log(gm);
+        scene.add(gm);
+        */
         var branchPath = new THREE.CatmullRomCurve3(this.points);
         var branchGeom = new THREE.TubeGeometry(branchPath, this.pointsNum, this.branchParams.thickness, 10, false);
         var branchMesh = new THREE.Mesh(branchGeom, this.shaderMat);
@@ -172,7 +190,7 @@ class CurvedTree{
 
     generateLeafSprite(pos){
         var spriteMat = new THREE.SpriteMaterial({
-            opacity: 0.5,
+            opacity: 0.25,
             color: 0xFFFFFF,
             transparent: true,
             blending: THREE.AdditiveBlending,
@@ -186,9 +204,9 @@ class CurvedTree{
         sprite.initPos = {x: pos.x, y: pos.y, z: pos.z};
         var r = Math.random() * 10;
         var c = 10;
-        var nx = noise.simplex2(pos.x * c, pos.y * c);
-        var ny = noise.simplex2(pos.x * c + r, pos.y * c);
-        var nz = noise.simplex2(pos.x * c, pos.y * c + r);
+        var nx = noise.simplex2(pos.x * c, pos.y * c) * 2.0;
+        var ny = noise.simplex2(pos.x * c + r, pos.y * c) * 2.0;
+        var nz = noise.simplex2(pos.x * c, pos.y * c + r) * 2.0;
         sprite.dropVec = new THREE.Vector3(nx, ny, nz);
         this.leafGroup.add(sprite);
     }
@@ -348,11 +366,10 @@ function init() {
         }
         */
         sketch.setup = () => {
-            console.log(sketch);
-            console.log("SETUP");
+           
             //sketch.createCanvas(50, 50, sketch.WEBGL);
             sketch.createCanvas(30, 30);
-            console.log(sketch.canvas);
+            
         }
         sketch.draw = () => {
             sketch.background(255);
@@ -375,13 +392,12 @@ function init() {
     //text.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
 
     text.style.backgroundColor = "white";
-    text.innerHTML = "creating trees......................................";
     text.style.top = 60 + 'px';
-    text.style.left = 20 + 'px';
+    text.style.left = 25 + 'px';
     text.style.color = "red";
-    text.style.fontSize = "10px";
+    text.style.fontSize = "11px";
     text.style.fontFamily = "Courier";
-    text.style.fontWeight = "400";
+    text.style.fontWeight = "1000";
     text.style.opacity = "0.75";
     document.body.appendChild(text);
 
@@ -401,9 +417,10 @@ function init() {
     var newTreeRef;
 
 
+
     scene.add(camera);
 
-    renderer.setClearColor(0x000000, 1.0);
+    renderer.setClearColor(0x550033, 1.0);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -435,16 +452,36 @@ function init() {
     //scene.add(tree.getTreeMesh());
     //scene.add(tree.getLeafSprites());
 
+    var planeGeom = new THREE.PlaneGeometry(700, 700, 15, 15);
+    planeGeom.rotateX(-Math.PI * 0.5);
+    
+
+    var plane = new THREE.Mesh(planeGeom, new THREE.MeshBasicMaterial({
+        wireframe: true,
+        opacity: 0.3,
+        transparent: true
+    }));
+    
+
+    var planeVerts = planeGeom.vertices;
+    for (let i = 0; i < planeVerts.length; i++){
+        planeVerts[i].y += noise.simplex2(planeVerts[i].x, planeVerts[i].z) * 20.0 - 70;
+    }
+    scene.add(plane);
+
     var treeArr = [];
-    var treeNum = 8;
+    var treeNum = 10;
     var growthRadius = 400;
     for (let i = 0; i < treeNum; i++){
         var randr = Math.random() * growthRadius;
         var randt = Math.random() * Math.PI * 2.0;
-        var tree = new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60, {
+        var randPointIndex = Math.floor(Math.random() * planeGeom.vertices.length);
+        var randPoint = planeGeom.vertices[randPointIndex];
+        //new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60
+        var tree = new CurvedTree(new THREE.Vector3(randPoint.x, randPoint.y, randPoint.z), 60, {
             pointsNum: 100,
             spiralRadius: mapLinear(Math.random() * 50, 0, 50, 20, 50),
-            thickness: 1.0,
+            thickness: mapLinear(Math.random(), 0, 1, 2, 3),
             heightCoef: 1,
             noiseCoef: 0.01
         });
@@ -474,19 +511,40 @@ function init() {
                 
         }
         */
+
+        if (newTreeRef != undefined){
+            if (!newTreeRef.genComplete){
+                text.innerHTML = "new tree's evaluation stack: <br>" + 
+                "size: " + newTreeRef.evalStack.length + "<br>" +
+                newTreeRef.getTopOfStackString() + "<br>";
+            }
+        }
+        else text.innerHTML = "";
+        let cpos = camera.getWorldPosition(new THREE.Vector3());
         treeArr.forEach(function(tree){
             tree.animateLeaves(step * 0.01);
-            if (!tree.evalComplete) tree.generatePointsIncrementally();
-            tree.tubeGroup.rotation.y = step * 0.0025;
-            tree.leafGroup.rotation.y = step * 0.0025;   
+            if (!tree.evalComplete) {
+                tree.generatePointsIncrementally();
+                text.innerHTML += "generating tree " + tree.tubeGroup.uuid + "<br>";
+            }
+
+
+            //tree.tubeGroup.rotation.y = step * 0.0025;
+           // tree.leafGroup.rotation.y = step * 0.0025;   
 
             if (tree == deleteTarget){
                 if (!tree.genComplete) tree.increaseOpacity();
             }
             else tree.increaseOpacity();
 
-            tree.shaderMat.uniforms.cameraPos.value = camera.getWorldPosition(new THREE.Vector3());
+            tree.shaderMat.uniforms.cameraPos.value = cpos;
+            tree.shaderMat.uniforms.distanceFromCamera.value = 
+                1.0 - mapLinear(cpos.distanceTo(tree.trunkPos),
+                    0, 1500, 0, 0.95);
+            tree.shaderMat.uniformsNeedUpdate = true;
         });
+        //plane.rotation.y = step * 0.0025;
+        //plane.rotation.y = step * 0.0025;
        // console.log(treeArr[0].shaderMat.uniforms.cameraPos.value);
 
         //console.log(deleteTarget);
@@ -495,7 +553,7 @@ function init() {
             if (deleteTarget.genComplete){
                 deleteTarget.decreaseOpacity();
                 deleteTarget.dropLeaves();
-                console.log(deleteTarget.deleteFlag);
+                text.innerHTML += "deleting tree " + deleteTarget.tubeGroup.uuid;
             }
             if (deleteTarget.deleteFlag){
                 treeArr.splice(0, 1);
@@ -505,7 +563,10 @@ function init() {
                 var growthRadius = 400;
                 var randr = Math.random() * growthRadius;
                 var randt = Math.random() * Math.PI * 2.0;
-                var tree = new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60, {
+                var randPointIndex = Math.floor(Math.random() * planeGeom.vertices.length);
+                var randPoint = planeGeom.vertices[randPointIndex];
+                //new CurvedTree(new THREE.Vector3(randr * Math.cos(randt), -70, randr * Math.sin(randt)), 60
+                var tree = new CurvedTree(new THREE.Vector3(randPoint.x, randPoint.y, randPoint.z), 60, {
                     pointsNum: 200,
                     spiralRadius: mapLinear(Math.random() * 50, 0, 50, 20, 50),
                     thickness: mapLinear(Math.random(), 0, 1, 2, 3),
@@ -521,16 +582,6 @@ function init() {
         } catch{}
 
         
-        if (newTreeRef != undefined){
-            if (!newTreeRef.genComplete){
-                text.innerHTML = "new tree's evaluation stack: <br>" + 
-                "size: " + newTreeRef.evalStack.length + "<br>" +
-                newTreeRef.getTopOfStackString() + "<br>";
-            }
-            if (deleteTarget.genComplete){
-                text.innerHTML += "deleting tree..";
-            }
-        }
 
         //document.getElementById("wall").innerHTML = Math.random()
         /*

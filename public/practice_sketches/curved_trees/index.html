@@ -32,7 +32,7 @@
       uniform float alpha;
       uniform vec2 resolution;
       uniform vec3 cameraPos;
-
+      uniform float distanceFromCamera;
       varying vec2 vUv;
       varying vec3 pos;
       varying vec3 normalVec;
@@ -49,7 +49,7 @@
         vec3 cpos = campos.xyz;
         vec3 camDir = normalize(cpos - pos);
         float d = max(.0, dot(camDir, normalVec));
-        gl_FragColor = vec4(vec3(camDir.x, camDir.y, d * 5.0), alpha);
+        gl_FragColor = vec4(vec3(distanceFromCamera), alpha);
       }
 
       
