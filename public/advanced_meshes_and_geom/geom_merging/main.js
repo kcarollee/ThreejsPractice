@@ -23,17 +23,56 @@ function init() {
     orbitControls.target.copy(scene.position);
     orbitControls.update();
 
-    camera.position.set(30, 30, 30);
+    camera.position.set(0, 40, 50);
     camera.lookAt(scene.position);
 
+    var cubeMaterial = new THREE.MeshNormalMaterial({
+        transparent: true,
+        opacity: 0.5
+    });
     
 
     document.body.appendChild(renderer.domElement);
 
     var controls = new function() {
-        
+        this.cameraNear = camera.near;
+        this.cameraFar = camera.far;
+        this.rotationSpeed = 0.01;
+        this.combined = false;
+
+        this.objNum = 500;
+
+        this.redraw = function(){
+            var toRemove = [];
+            scene.traverse(function(e){
+                if (e instanceof THREE.Mesh) toRemove.push(e);
+            });
+            toRemove.forEach(function(e){
+                scene.remove(e);
+            });
+            
+            if (controls.combined){
+                var geom = new THREE.Geometry();
+                for (var i = 0; i < controls.objNum; i++){
+                    var cubeMesh = addCube();
+                    cubeMesh.updateMatrix();
+                    geom.merge(cubeMesh.geometry, cubeMesh.matrix);
+                }
+                scene.add(new THREE.Mesh(geom, cubeMaterial));
+            }
+            else{
+                for (var i = 0; i < controls.objNum; i++){
+                    scene.add(controls.addCube());
+                }
+            }
+        }
+        this.addCube = addCube;
     }
- 
+    gui.add(controls, 'objNum', 0, 20000);
+    gui.add(controls, 'combined').onChange(controls.redraw);
+    gui.add(controls, 'redraw');
+    
+    controls.redraw();
 
     
     renderScene();
@@ -41,6 +80,9 @@ function init() {
 
     function animateScene() {
         step++;
+        camera.position.x = Math.sin(step * 0.001) * 50;
+        camera.position.z = Math.cos(step * 0.001) * 50;
+        camera.lookAt(scene.position);
         
     }
 
@@ -51,12 +93,20 @@ function init() {
         renderer.render(scene, camera);
     }
 
-    function createMesh(geom) {
-        var meshMat = new THREE.MeshNormalMaterial();
-        meshMat.side = THREE.DoubleSide;
+    function addCube(){
+        var cubeSize = 1.0;
+        var cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
 
-        var plane = new THREE.Mesh(geom, meshMat);
-        return plane;
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.castShadow = true;
+
+        // position the cube randomly in the scene
+        cube.position.x = -60 + Math.round((Math.random() * 100));
+        cube.position.y = Math.round((Math.random() * 10));
+        cube.position.z = -150 + Math.round((Math.random() * 175));
+
+        // add the cube to the scene
+        return cube;
     }
 
     function initStats() {
