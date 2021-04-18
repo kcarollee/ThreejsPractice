@@ -20,11 +20,11 @@ function init() {
     var raycaster = new THREE.Raycaster();
     var mouse = new THREE.Vector2();
 
-    /*
+    
     var orbitControls = new OrbitControls(camera, renderer.domElement);
     orbitControls.target.copy(scene.position);
     orbitControls.update();
-    */
+    
     camera.position.x = -30;
     camera.position.y = 40;
     camera.position.z = 30;
