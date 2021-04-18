@@ -32,3 +32,9 @@ Learning Three.js
         var texture = new THREE.TextureLoader().load("assets/raindrop-1.png");
 - THREE.Points takes a THREE.BufferGeometry object as a parameter instead of the deprecated THREE.Geometry object. 
 - It is still possible to pass a THREE.Geometry object as an parameter to THREE.Points. Don't forget to set the verticesNeedUpdate attribute of the geometry to true when vertices need update.
+- THREE.TrackballControls: The second parameter "domElement" is now mandatory.
+
+        //deprecated
+        var trackballControls = new TrackballControls(camera);
+        // valid
+        var trackballControls = new TrackballControls(camera, renderer.domElement);
