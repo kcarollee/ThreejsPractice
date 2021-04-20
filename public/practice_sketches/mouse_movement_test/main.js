@@ -9,14 +9,17 @@ function init() {
     });
     var gui = new dat.GUI();
     var mouse = new THREE.Vector2();
+    var mouseDown = false;
     var raycaster = new THREE.Raycaster();
     var cubeGeom = new THREE.BoxGeometry(1, 1, 1);
     var cubeMat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+    var pointsArr = [];
     var planeGeom = new THREE.PlaneGeometry(80, 80);
     var planeMat = new THREE.MeshBasicMaterial({color: 0xffffff});
     var plane = new THREE.Mesh(planeGeom, planeMat);
     plane.name = "plane";
     //plane.rotateX(Math.PI * 0.5);
+    var planePoint;
     scene.add(plane);
     var debugCube = new THREE.Mesh(cubeGeom, cubeMat);
     scene.add(debugCube);
@@ -56,10 +59,18 @@ function init() {
         
         intersects.forEach(function (p){
             if (p.object.name == "plane"){
-                var point = p.point;
-                debugCube.position.set(point.x, point.y, point.z);
+                planePoint = p.point;
+                debugCube.position.set(planePoint.x, planePoint.y, planePoint.z);
             }
         });
+
+        if (mouseDown && step % 4 == 0){
+            var geom = new THREE.BoxGeometry(1, 1, 1);
+            var mat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+            var box = new THREE.Mesh(geom, mat);
+            box.position.set(planePoint.x, planePoint.y, planePoint.z);
+            scene.add(box);
+        }
     }
 
     function renderScene() {
@@ -92,8 +103,20 @@ function init() {
         //debugCube.position.set(mouse.x, mouse.y);
     }
 
+    function onMouseDown(){
+        mouseDown = true;
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    function onMouseUp(){
+        mouseDown = false;
+    }
+
     window.addEventListener('resize', onResize, false);
     window.addEventListener('mousemove', onMouseMove, false);
+    window.addEventListener('mousedown', onMouseDown, false);
+    window.addEventListener('mouseup', onMouseUp, false);
 }
 
 
