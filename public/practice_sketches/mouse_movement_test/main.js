@@ -25,6 +25,15 @@ function init() {
     scene.add(debugCube);
     scene.add(camera);
 
+    var centerCurvePointsArr = [];
+    var centerCurve = new THREE.CatmullRomCurve3([]);
+    var centerCurvePoints;
+
+    var centerMat = new THREE.LineBasicMaterial({color: 0xff0000});
+    var centerGeom = new THREE.BufferGeometry();
+    var centerObject;
+
+
     renderer.setClearColor(0x000000, 1.0);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
@@ -64,12 +73,28 @@ function init() {
             }
         });
 
-        if (mouseDown && step % 4 == 0){
-            var geom = new THREE.BoxGeometry(1, 1, 1);
+        if (mouseDown && step % 10 == 0){
+            var geom = new THREE.BoxGeometry(0.2, 0.2, 0.2);
             var mat = new THREE.MeshBasicMaterial({color: 0xFF0000});
             var box = new THREE.Mesh(geom, mat);
             box.position.set(planePoint.x, planePoint.y, planePoint.z);
             scene.add(box);
+            centerCurvePointsArr.push(planePoint);
+            centerCurve = new THREE.CatmullRomCurve3(centerCurvePointsArr);
+            
+
+
+            if (centerCurvePointsArr.length == 2) {
+                centerCurvePoints = centerCurve.getPoints(500);
+                centerGeom.setFromPoints(centerCurvePoints);
+                centerObject = new THREE.Line(centerGeom, centerMat)
+                scene.add(centerObject);
+            }
+
+            else if (centerCurvePointsArr.length > 2){
+                centerCurvePoints = centerCurve.getPoints(500);
+                centerGeom.setFromPoints(centerCurvePoints);
+            }
         }
     }
 
