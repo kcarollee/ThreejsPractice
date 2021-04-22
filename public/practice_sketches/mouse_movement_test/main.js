@@ -32,6 +32,7 @@ function init() {
     var centerMat = new THREE.LineBasicMaterial({color: 0xff0000});
     var centerGeom = new THREE.BufferGeometry();
     var centerObject;
+    var centerTube, centerTubeGeom;
 
 
     renderer.setClearColor(0x000000, 1.0);
@@ -80,20 +81,28 @@ function init() {
             box.position.set(planePoint.x, planePoint.y, planePoint.z);
             scene.add(box);
             centerCurvePointsArr.push(planePoint);
-            centerCurve = new THREE.CatmullRomCurve3(centerCurvePointsArr);
+            
             
 
 
             if (centerCurvePointsArr.length == 2) {
+                centerCurve = new THREE.CatmullRomCurve3(centerCurvePointsArr);
                 centerCurvePoints = centerCurve.getPoints(500);
                 centerGeom.setFromPoints(centerCurvePoints);
                 centerObject = new THREE.Line(centerGeom, centerMat)
                 scene.add(centerObject);
+
+                centerTubeGeom = new THREE.TubeGeometry(centerCurve, 20, 2, 8, false);
+                centerTube = new THREE.Mesh(centerTubeGeom, centerMat);
+                scene.add(centerTube);
             }
 
             else if (centerCurvePointsArr.length > 2){
                 centerCurvePoints = centerCurve.getPoints(500);
                 centerGeom.setFromPoints(centerCurvePoints);
+                console.log(centerTube);
+                centerTube.geometry.vertices = centerCurvePointsArr;
+                centerTube.geometry.verticesNeedUpdate = true;
             }
         }
     }
