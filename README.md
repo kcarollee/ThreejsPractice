@@ -38,3 +38,6 @@ Learning Three.js
         var trackballControls = new TrackballControls(camera);
         // valid
         var trackballControls = new TrackballControls(camera, renderer.domElement);
+
+- should've realized how outadated the book was months ago ffs
+- will be basing this prac folder on https://threejsfundamentals.org/ from now on.

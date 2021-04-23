@@ -108,6 +108,7 @@ function init() {
     }
 
     function renderScene() {
+    
         raycaster.setFromCamera(mouse, camera);
         animateScene();
         stats.update();
