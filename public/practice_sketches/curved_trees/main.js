@@ -404,6 +404,7 @@ function init() {
     
     leafTexture = new THREE.CanvasTexture(p5Canvas.canvas);
     leafTexture.needsUpdate = true;
+    console.log(leafTexture);
     
     noise.seed(Math.random());
     scene = new THREE.Scene();
