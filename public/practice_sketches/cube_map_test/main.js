@@ -1,4 +1,24 @@
+let p5Canvas; // a p5 canvas to be used as a texture
+let cubeMapTexture, textureCube;
 function main(){
+//----------------p5 SETUP---------------------------
+	const p5Sketch = (sketch) => {
+		sketch.setup = () => {
+			sketch.createCanvas(100, 100);
+		}
+		sketch.draw = () => {
+			sketch.background(255, 0, 0);
+			if (cubeMapTexture) cubeMapTexture.needsUpdate = true;
+		}
+	};
+	p5Canvas = new p5(p5Sketch);
+
+	cubeMapTexture = new THREE.CanvasTexture(p5Canvas.canvas);
+	cubeMapTexture.mapping = THREE.CubeRefractionMapping;
+
+	cubeMapTexture.needsUpdate = true;
+//---------------------------------------------------
+
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
 
@@ -12,8 +32,19 @@ function main(){
 	camera.position.set(0, 0, 20);
 //---------------------------------------------------
 	const scene = new THREE.Scene();
+
+
 	scene.background = new THREE.Color(0xCCCCCC);
 	renderer.render(scene, camera);
+
+//-------------------OBJECTS-------------------------
+
+	const mat = new THREE.MeshLambertMaterial({envMap: cubeMapTexture})
+	const icoGeom = new THREE.IcosahedronGeometry(400, 15);
+	const icoMesh = new THREE.Mesh(icoGeom, mat);
+	scene.add(icoMesh);
+
+//---------------------------------------------------
 
 	
 //---------------------GUI---------------------------
