@@ -11,26 +11,39 @@ function main(){
 	camera.position.set(0, 0, 2);
 
 	const scene = new THREE.Scene();
-
-	const boxWidth = 1;
-	const boxHeight = 1;
-	const boxDepth = 1;
-	const geom = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
-	const mat = new THREE.MeshBasicMaterial({color: 0x44aa88});
-	const cube = new THREE.Mesh(geom, mat);
-	scene.add(cube);
-
+	scene.background = new THREE.Color(0xCCCCCC);
 	renderer.render(scene, camera);
+	
+	const gui = new dat.GUI();
+	const controls = new function(){
+		this.outputObj = function(){
+			scene.children.forEach(c => console.log(c));
+		}
+	}
+	gui.add(controls, 'outputObj');
 
 	function render(time){
 		time *= 0.001;
-
-		cube.rotation.x = time;
-		cube.rotation.y = time;
-
+		
+		if (resizeRenderToDisplaySize(renderer)){
+			const canvas = renderer.domElement;
+			camera.aspect = canvas.clientWidth / canvas.clientHeight;
+			camera.updateProjectionMatrix();
+		}
 		renderer.render(scene, camera);
-
 		requestAnimationFrame(render);
+	}
+
+	function resizeRenderToDisplaySize(renderer){
+		const canvas = renderer.domElement;
+		const pixelRatio = window.devicePixelRatio;
+		const width = canvas.clientWidth * pixelRatio | 0; // or 0
+		const height = canvas.clientHeight * pixelRatio | 0; // 0
+		const needResize = canvas.width !== width || canvas.height !== height;
+		if (needResize){
+			renderer.setSize(width, height, false);
+		}
+		return needResize;
 	}
 	requestAnimationFrame(render);
 }
