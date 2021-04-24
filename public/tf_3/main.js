@@ -14,62 +14,113 @@ function main(){
 	scene.background = new THREE.Color(0xFFAAAA);
 	renderer.render(scene, camera);
 
+
 	const gui = new dat.GUI();
 	const controls = new function(){
 		this.outputObj = function(){
 			scene.children.forEach(c => console.log(c));
 		}
 
-		
+		this.current = "box";
 
-		this.boxProperties = {
+		this.boxParams = {
 			width: 8,
 			height: 8,
 			depth: 8
 		}
 
-		this.circleProperties = {
+		this.circleParams = {
 			radius: 7,
-			segments: 24
+			segments: 24,
+			thetaStart: Math.PI * 0.25,
+			thetaLength: Math.PI * 1.5
+		}
+
+		this.icoParams = {
+			radius: 7,
+			detail: 2
 		}
 	}
 	gui.add(controls, 'outputObj');
+	gui.add(controls, 'current', ["box", "circle", "ico"]).onChange(function (e){
+		switch(e){
+			case "box":
+				currentMesh.visible = false;
+				currentMesh = scene.children[0];
+				currentMesh.visible = true;
+				break;
+			case "circle":
+				currentMesh.visible = false;
+				currentMesh = scene.children[1];
+				currentMesh.visible = true;
+				break;
+			case "ico":
+				currentMesh.visible = false;
+				currentMesh = scene.children[2];
+				currentMesh.visible = true;
+		}
+	});	
+
 
 	let currentMesh;
+
 
 	const mat = new THREE.MeshNormalMaterial();
 
 	//---------------------BOXGEOMETRY----------------------------
 	{
-		const properties = controls.boxProperties;
-		const boxGeom = new THREE.BoxGeometry(properties.width, 
-										properties.height, 
-										properties.depth);
+		const params = controls.boxParams;
+		const boxGeom = new THREE.BoxGeometry(params.width, 
+										params.height, 
+										params.depth);
 		const box = new THREE.Mesh(boxGeom, mat);
 		currentMesh = box;
 		scene.add(box);
 
 		const boxFolder = gui.addFolder('BoxGeometry');
-		boxFolder.add(properties, 'width', 1, 10).onChange(e => updateGeometry(box, new THREE.BoxGeometry(properties.width, 
-											properties.height, 
-											properties.depth)));
-		boxFolder.add(properties, 'height', 1, 10).onChange(e => updateGeometry(box, new THREE.BoxGeometry(properties.width, 
-											properties.height, 
-											properties.depth)));
-		boxFolder.add(properties, 'depth', 1, 10).onChange(e => updateGeometry(box, new THREE.BoxGeometry(properties.width, 
-											properties.height, 
-											properties.depth)));
+		boxFolder.add(params, 'width', 1, 10).onChange(e => updateGeometry(box, new THREE.BoxGeometry(params.width, 
+		params.height, params.depth)));
+		boxFolder.add(params, 'height', 1, 10).onChange(e => updateGeometry(box, new THREE.BoxGeometry(params.width, 
+		params.height, params.depth)));
+		boxFolder.add(params, 'depth', 1, 10).onChange(e => updateGeometry(box, new THREE.BoxGeometry(params.width, 
+		params.height, params.depth)));
 	}
 	//------------------------------------------------------
 	//-------------------CIRCLEGEOMETRY--------------------------
 	{
-		const properties = controls.circleProperties;
-		const circleGeom = new THREE.CircleGeometry(properties.radius, properties.segments);
+		const params = controls.circleParams;
+		const circleGeom = new THREE.CircleGeometry(params.radius, params.segments);
 		const circle = new THREE.Mesh(circleGeom, mat);
 		circle.visible = false;
 		scene.add(circle);
+
+		const circleFolder = gui.addFolder('CircleGeometry');
+		circleFolder.add(params, 'radius', 1, 10).onChange(e => updateGeometry(circle, new THREE.CircleGeometry(params.radius, params.segments,
+		params.thetaStart, params.thetaLength)));
+		circleFolder.add(params, 'segments', 1, 50).onChange(e => updateGeometry(circle, new THREE.CircleGeometry(params.radius, params.segments,
+		params.thetaStart, params.thetaLength)));
+		circleFolder.add(params, 'thetaStart', 0, Math.PI * 2.0).onChange(e => updateGeometry(circle, new THREE.CircleGeometry(params.radius, params.segments,
+		params.thetaStart, params.thetaLength)));
+		circleFolder.add(params, 'thetaLength', 0, Math.PI * 2.0).onChange(e => updateGeometry(circle, new THREE.CircleGeometry(params.radius, params.segments,
+		params.thetaStart, params.thetaLength)));
 	}
 	//-----------------------------------------------------------
+	//-------------------ICOSAHEDRONGEOMETRY----------------------
+	{
+		const params = controls.icoParams;
+		const icoGeom = new THREE.IcosahedronGeometry(params.radius, params.detail);
+		const ico = new THREE.Mesh(icoGeom, mat);
+		ico.visible = false;
+		scene.add(ico);
+
+		const icoFolder = gui.addFolder('IcosahedronGeometry');
+		icoFolder.add(params, 'radius', 1, 10).onChange(e => updateGeometry(ico, new THREE.IcosahedronGeometry(params.radius, params.detail)));
+		icoFolder.add(params, 'detail', 1, 5).step(1).onChange(e => updateGeometry(ico, new THREE.IcosahedronGeometry(params.radius, params.detail)));
+	}
+
+	//----------------------------------------------------------
+
+	
 
 	function render(time){
 		time *= 0.001;
