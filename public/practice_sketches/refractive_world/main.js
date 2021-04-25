@@ -7,23 +7,25 @@ function main(){
 	const p5Sketch = (sketch) => {
 		sketch.setup = () => {
 			sketch.createCanvas(1000, 1000);
-			sketch.textSize(50);
+			sketch.textSize(80);
 			
 		}
 		sketch.draw = () => {
             sketch.smooth();
-			sketch.background(255);
+			sketch.background(212, 134, 78);
             //sketch.shader(leafShader);
             //sketch.noFill();
            
-            sketch.stroke(255, 0, 0);
-            sketch.strokeWeight(3);
-            sketch.rectMode(sketch.CENTER);
-            for (var i = 0; i < 40; i++){
-                sketch.textSize(30 + 30 * Math.sin(i * 0.4 + sketch.frameCount * 0.03));
-                sketch.text("CREATIVE BANKRUPTCY", 0 % (sketch.width / 2), 34 * i);
+            sketch.noStroke();
+           
+            let rectNum = 100;
+            let rectHeight = sketch.height / rectNum;
+            for (var i = 0; i < rectNum; i++){
+                if (i % 2 == 0) sketch.fill(255);
+                else sketch.fill(0);
+                sketch.rect(0, rectHeight * i, sketch.width, rectHeight);
             }
-            sketch.text("CREATIVE BANKRUPTCY", 0, 20);
+
 			if (canvasTexture) canvasTexture.needsUpdate = true;
 		}
 	};
@@ -37,7 +39,8 @@ function main(){
 //---------------------------------------------------
 
 	const canvas = document.querySelector('#c');
-	const renderer = new THREE.WebGLRenderer({canvas});
+    const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+
 
 
 //------------------CAMERA---------------------------
@@ -74,6 +77,17 @@ function main(){
 	const icoMesh = new THREE.Mesh(icoGeom, mat);
     scene.add(icoMesh);
     
+    const range = 30.0;
+    for (let i = 0; i < 0; i++){
+        const boxGeom = new THREE.BoxGeometry(2, 2, 2);
+        const boxMesh = new THREE.Mesh(boxGeom, mat);
+        boxMesh.position.set(
+            Math.random() * range - range * 0.5,
+            Math.random() * range - range * 0.5,
+            Math.random() * range - range * 0.5
+        );
+        scene.add(boxMesh);
+    }
     
 
 	const spriteMat = new THREE.SpriteMaterial({
@@ -111,7 +125,12 @@ function main(){
 		//canvasTexture.encoding = THREE.sRGBEncoding;
 		canvasTexture.needsUpdate = true;
 		scene.background = canvasTexture;
-	}
+    }
+    
+    function createRandomMesh(){
+        const geom = new THREE.BoxGeometry(4, 1, 1, 32, 32, 32);
+        geom.morphAttributes.position = [];
+    }
 	function render(time){
 		time *= 0.001;
         updateBackground();
@@ -120,13 +139,18 @@ function main(){
         canvasTexture.needsUpdate = true;
         
         let params = controls.materialParams;
-		icoMesh.material = new THREE.MeshBasicMaterial({
-            envMap: canvasTexture,
-            refractionRatio: params.refractionRatio,
-            reflectivity: params.reflectivity,
-            color: params.color
-        });
-		icoMesh.material.needsUpdate = true;
+		
+        
+        scene.children.forEach(function(c){
+            c.material = new THREE.MeshBasicMaterial({
+                envMap: canvasTexture,
+                refractionRatio: params.refractionRatio,
+                reflectivity: params.reflectivity,
+                color: params.color,
+                
+            });
+            c.material.needsUpdate = true;
+        })
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
