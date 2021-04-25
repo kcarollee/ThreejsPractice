@@ -37,7 +37,7 @@ function main(){
 	canvasTexture.encoding = THREE.sRGBEncoding;
 	canvasTexture.needsUpdate = true;
 //---------------------------------------------------
-
+	noise.seed(Math.random());
 	const canvas = document.querySelector('#c');
     const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
 
@@ -75,26 +75,24 @@ function main(){
 	mat.needsUpdate = true;
 	const icoGeom = new THREE.IcosahedronGeometry(8, 15);
 	const icoMesh = new THREE.Mesh(icoGeom, mat);
+	console.log(icoMesh);
     scene.add(icoMesh);
     
     const range = 30.0;
-    for (let i = 0; i < 0; i++){
-        const boxGeom = new THREE.BoxGeometry(2, 2, 2);
+    for (let i = 0; i < 2; i++){
+        const boxGeom = createRandomGeometry();
         const boxMesh = new THREE.Mesh(boxGeom, mat);
         boxMesh.position.set(
             Math.random() * range - range * 0.5,
             Math.random() * range - range * 0.5,
             Math.random() * range - range * 0.5
         );
+        boxMesh.morphTargetInfluences[0] = 1.0;
         scene.add(boxMesh);
     }
     
 
-	const spriteMat = new THREE.SpriteMaterial({
-		map: canvasTexture
-	});
-	const sprite = new THREE.Sprite(spriteMat);
-	scene.add(sprite);
+	
 
 //---------------------------------------------------
 
@@ -110,8 +108,16 @@ function main(){
             reflectivity: 1,
             color: 0xFFFFFF
         }
+
+        this.morph = 0.5;
 	}
     gui.add(controls, 'outputObj');
+    gui.add(controls, 'morph', 0, 1).onChange(function(c){
+		scene.children.forEach(function(e){
+			e.morphTargetInfluences[0] = c;
+			
+		});  	
+    });
     const materialFolder = gui.addFolder('Material Params');
     materialFolder.add(controls.materialParams, 'refractionRatio', 0, 1).step(0.001);
     materialFolder.add(controls.materialParams, 'reflectivity', 0, 1).step(0.001);
@@ -127,9 +133,28 @@ function main(){
 		scene.background = canvasTexture;
     }
     
-    function createRandomMesh(){
-        const geom = new THREE.BoxGeometry(4, 1, 1, 32, 32, 32);
+    function createRandomGeometry(){
+        const geom = new THREE.SphereGeometry(3, 64, 64);
         geom.morphAttributes.position = [];
+        const initialPosAttribute = geom.attributes.position;
+        const morphPositions = [];
+       	const rs = Math.random();
+        for (let i = 0; i < initialPosAttribute.count; i++){
+        	const x = initialPosAttribute.getX(i) + rs;
+        	const y = initialPosAttribute.getY(i) + rs;
+        	const z = initialPosAttribute.getZ(i) + rs;
+        	const c = 1.0;
+        	const vc = 0.3;
+        	morphPositions.push(
+        		x + noise.simplex3(x * vc, y * vc, z * vc) * c,
+        		y + noise.simplex3(x * vc, y * vc, z * vc) * c,
+        		z + noise.simplex3(x * vc, y * vc, z * vc) * c
+        	);
+  
+        }
+        
+        geom.morphAttributes.position[0] = new THREE.Float32BufferAttribute(morphPositions, 3);
+        return geom;
     }
 	function render(time){
 		time *= 0.001;
@@ -141,15 +166,17 @@ function main(){
         let params = controls.materialParams;
 		
         
-        scene.children.forEach(function(c){
+        scene.children.forEach(function(c, i){
             c.material = new THREE.MeshBasicMaterial({
                 envMap: canvasTexture,
                 refractionRatio: params.refractionRatio,
                 reflectivity: params.reflectivity,
                 color: params.color,
-                
+                morphTargets: true
             });
             c.material.needsUpdate = true;
+            c.geometry.attributes.position.needsUpdate = true;
+            if (i > 0) c.morphTargetInfluences[0] = Math.sin(time);
         })
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
