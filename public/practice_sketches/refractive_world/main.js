@@ -13,8 +13,7 @@ function main(){
 		sketch.draw = () => {
             sketch.smooth();
 			sketch.background(212, 134, 78);
-            //sketch.shader(leafShader);
-            //sketch.noFill();
+            
            
             sketch.noStroke();
            
@@ -79,7 +78,7 @@ function main(){
     scene.add(icoMesh);
     
     const range = 30.0;
-    for (let i = 0; i < 2; i++){
+    for (let i = 0; i < 100; i++){
         const boxGeom = createRandomGeometry();
         const boxMesh = new THREE.Mesh(boxGeom, mat);
         boxMesh.position.set(
@@ -134,7 +133,8 @@ function main(){
     }
     
     function createRandomGeometry(){
-        const geom = new THREE.SphereGeometry(3, 64, 64);
+        const geom = new THREE.SphereGeometry(1, 32, 32);
+        
         geom.morphAttributes.position = [];
         const initialPosAttribute = geom.attributes.position;
         const morphPositions = [];
@@ -143,12 +143,16 @@ function main(){
         	const x = initialPosAttribute.getX(i) + rs;
         	const y = initialPosAttribute.getY(i) + rs;
         	const z = initialPosAttribute.getZ(i) + rs;
-        	const c = 1.0;
+        	const c = 1;
         	const vc = 0.3;
+            const nx = noise.simplex2(x * vc, y * vc);
+            const ny = noise.simplex2(y * vc, z * vc);
+            const nz = noise.simplex2(z * vc, x * vc);
+            
         	morphPositions.push(
-        		x + noise.simplex3(x * vc, y * vc, z * vc) * c,
-        		y + noise.simplex3(x * vc, y * vc, z * vc) * c,
-        		z + noise.simplex3(x * vc, y * vc, z * vc) * c
+        		x + nx * c,
+        		y + ny * c,
+        		z + nz * c
         	);
   
         }
@@ -176,7 +180,7 @@ function main(){
             });
             c.material.needsUpdate = true;
             c.geometry.attributes.position.needsUpdate = true;
-            if (i > 0) c.morphTargetInfluences[0] = Math.sin(time);
+            if (i > 0) c.morphTargetInfluences[0] = Math.sin(time * 2.0 + i);
         })
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
