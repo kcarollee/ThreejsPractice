@@ -121,6 +121,15 @@ class Cube{
     	console.log(this.meshVertArr);
     }
 
+    createMesh(scene){
+    	let geom = new THREE.BufferGeometry();
+    	let vertices = new Float32Array(this.meshVertArr);
+    	geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    	let mat = new THREE.MeshBasicMaterial({color: 0xff0000});
+    	let mesh = new THREE.Mesh(geom, mat);
+    	scene.add(mesh);
+    }
+
     static setDimensions(x, y, z){
     	Cube.width = x;
     	Cube.height = y;
@@ -177,16 +186,12 @@ function main(){
 	}
 
 	const f3 = (x, y, z) => {
-		return Math.sin(x * 10 + y + z);
+		return Math.sin(x * 10 + y * 10 + z * z);
 	}
 
 	console.log(f2(f1, f1));
 
-	Cube.setDimensions(1, 1, 1);
-	let testCube = new Cube(0, 0, 0);
-	testCube.setCubeCorners();
-	testCube.setConfigIndex(f3, 0);
-	testCube.setMeshVertices();
+	
 
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
@@ -204,16 +209,11 @@ function main(){
 	scene.background = new THREE.Color(0xCCCCCC);
 	renderer.render(scene, camera);
 
-	const orbitControls = new OrbitControls(camera, renderer.domElement);
-    orbitControls.target.copy(scene.position);
-    orbitControls.update();
-
-
 // TEST SPACE
 	let testSpace = {
-		width: 10,
-		height: 10,
-		depth: 10
+		width: 20,
+		height: 20,
+		depth: 20
 	}
 // SINGLE CUBE PARAMS
 	let singleCubeParams = {
@@ -221,6 +221,22 @@ function main(){
 		height: 1,
 		depth: 1
 	}
+
+	Cube.setDimensions(singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
+	
+	let testCube = new Cube(0, 0, 0);
+	testCube.setCubeCorners();
+	testCube.setConfigIndex(f3, 0);
+	testCube.setMeshVertices();
+	testCube.createMesh(scene);
+
+	
+	const orbitControls = new OrbitControls(camera, renderer.domElement);
+    orbitControls.target.copy(scene.position);
+    orbitControls.update();
+
+
+
 // DEBUG SPRITES
 
 	for (let w = -testSpace.width * 0.5; w < testSpace.width * 0.5; w += singleCubeParams.width){
