@@ -2,8 +2,12 @@ import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/example
 
 
 class Cube{
-    constructor(){
-    	this.vertArr = [];
+    constructor(centerX, centerY, centerZ){
+    	this.centerX = centerX;
+    	this.centerY = centerY;
+    	this.centerZ = centerZ;
+    	this.cubeVertArr = []; // [x0, y0, z0, x1, y1, z1..., x7, y7, z7]
+    	this.meshVertArr = [];
 
     	/*****************
 		  4________5
@@ -14,15 +18,107 @@ class Cube{
 		|/		  |/
 		3_________2
 			
-		0: left down back
-		1: right down back 
-		2: right down front
-		3: left down front
-		4: left up back
-		5: right up back
-        6: right up front
-        7: left up front
+		0: left down back   | cx-hw cy-hh cz-hd
+		1: right down back  | cx+hw cy-hh cz-hd 
+		2: right down front | cx+hw cy-hh cz+hd
+		3: left down front  | cx-hw cy-hh cz+hd
+		4: left up back     | cx-hw cy+hh cz-hd
+		5: right up back    | cx+hw cy+hh cz-hd
+        6: right up front   | cx+hw cy+hh cz+hd
+        7: left up front    | cx-hw cy+hh cz+hd
+
+        testing should be done in a decreasing order to create the correct configIndex.
     	******************/
+
+    	this.configIndex = 0; // index in the triangulation table
+    	this.triangulationEdgeIndices;
+    }
+
+    setCubeCorners(){
+    	// half width, height, depth
+    	let hw = Cube.width * 0.5;
+    	let hh = Cube.height * 0.5;
+    	let hd = Cube.depth * 0.5;
+    	let mult = [
+    		-1, -1, -1,
+    		1, -1, -1,
+    		1, -1, 1,
+    		-1, -1, 1,
+    		-1, 1, -1,
+    		1, 1, -1,
+    		1, 1, 1,
+    		-1, 1, 1
+    	];
+    	for (let i = 0; i < 24; i++){
+    		switch(i % 3){
+    			// push xpos of the corner
+    			case 0:
+    				let x = this.centerX + mult[i] * hw;
+    				this.cubeVertArr.push(x);
+    				break;
+    			// push ypos of the corner
+    			case 1:
+    				let y = this.centerY + mult[i] * hh;
+    				this.cubeVertArr.push(y);
+    				break;
+    			// push zpos of the corner
+    			case 2:
+    				let z = this.centerZ + mult[i] * hd;
+    				this.cubeVertArr.push(z);
+    				break;
+    		}
+    	}
+    	console.log(this.cubeVertArr);
+    }
+
+
+    // f is a shape function that takes x, y, z as arguments
+    // threshold is a threshold value over which we define as being 'inside' (1)
+    setConfigIndex(f, threshold){
+    	// start from vert # 7 since that's how the configIndex is generated.
+    	for (let i = 7; i > -1; i--){
+    		let x = this.cubeVertArr[i * 3];
+    		let y = this.cubeVertArr[i * 3 + 1];
+    		let z = this.cubeVertArr[i * 3 + 2];
+    		if (f(x, y, z) > threshold) this.configIndex |= 1 << i;
+    	}
+    	console.log(this.configIndex);
+
+    	// set the array of triangulation edge indices based on the configIndex.
+    	this.triangulationEdgeIndices = Cube.triangulationTable[this.configIndex];
+    	console.log(this.triangulationEdgeIndices);
+    }
+
+    setMeshVertices(){
+    	for (let i = 0; i < 16; i++){
+    		if (this.triangulationEdgeIndices[i] == -1) break;
+    		
+    		// 1. get edge index in triEdgeIndices 
+    		let edgeIndex = this.triangulationEdgeIndices[i];
+    		
+    		// 2. use Cube.edgeToVerticesIndices to determine which two vertices the edge is in between
+    		let vertIndices = Cube.edgeToVerticesIndices[edgeIndex];
+    		let vertIndex1 = vertIndices[0];
+    		let vertIndex2 = vertIndices[1];
+
+    		let v1x = this.cubeVertArr[vertIndex1 * 3];
+    		let v1y = this.cubeVertArr[vertIndex1 * 3 + 1];
+    		let v1z = this.cubeVertArr[vertIndex1 * 3 + 2];
+
+    		let v2x = this.cubeVertArr[vertIndex2 * 3];
+    		let v2y = this.cubeVertArr[vertIndex2 * 3 + 1];
+    		let v2z = this.cubeVertArr[vertIndex2 * 3 + 2];
+    		
+    		// 3. get the midpoint of the two vertices
+    		let mx = (v1x + v2x) * 0.5;
+    		let my = (v1y + v2y) * 0.5;
+    		let mz = (v1z + v2z) * 0.5;
+
+    		// 4. push the coordinates of the midpoint to meshVertArr
+    		this.meshVertArr.push(mx, my, mz);
+    	}
+
+    	console.log(this.meshVertArr);
     }
 
     static setDimensions(x, y, z){
@@ -36,7 +132,20 @@ Cube.height;
 Cube.depth;
 Cube.edgeIndices = edgeIndices;
 Cube.triangulationTable = triangulationTable;
-
+Cube.edgeToVerticesIndices = [
+	[0, 1], // edge number 0 is between vert0 & vert1
+	[1, 2], // edge number 1 is between vert1 & vert2
+	[2, 3], // edge number 2
+	[3, 0], // edge number 3 
+	[4, 5], // edge number 4
+	[5, 6], // edge number 5
+	[6, 7], // edge number 6
+	[7, 4], // edge number 7
+	[0, 4], // edge number 8
+	[1, 5], // edge number 9
+	[2, 6], // edge number 10
+	[3, 7]  // edge number 11
+];	
 
 
 function main(){
@@ -51,9 +160,34 @@ function main(){
 	}
 	console.log(b);
 
-	console.log(Cube.edgeIndices);
-	console.log(Cube.triangulationTable);
-	
+// TEST SHAPE FUNCTIONS
+	const f1 = (x, y, z) =>{
+		let val = 10000.0 / 
+			(
+				Math.pow(x, 2) +
+				Math.pow(y, 2) + 
+				Math.pow(z, 2)
+			);
+		return  val > 999 ? 1 : val;
+	} 
+
+	const f2 = (g, h) => {
+		console.log(g);
+		return g(1, 1, 1) + h(2, 2, 2);
+	}
+
+	const f3 = (x, y, z) => {
+		return Math.sin(x * 10 + y + z);
+	}
+
+	console.log(f2(f1, f1));
+
+	Cube.setDimensions(1, 1, 1);
+	let testCube = new Cube(0, 0, 0);
+	testCube.setCubeCorners();
+	testCube.setConfigIndex(f3, 0);
+	testCube.setMeshVertices();
+
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
 
@@ -74,23 +208,7 @@ function main(){
     orbitControls.target.copy(scene.position);
     orbitControls.update();
 
-// TEST SHAPE FUNCTIONS
-	const f1 = (x, y, z) =>{
-		let val = 10000.0 / 
-			(
-				Math.pow(x, 2) +
-				Math.pow(y, 2) + 
-				Math.pow(z, 2)
-			);
-		return  val > 999 ? 1 : val;
-	} 
 
-	const f2 = (g, h) => {
-		console.log(g);
-		return g(1, 1, 1) + h(2, 2, 2);
-	}
-
-	console.log(f2(f1, f1));
 // TEST SPACE
 	let testSpace = {
 		width: 10,
@@ -132,7 +250,6 @@ function main(){
 
 	function render(time){
 		time *= 0.001;
-		
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
