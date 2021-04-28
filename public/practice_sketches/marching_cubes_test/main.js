@@ -1,5 +1,59 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
+
+
+class Cube{
+    constructor(){
+    	this.vertArr = [];
+
+    	/*****************
+		  4________5
+		 /		   /
+		7_________6 |
+		|         | |
+		| 0________1
+		|/		  |/
+		3_________2
+			
+		0: left down back
+		1: right down back 
+		2: right down front
+		3: left down front
+		4: left up back
+		5: right up back
+        6: right up front
+        7: left up front
+    	******************/
+    }
+
+    static setDimensions(x, y, z){
+    	Cube.width = x;
+    	Cube.height = y;
+    	Cube.depth = z;
+    }
+}
+Cube.width;
+Cube.height;
+Cube.depth;
+Cube.edgeIndices = edgeIndices;
+Cube.triangulationTable = triangulationTable;
+
+
+
 function main(){
+
+	// how to get configIndex
+	let b = 0;
+	for (let i = 7; i >= 0; i--){
+		if (i == 7 || i == 5 || i == 1){ // if (cond) b |= 1 << i
+			b |= 1 << i;
+		}
+		
+	}
+	console.log(b);
+
+	console.log(Cube.edgeIndices);
+	console.log(Cube.triangulationTable);
+	
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
 
@@ -30,6 +84,13 @@ function main(){
 			);
 		return  val > 999 ? 1 : val;
 	} 
+
+	const f2 = (g, h) => {
+		console.log(g);
+		return g(1, 1, 1) + h(2, 2, 2);
+	}
+
+	console.log(f2(f1, f1));
 // TEST SPACE
 	let testSpace = {
 		width: 10,

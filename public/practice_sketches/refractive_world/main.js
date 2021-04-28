@@ -2,6 +2,17 @@ import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/example
 
 let p5Canvas; // a p5 canvas to be used as a texture
 let canvasTexture;
+
+class Cube{
+    constructor(){
+
+    }
+}
+Cube.width;
+Cube.height;
+Cube.depth;
+
+
 function main(){
 //----------------p5 SETUP---------------------------
 	const p5Sketch = (sketch) => {

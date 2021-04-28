@@ -1,5 +1,5 @@
 // source: http://paulbourke.net/geometry/polygonise/
-[
+let edgeIndices = [
     0x0,
     0x109,
     0x203,
