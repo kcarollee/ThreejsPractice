@@ -8,6 +8,7 @@ class Cube{
     	this.centerZ = centerZ;
     	this.cubeVertArr = []; // [x0, y0, z0, x1, y1, z1..., x7, y7, z7]
     	this.meshVertArr = [];
+    	this.meshNormalsArr = [];
 
     	/*****************
 		  4________5
@@ -90,6 +91,7 @@ class Cube{
     }
 
     setMeshVertices(){
+    	let tempForNormals = [];
     	for (let i = 0; i < 16; i++){
     		if (this.triangulationEdgeIndices[i] == -1) break;
     		
@@ -116,17 +118,36 @@ class Cube{
 
     		// 4. push the coordinates of the midpoint to meshVertArr
     		this.meshVertArr.push(mx, my, mz);
+
+    		// calculating normals
+    		tempForNormals.push([mx, my, mz]);
+    		if (i % 3 == 2){
+    			let v0 = new THREE.Vector3(tempForNormals[0][0], tempForNormals[0][1], tempForNormals[0][2]);
+    			let v1 = new THREE.Vector3(tempForNormals[1][0], tempForNormals[1][1], tempForNormals[1][2]);
+    			let v2 = new THREE.Vector3(tempForNormals[2][0], tempForNormals[2][1], tempForNormals[2][2]);
+
+    			let s0 = new THREE.Vector3().subVectors(v1, v0);
+    			let s1 = new THREE.Vector3().subVectors(v2, v0);
+    			//console.log(s1);
+    			let norm = new THREE.Vector3().crossVectors(s0, s1).normalize();
+
+    			for (let j = 0; j < 3; j++){
+    				this.meshNormalsArr.push(norm.getComponent(0), norm.getComponent(1), norm.getComponent(2));
+    			}
+    			tempForNormals = [];
+    		}
     	}
 
-    	//console.log(this.meshVertArr);
+    	//console.log(this.meshNormalsArr);
     }
 
     createMesh(scene){
     	let geom = new THREE.BufferGeometry();
     	let vertices = new Float32Array(this.meshVertArr);
+    	let normals = new Float32Array(this.meshNormalsArr);
     	geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    	let mat = new THREE.MeshBasicMaterial({color: 0xff0000, side: THREE.DoubleSide});
-    	let mesh = new THREE.Mesh(geom, mat);
+    	geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    	let mesh = new THREE.Mesh(geom, Cube.material);
     	scene.add(mesh);
     }
 
@@ -156,6 +177,17 @@ Cube.edgeToVerticesIndices = [
 	[3, 7]  // edge number 11
 ];	
 
+//Cube.material = new THREE.MeshBasicMaterial({color: 0xFF4466, transparent: true, opacity: 0.7, side: THREE.DoubleSide});
+/*
+Cube.material = new THREE.MeshPhongMaterial({
+	color: 0xFF4466, 
+	transparent: false, 
+	opacity: 0.7, 
+	side: THREE.DoubleSide
+});
+*/
+Cube.material = new THREE.MeshNormalMaterial({side: THREE.DoubleSide});
+
 
 function main(){
 
@@ -168,6 +200,9 @@ function main(){
 		
 	}
 	console.log(b);
+
+// NOISE
+	noise.seed(Math.random());
 
 // TEST SHAPE FUNCTIONS
 	const f1 = (x, y, z) =>{
@@ -186,7 +221,14 @@ function main(){
 	}
 
 	const f3 = (x, y, z) => {
-		return Math.sin(x * 10 + y * 10 + z * z);
+		return Math.sin(x * 1 + y * 1 + z * z);
+	}
+
+	const noiseFunc1 = (x, y, z) =>{
+		let nx = 0.07;
+		let ny = 0.07;
+		let nz = 0.07;
+		return noise.simplex3(x * nx, y * ny, z * nz);
 	}
 
 	console.log(f2(f1, f1));
@@ -194,7 +236,7 @@ function main(){
 	
 
 	const canvas = document.querySelector('#c');
-	const renderer = new THREE.WebGLRenderer({canvas});
+	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
 
 //CAMERA
 	const fov = 75;
@@ -211,26 +253,29 @@ function main(){
 
 // TEST SPACE
 	let testSpace = {
-		width: 10,
-		height: 10,
-		depth: 10
+		width: 20,
+		height: 40,
+		depth: 20
 	}
 // SINGLE CUBE PARAMS
 	let singleCubeParams = {
 		width: 1,
-		height: 1,
+		height: 2,
 		depth: 1
 	}
 
 	Cube.setDimensions(singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
+	console.log(Cube.material);
 	
 	/*
 	let testCube = new Cube(0, 0, 0);
 	testCube.setCubeCorners();
-	testCube.setConfigIndex(f3, 0);
+	testCube.setConfigIndex(noiseFunc1, 0);
 	testCube.setMeshVertices();
 	testCube.createMesh(scene);
 	*/
+
+	
 	let marchingCubes = [];
 
 	for (let w = testSpace.width * -0.5; w < testSpace.width * 0.5; w += singleCubeParams.width){
@@ -244,11 +289,16 @@ function main(){
 
 	marchingCubes.forEach(function(c){
 		c.setCubeCorners();
-		c.setConfigIndex(f3, 0);
+		c.setConfigIndex(noiseFunc1, 0);
 		c.setMeshVertices();
 		c.createMesh(scene);
 	});
+	
 
+// LIGHTS
+	let dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+	dirLight.position.set(0, 0, 50);
+	scene.add(dirLight);
 	
 	const orbitControls = new OrbitControls(camera, renderer.domElement);
     orbitControls.target.copy(scene.position);
