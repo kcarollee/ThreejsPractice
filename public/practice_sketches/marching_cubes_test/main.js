@@ -68,7 +68,7 @@ class Cube{
     				break;
     		}
     	}
-    	console.log(this.cubeVertArr);
+    	//console.log(this.cubeVertArr);
     }
 
 
@@ -82,11 +82,11 @@ class Cube{
     		let z = this.cubeVertArr[i * 3 + 2];
     		if (f(x, y, z) > threshold) this.configIndex |= 1 << i;
     	}
-    	console.log(this.configIndex);
+    	//console.log(this.configIndex);
 
     	// set the array of triangulation edge indices based on the configIndex.
     	this.triangulationEdgeIndices = Cube.triangulationTable[this.configIndex];
-    	console.log(this.triangulationEdgeIndices);
+    	//console.log(this.triangulationEdgeIndices);
     }
 
     setMeshVertices(){
@@ -118,14 +118,14 @@ class Cube{
     		this.meshVertArr.push(mx, my, mz);
     	}
 
-    	console.log(this.meshVertArr);
+    	//console.log(this.meshVertArr);
     }
 
     createMesh(scene){
     	let geom = new THREE.BufferGeometry();
     	let vertices = new Float32Array(this.meshVertArr);
     	geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    	let mat = new THREE.MeshBasicMaterial({color: 0xff0000});
+    	let mat = new THREE.MeshBasicMaterial({color: 0xff0000, side: THREE.DoubleSide});
     	let mesh = new THREE.Mesh(geom, mat);
     	scene.add(mesh);
     }
@@ -211,9 +211,9 @@ function main(){
 
 // TEST SPACE
 	let testSpace = {
-		width: 20,
-		height: 20,
-		depth: 20
+		width: 10,
+		height: 10,
+		depth: 10
 	}
 // SINGLE CUBE PARAMS
 	let singleCubeParams = {
@@ -224,11 +224,30 @@ function main(){
 
 	Cube.setDimensions(singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
 	
+	/*
 	let testCube = new Cube(0, 0, 0);
 	testCube.setCubeCorners();
 	testCube.setConfigIndex(f3, 0);
 	testCube.setMeshVertices();
 	testCube.createMesh(scene);
+	*/
+	let marchingCubes = [];
+
+	for (let w = testSpace.width * -0.5; w < testSpace.width * 0.5; w += singleCubeParams.width){
+		for (let h = testSpace.height * -0.5; h < testSpace.height * 0.5; h += singleCubeParams.height){
+			for (let d = testSpace.depth * -0.5; d < testSpace.depth * 0.5; d += singleCubeParams.depth){
+				let cube = new Cube(w, h, d);
+				marchingCubes.push(cube);
+			}
+		}	
+	}
+
+	marchingCubes.forEach(function(c){
+		c.setCubeCorners();
+		c.setConfigIndex(f3, 0);
+		c.setMeshVertices();
+		c.createMesh(scene);
+	});
 
 	
 	const orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -238,7 +257,8 @@ function main(){
 
 
 // DEBUG SPRITES
-
+	
+	/*
 	for (let w = -testSpace.width * 0.5; w < testSpace.width * 0.5; w += singleCubeParams.width){
 		for (let h =  testSpace.height * -0.5; h < testSpace.height * 0.5; h += singleCubeParams.height){
 			for (let d = -testSpace.depth * 0.5; d < testSpace.depth * 0.5; d += singleCubeParams.depth){
@@ -252,6 +272,7 @@ function main(){
 			}
 		}
 	}
+	*/
 
 //GUI
 	const gui = new dat.GUI();
