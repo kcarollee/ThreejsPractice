@@ -128,30 +128,31 @@ class Cube{
     		let v2z = this.cubeVertArr[vertIndex2 * 3 + 2];
 
     		
-    		
-    		/*
-    		// 3. get the midpoint of the two vertices
-    		let mx = (v1x + v2x) * 0.5;
-    		let my = (v1y + v2y) * 0.5;
-    		let mz = (v1z + v2z) * 0.5;
-    		*/
-
-    		// 3.5. get the intepolated point between the two vertices
-    		let v1f = f(v1x, v1y, v1z);
-    		let v2f = f(v2x, v2y, v2z);
-
-    		let r = v1f < v2f ? mapLinear(threshold, v1f, v2f, 0, 1) : mapLinear(threshold, v2f, v1f, 0, 1);
+    
     		let mx, my, mz;
-    		if (v1f < v2f){
-    			mx = v1x + (v2x - v1x) * r;
-    			my = v1y + (v2y - v1y) * r;
-    			mz = v1z + (v2z - v1z) * r;
-    		}
+    		// 3.5. get the intepolated point between the two vertices
+    		if (Cube.interpolate){
+    			let v1f = f(v1x, v1y, v1z);
+    			let v2f = f(v2x, v2y, v2z);
+    			let r = v1f < v2f ? mapLinear(threshold, v1f, v2f, 0, 1) : mapLinear(threshold, v2f, v1f, 0, 1);
+    			
+    			if (v1f < v2f){
+    				mx = v1x + (v2x - v1x) * r;
+    				my = v1y + (v2y - v1y) * r;
+    				mz = v1z + (v2z - v1z) * r;
+    			}
 
+    			else{
+    				mx = v2x + (v1x - v2x) * r;
+    				my = v2y + (v1y - v2y) * r;
+    				mz = v2z + (v1z - v2z) * r;
+    			}
+    		}
+    		// 3. get the midpoint of the two vertices
     		else{
-    			mx = v2x + (v1x - v2x) * r;
-    			my = v2y + (v1y - v2y) * r;
-    			mz = v2z + (v1z - v2z) * r;
+    			mx = (v1x + v2x) * 0.5;
+				my = (v1y + v2y) * 0.5;
+				mz = (v1z + v2z) * 0.5;
     		}
     		
 
@@ -259,6 +260,7 @@ Cube.material = new THREE.MeshNormalMaterial({
 //Cube.material = new THREE.MeshNormalMaterial({side: THREE.DoubleSide});
 Cube.totalCubesMesh;
 Cube.totalCubesGeom;
+Cube.interpolate = true;
 
 function main(){
 
@@ -318,7 +320,7 @@ function main(){
 		let c = 0.1;
 		let v = 0.03;
 		let n = noise.simplex3(x * c + step * v, y * c + step * v, z * c + step * v);
-		r += n;
+		r += 2.0 * n;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
 		return m;
@@ -353,9 +355,9 @@ function main(){
 
 // TEST SPACE
 	let testSpace = {
-		width: 11,
-		height: 11,
-		depth: 11
+		width: 10,
+		height: 10,
+		depth: 10
 	}
 // SINGLE CUBE PARAMS
 	let singleCubeParams = {
@@ -421,9 +423,13 @@ function main(){
 		this.outputObj = function(){
 			scene.children.forEach(c => console.log(c));
 		}
+		this.interpolate = true;
 	}
 	gui.add(controls, 'outputObj');
-
+	gui.add(controls, 'interpolate').onChange(function(e) {
+		Cube.interpolate = !Cube.interpolate;
+		console.log(Cube.interpolate);
+	});
 
 
 	function render(time){
@@ -438,8 +444,8 @@ function main(){
 		totalCubesGeom =[];
 		marchingCubes.forEach(function(c){
 			c.reset();
-			c.setConfigIndex(randomSphereFunc, 0.9 * Math.sin(time * 0.01));
-			c.setMeshVertices(randomSphereFunc, 0.9 * Math.sin(time * 0.01));
+			c.setConfigIndex(randomSphereFunc, 0.9 * Math.sin(time * 0.03));
+			c.setMeshVertices(randomSphereFunc, 0.9 * Math.sin(time * 0.03));
 			c.createMesh(scene);
 			if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
 		});
