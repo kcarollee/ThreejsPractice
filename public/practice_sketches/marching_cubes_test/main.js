@@ -1,6 +1,9 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 import {BufferGeometryUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/BufferGeometryUtils.js";
 let step = 0;
+function mapLinear(x, a1, a2, b1, b2){
+    return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
+}
 class Cube{
     constructor(centerX, centerY, centerZ){
     	this.centerX = centerX;
@@ -34,6 +37,8 @@ class Cube{
 
     	this.configIndex = 0; // index in the triangulation table
     	this.triangulationEdgeIndices;
+
+    	this.empty = false;
     }
 
     setCubeCorners(){
@@ -95,10 +100,16 @@ class Cube{
     	//console.log(this.triangulationEdgeIndices);
     }
 
-    setMeshVertices(){
+    setMeshVertices(f, threshold){
     	let tempForNormals = [];
     	for (let i = 0; i < 16; i++){
-    		if (this.triangulationEdgeIndices[i] == -1) break;
+    		if (this.triangulationEdgeIndices[i] == -1){
+    			if (i == 0) {
+    				this.empty = true;
+    				break;
+    			}
+    			break;
+    		} 
     		
     		// 1. get edge index in triEdgeIndices 
     		let edgeIndex = this.triangulationEdgeIndices[i];
@@ -115,11 +126,34 @@ class Cube{
     		let v2x = this.cubeVertArr[vertIndex2 * 3];
     		let v2y = this.cubeVertArr[vertIndex2 * 3 + 1];
     		let v2z = this.cubeVertArr[vertIndex2 * 3 + 2];
+
     		
+    		
+    		/*
     		// 3. get the midpoint of the two vertices
     		let mx = (v1x + v2x) * 0.5;
     		let my = (v1y + v2y) * 0.5;
     		let mz = (v1z + v2z) * 0.5;
+    		*/
+
+    		// 3.5. get the intepolated point between the two vertices
+    		let v1f = f(v1x, v1y, v1z);
+    		let v2f = f(v2x, v2y, v2z);
+
+    		let r = v1f < v2f ? mapLinear(threshold, v1f, v2f, 0, 1) : mapLinear(threshold, v2f, v1f, 0, 1);
+    		let mx, my, mz;
+    		if (v1f < v2f){
+    			mx = v1x + (v2x - v1x) * r;
+    			my = v1y + (v2y - v1y) * r;
+    			mz = v1z + (v2z - v1z) * r;
+    		}
+
+    		else{
+    			mx = v2x + (v1x - v2x) * r;
+    			my = v2y + (v1y - v2y) * r;
+    			mz = v2z + (v1z - v2z) * r;
+    		}
+    		
 
     		// 4. push the coordinates of the midpoint to meshVertArr
     		this.meshVertArr.push(mx, my, mz);
@@ -147,12 +181,14 @@ class Cube{
     }
 
     createMesh(scene){
-    	let geom = new THREE.BufferGeometry();
-    	let vertices = new Float32Array(this.meshVertArr);
-    	let normals = new Float32Array(this.meshNormalsArr);
-    	geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    	geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    	if (!this.empty){
+    		let geom = new THREE.BufferGeometry();
+    		let vertices = new Float32Array(this.meshVertArr);
+    		let normals = new Float32Array(this.meshNormalsArr);
+    		geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    		geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
     	this.mesh = new THREE.Mesh(geom, Cube.material);
+    	}
     	//this.mesh.updateMatrix();
     	//scene.add(this.mesh);
 
@@ -170,9 +206,11 @@ class Cube{
     }
 
     reset(){
-    	this.mesh.geometry.dispose();
+    	if (!this.empty) this.mesh.geometry.dispose();
+    	this.empty = false;
     	this.meshVertArr = [];
     	this.meshNormalsArr = [];
+    	this.configIndex = 0;
     }
     getMeshGeometry(){
     	return this.mesh.geometry;
@@ -211,7 +249,7 @@ Cube.edgeToVerticesIndices = [
 
 //Cube.material = new THREE.MeshBasicMaterial({color: 0xFF4466, transparent: true, opacity: 0.7, side: THREE.DoubleSide});
 
-Cube.material = new THREE.MeshLambertMaterial({
+Cube.material = new THREE.MeshNormalMaterial({
 	color: 0xFF4466, 
 	transparent: false, 
 	opacity: 0.7, 
@@ -258,10 +296,39 @@ function main(){
 	}
 
 	const noiseFunc1 = (x, y, z) =>{
-		let nx = 0.14;
-		let ny = 0.14;
-		let nz = 0.14;
-		return noise.simplex3(x * nx + step, y * ny + step , z * nz + step);
+		let nx = 0.1;
+		let ny = 0.1;
+		let nz = 0.1;
+
+		
+		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
+		
+		return n;
+	}
+
+	const sphereFunc1 = (x, y, z) => {
+		let r = 3;
+		let ds = x*x + y*y + z*z;
+		let m = mapLinear(ds, 0, r*r, -1, 1);
+		return m;
+	}
+
+	const randomSphereFunc = (x, y, z) => {
+		let r = 7;
+		let c = 0.1;
+		let v = 0.03;
+		let n = noise.simplex3(x * c + step * v, y * c + step * v, z * c + step * v);
+		r += n;
+		let ds = x*x + y*y + z*z;
+		let m = mapLinear(ds, 0, r*r, -1, 1);
+		return m;
+	}
+
+	const addFunc = (x, y, z) => {
+		let n = noiseFunc1(x, y, z);
+		let s = sphereFunc1(x, y, z);
+		//console.log(n + s);
+		return (n + s) * 0.5;
 	}
 
 	console.log(f2(f1, f1));
@@ -278,7 +345,7 @@ function main(){
 	const far = 1000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
-	camera.position.set(0, 0, 30);
+	camera.position.set(0, 0, 20);
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xCCCCCC);
@@ -286,15 +353,15 @@ function main(){
 
 // TEST SPACE
 	let testSpace = {
-		width: 15,
-		height: 15,
-		depth: 15
+		width: 11,
+		height: 11,
+		depth: 11
 	}
 // SINGLE CUBE PARAMS
 	let singleCubeParams = {
-		width: 1,
-		height: 1,
-		depth: 1
+		width: 0.5,
+		height: 0.5,
+		depth: 0.5
 	}
 
 	Cube.setDimensions(singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
@@ -323,10 +390,10 @@ function main(){
 	let totalCubesGeom =[];
 	marchingCubes.forEach(function(c){
 		c.setCubeCorners();
-		c.setConfigIndex(noiseFunc1, 0.5);
-		c.setMeshVertices();
+		c.setConfigIndex(randomSphereFunc, 0);
+		c.setMeshVertices(randomSphereFunc, 0);
 		c.createMesh(scene);
-		totalCubesGeom.push(c.getMeshGeometry());
+		if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
 	});
 	
 	let mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
@@ -361,16 +428,20 @@ function main(){
 
 	function render(time){
 		time *= 0.01;
-		step += 0.01;
+		step += 1;
+
+		scene.rotation.x = time * 0.1;
+		scene.rotation.y = time * 0.1;
+		scene.rotation.z = time * 0.1;
 
 		scene.remove(scene.getObjectByName("totalMesh"));
 		totalCubesGeom =[];
 		marchingCubes.forEach(function(c){
 			c.reset();
-			c.setConfigIndex(noiseFunc1, 0.5);
-			c.setMeshVertices();
+			c.setConfigIndex(randomSphereFunc, 0.9 * Math.sin(time * 0.01));
+			c.setMeshVertices(randomSphereFunc, 0.9 * Math.sin(time * 0.01));
 			c.createMesh(scene);
-			totalCubesGeom.push(c.getMeshGeometry());
+			if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
 		});
 	
 		mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
