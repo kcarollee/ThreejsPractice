@@ -170,8 +170,9 @@ class Cube{
     }
 
     reset(){
-    	this.mesh.remove();
+    	this.mesh.geometry.dispose();
     	this.meshVertArr = [];
+    	this.meshNormalsArr = [];
     }
     getMeshGeometry(){
     	return this.mesh.geometry;
@@ -179,7 +180,6 @@ class Cube{
 
     static completeTotalCubesMesh(scene){
     	Cube.totalCubesMesh = new THREE.Mesh(Cube.totalCubesGeom, Cube.material);
-    	console.log(Cube.totalCubesMesh);
     	scene.add(Cube.totalCubesMesh);
     }
 
@@ -258,10 +258,10 @@ function main(){
 	}
 
 	const noiseFunc1 = (x, y, z) =>{
-		let nx = 0.2;
-		let ny = 0.2;
-		let nz = 0.2;
-		return noise.simplex3(x * nx, y * ny + step, z * nz + step);
+		let nx = 0.14;
+		let ny = 0.14;
+		let nz = 0.14;
+		return noise.simplex3(x * nx + step, y * ny + step , z * nz + step);
 	}
 
 	console.log(f2(f1, f1));
@@ -286,9 +286,9 @@ function main(){
 
 // TEST SPACE
 	let testSpace = {
-		width: 10,
-		height: 10,
-		depth: 10
+		width: 15,
+		height: 15,
+		depth: 15
 	}
 // SINGLE CUBE PARAMS
 	let singleCubeParams = {
@@ -328,9 +328,11 @@ function main(){
 		c.createMesh(scene);
 		totalCubesGeom.push(c.getMeshGeometry());
 	});
-	console.log(BufferGeometryUtils);
+	
 	let mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
-	scene.add(new THREE.Mesh(mergedGeom, Cube.material));
+	let totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
+	totalMesh.name = "totalMesh";
+	scene.add(totalMesh);
 
 	//Cube.completeTotalCubesMesh(scene);
 	
@@ -360,13 +362,9 @@ function main(){
 	function render(time){
 		time *= 0.01;
 		step += 0.01;
-		
-		/*
-		scene.children = [];
 
-		mergedGeom.dispose();
-
-		totalCubesGeom = [];
+		scene.remove(scene.getObjectByName("totalMesh"));
+		totalCubesGeom =[];
 		marchingCubes.forEach(function(c){
 			c.reset();
 			c.setConfigIndex(noiseFunc1, 0.5);
@@ -376,9 +374,13 @@ function main(){
 		});
 	
 		mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
-		scene.add(new THREE.Mesh(mergedGeom, Cube.material));
-		*/
+		totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
+		totalMesh.name = "totalMesh";
+		scene.add(totalMesh);
 
+		mergedGeom.dispose();
+		
+		
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
