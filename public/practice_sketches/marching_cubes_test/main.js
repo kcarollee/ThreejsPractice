@@ -1,6 +1,7 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 import {BufferGeometryUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/BufferGeometryUtils.js";
 let step = 0;
+let scene;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -14,8 +15,10 @@ function smoothUnion(x, y, k){
 	let h = clamp(0.5 + 0.5 * (y - x) / k, 0, 1);
 	return mix(x, y, h) - k * h * (1.0 - h);
 }
+
+
 class Cube{
-    constructor(centerX, centerY, centerZ){
+    constructor(centerX, centerY, centerZ, w, h, d){
     	this.centerX = centerX;
     	this.centerY = centerY;
     	this.centerZ = centerZ;
@@ -23,6 +26,10 @@ class Cube{
     	this.meshVertArr = [];
     	this.meshNormalsArr = [];
     	this.mesh;
+
+    	this.width = w;
+    	this.height = h;
+    	this.depth = d;
 
     	/*****************
 		  4________5
@@ -53,9 +60,9 @@ class Cube{
 
     setCubeCorners(){
     	// half width, height, depth
-    	let hw = Cube.width * 0.5;
-    	let hh = Cube.height * 0.5;
-    	let hd = Cube.depth * 0.5;
+    	let hw = this.width * 0.5;
+    	let hh = this.height * 0.5;
+    	let hd = this.depth * 0.5;
     	let mult = [
     		-1, -1, -1,
     		1, -1, -1,
@@ -110,7 +117,7 @@ class Cube{
     	//console.log(this.triangulationEdgeIndices);
     }
 
-    setMeshVertices(f, threshold){
+    setMeshVertices(f, threshold, interpolate){
     	let tempForNormals = [];
     	for (let i = 0; i < 16; i++){
     		if (this.triangulationEdgeIndices[i] == -1){
@@ -141,7 +148,7 @@ class Cube{
     
     		let mx, my, mz;
     		// 3.5. get the intepolated point between the two vertices
-    		if (Cube.interpolate){
+    		if (interpolate){
     			let v1f = f(v1x, v1y, v1z);
     			let v2f = f(v2x, v2y, v2z);
     			let r = v1f < v2f ? mapLinear(threshold, v1f, v2f, 0, 1) : mapLinear(threshold, v2f, v1f, 0, 1);
@@ -191,7 +198,7 @@ class Cube{
     	//console.log(this.meshNormalsArr);
     }
 
-    createMesh(scene){
+    createMesh(){
     	if (!this.empty){
     		let geom = new THREE.BufferGeometry();
     		let vertices = new Float32Array(this.meshVertArr);
@@ -199,7 +206,7 @@ class Cube{
     		geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     		geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
     		geom.computeVertexNormals();
-    		this.mesh = new THREE.Mesh(geom, Cube.material);
+    		this.mesh = new THREE.Mesh(geom);
     	}
     }
 
@@ -214,21 +221,8 @@ class Cube{
     getMeshGeometry(){
     	return this.mesh.geometry;
     }
-
-    static completeTotalCubesMesh(scene){
-    	Cube.totalCubesMesh = new THREE.Mesh(Cube.totalCubesGeom, Cube.material);
-    	scene.add(Cube.totalCubesMesh);
-    }
-
-    static setDimensions(x, y, z){
-    	Cube.width = x;
-    	Cube.height = y;
-    	Cube.depth = z;
-    }
 }
-Cube.width;
-Cube.height;
-Cube.depth;
+
 Cube.edgeIndices = edgeIndices;
 Cube.triangulationTable = triangulationTable;
 Cube.edgeToVerticesIndices = [
@@ -246,35 +240,125 @@ Cube.edgeToVerticesIndices = [
 	[3, 7]  // edge number 11
 ];	
 
-//Cube.material = new THREE.MeshBasicMaterial({color: 0xFF4466, transparent: true, opacity: 0.7, side: THREE.DoubleSide});
-//Cube.material = new THREE.MeshLambertMaterial({color: 0xFF4466, side: THREE.DoubleSide});
-//Cube.material.flatShading = false;
+
+class MarchingCubes{
+	// test space w, h, d & single cube w, h, d
+	constructor(tw, th, td, sw, sh, sd, shapeFunc, threshold){
+		this.testSpace = {
+			width: tw,
+			height: th,
+			depth: td
+		}
+
+		this.singleCubeParams = {
+			width: sw,
+			height: sh,
+			depth: sd
+		}
+
+		this.shapeFunc = shapeFunc;
+		this.threshold = threshold;
+
+		this.marchingCubes = [];
+		this.initCubes();
+		
+
+		this.totalCubesGeom = [];
+		this.mergedGeom;
+		this.totalMesh;
+
+		this.setCubes();
+
+		this.material = new THREE.MeshNormalMaterial({ 
+			transparent: false, 
+			opacity: 0.7, 
+			side: THREE.DoubleSide
+		});
+
+		this.interpolate = true;
+
+		this.id = ++MarchingCubes.id;
+
+	}
 
 
-Cube.material = new THREE.MeshNormalMaterial({ 
-	transparent: false, 
-	opacity: 0.7, 
-	side: THREE.DoubleSide
-});
+	initCubes(){
+		let testSpace = this.testSpace;
+		let singleCubeParams = this.singleCubeParams;
 
+		for (let w = testSpace.width * -0.5; w < testSpace.width * 0.5; w += singleCubeParams.width){
+			for (let h = testSpace.height * -0.5; h < testSpace.height * 0.5; h += singleCubeParams.height){
+				for (let d = testSpace.depth * -0.5; d < testSpace.depth * 0.5; d += singleCubeParams.depth){
+					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
+					this.marchingCubes.push(cube);
+				}
+			}	
+		}
+	}
 
-//Cube.material = new THREE.MeshNormalMaterial({side: THREE.DoubleSide});
-Cube.totalCubesMesh;
-Cube.totalCubesGeom;
-Cube.interpolate = true;
+	setCubes(){
+		let func = this.shapeFunc;
+		let tcg = this.totalCubesGeom;
+		let interpolate = this.interpolate;
+		let threshold = this.threshold;
+		//console.log(func);
+		this.marchingCubes.forEach(function(c){
+			c.setCubeCorners();
+			c.setConfigIndex(func, threshold);
+			c.setMeshVertices(func, threshold, interpolate);
+			c.createMesh(scene);
+			if (!c.empty) tcg.push(c.getMeshGeometry());
+		});
+
+		if (this.totalCubesGeom.length > 0){
+		
+			this.mergedGeom = BufferGeometryUtils.mergeBufferGeometries(this.totalCubesGeom);
+			this.totalMesh = new THREE.Mesh(this.mergedGeom, this.material);
+			this.totalMesh.name = "totalMesh";
+			scene.add(this.totalMesh);
+		}
+	}
+
+	updateCubes(){
+		scene.remove(scene.getObjectByName("totalMesh"));
+		this.totalCubesGeom = [];
+		let func = this.shapeFunc;
+		let tcg = this.totalCubesGeom;
+		let interpolate = this.interpolate;
+		let threshold = this.threshold;
+		this.marchingCubes.forEach(function(c){
+			c.reset();
+			c.setConfigIndex(func, threshold);
+			c.setMeshVertices(func, threshold, interpolate);
+			c.createMesh(scene);
+			if (!c.empty) tcg.push(c.getMeshGeometry());
+		});
+
+		if (this.totalCubesGeom.length > 0){
+			this.mergedGeom = BufferGeometryUtils.mergeBufferGeometries(this.totalCubesGeom);
+			this.totalMesh = new THREE.Mesh(this.mergedGeom, this.material);
+			this.totalMesh.name = "totalMesh";
+			scene.add(this.totalMesh);
+		}
+	}
+
+	setShapeFunc(newFunc){
+		this.shapeFunc = newFunc;
+	}
+
+	setThreshold(newThreshold){
+		this.threshold = newThreshold;
+	}
+
+	setMaterial(newMat){
+		this.material = newMat;
+		this.material.needUpdate = true;
+	}
+
+}
+MarchingCubes.id = 0;
 
 function main(){
-
-	// how to get configIndex
-	let b = 0;
-	for (let i = 7; i >= 0; i--){
-		if (i == 7 || i == 5 || i == 1){ // if (cond) b |= 1 << i
-			b |= 1 << i;
-		}
-		
-	}
-	console.log(b);
-
 // NOISE
 	noise.seed(Math.random());
 
@@ -341,7 +425,7 @@ function main(){
 
 
 
-
+// METABALL
 
 	class MetaBall{
 		constructor(centerX, centerY, centerZ, radius){
@@ -376,7 +460,7 @@ function main(){
 		}
 	}
 
-	let metaBallNum = 10;
+	let metaBallNum = 5;
 	let metaBallArr = [];
 	for (let i = 0; i < metaBallNum; i++){
 		let m = new MetaBall(Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 20 + 20);
@@ -384,8 +468,6 @@ function main(){
 	}
 
 	const metaBall1 = (x, y, z) => {
-
-		/*
 		let max = -99999999;
 		metaBallArr.forEach(function(m){
 			let val = m.getValue(x, y, z);
@@ -393,25 +475,23 @@ function main(){
 			if (val > max) max = val;
 		});
 		return max;
-		*/
-
+		/*
 		let val = metaBallArr[0].getValue(x, y, z);
 		metaBallArr[0].updatePos();
 		for (let i = 1; i < metaBallArr.length; i++){
-			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 0);
+			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 1);
 			metaBallArr[i].updatePos();
 		}
 
 		return val;
-
+		*/
 	}
 
-
-
+// CANVAS & RENDERER
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
 
-//CAMERA
+// CAMERA
 	const fov = 60;
 	const aspect = 2; // display aspect of the canvas
 	const near = 0.1;
@@ -420,66 +500,15 @@ function main(){
 
 	camera.position.set(0, 0, 200);
 
-	const scene = new THREE.Scene();
+	scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xCCCCCC);
 
 	renderer.render(scene, camera);
 
-// TEST SPACE
-	let testSpace = {
-		width: 240,
-		height: 240,
-		depth: 240
-	}
-// SINGLE CUBE PARAMS
-	let singleCubeParams = {
-		width: 18,
-		height: 18,
-		depth: 18
-	}
+	let cubes = new MarchingCubes(240, 240, 240, 24, 24, 24, metaBall1, 0.5);
 
-	Cube.setDimensions(singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
-	console.log(Cube.material);
-	
-	/*
-	let testCube = new Cube(0, 0, 0);
-	testCube.setCubeCorners();
-	testCube.setConfigIndex(noiseFunc1, 0);
-	testCube.setMeshVertices();
-	testCube.createMesh(scene);
-	*/
-
-	
-	let marchingCubes = [];
-
-	for (let w = testSpace.width * -0.5; w < testSpace.width * 0.5; w += singleCubeParams.width){
-		for (let h = testSpace.height * -0.5; h < testSpace.height * 0.5; h += singleCubeParams.height){
-			for (let d = testSpace.depth * -0.5; d < testSpace.depth * 0.5; d += singleCubeParams.depth){
-				let cube = new Cube(w, h, d);
-				marchingCubes.push(cube);
-			}
-		}	
-	}
-
-	let totalCubesGeom =[];
-	let mergedGeom;
-	let totalMesh;
-	marchingCubes.forEach(function(c){
-		c.setCubeCorners();
-		c.setConfigIndex(noiseFunc1, 0.2);
-		c.setMeshVertices(noiseFunc1, 0.2);
-		c.createMesh(scene);
-		if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
-	});
-	if (totalCubesGeom.length > 0){
-	
-		mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
-		totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
-		totalMesh.name = "totalMesh";
-		scene.add(totalMesh);
-	}
-
-	//Cube.completeTotalCubesMesh(scene);
+	let cubes2 = new MarchingCubes(240, 240, 240, 12, 12, 12, noiseFunc1, 0.2);
+	cubes2.setMaterial = new THREE.MeshLambertMaterial({color: 0xFF4466, side: THREE.DoubleSide});
 	
 
 // LIGHTS
@@ -493,7 +522,7 @@ function main(){
 
 
 
-//GUI
+// GUI
 	const gui = new dat.GUI();
 	const controls = new function(){
 		this.outputObj = function(){
@@ -503,8 +532,8 @@ function main(){
 	}
 	gui.add(controls, 'outputObj');
 	gui.add(controls, 'interpolate').onChange(function(e) {
-		Cube.interpolate = !Cube.interpolate;
-		console.log(Cube.interpolate);
+		scene.children.forEach(c => c.interpolate = !c.interpolate);
+		
 	});
 
 
@@ -514,8 +543,9 @@ function main(){
 
 		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 
+		cubes.updateCubes();
+		cubes2.updateCubes();
 		
-		updateCubes();
 		
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
@@ -529,27 +559,7 @@ function main(){
 		requestAnimationFrame(render);
 	}
 
-	function updateCubes(){
-		scene.remove(scene.getObjectByName("totalMesh"));
-		totalCubesGeom =[];
-		marchingCubes.forEach(function(c){
-			c.reset();
-			c.setConfigIndex(metaBall1, 0.9);
-			c.setMeshVertices(metaBall1, 0.9);
-			c.createMesh(scene);
-			if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
-		});
-		
-		Cube.material.needsUpdate = true;
-		if (totalCubesGeom.length > 0){
-			mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
-			totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
-			totalMesh.name = "totalMesh";
-			scene.add(totalMesh);
-
-			mergedGeom.dispose();
-		}
-	}
+	
 
 	function resizeRenderToDisplaySize(renderer){
 		const canvas = renderer.domElement;
@@ -565,4 +575,4 @@ function main(){
 	requestAnimationFrame(render);
 }
 
-main();
+window.onload = main;
