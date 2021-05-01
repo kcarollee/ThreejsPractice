@@ -188,22 +188,9 @@ class Cube{
     		let normals = new Float32Array(this.meshNormalsArr);
     		geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     		geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-    	this.mesh = new THREE.Mesh(geom, Cube.material);
+    		geom.computeVertexNormals();
+    		this.mesh = new THREE.Mesh(geom, Cube.material);
     	}
-    	//this.mesh.updateMatrix();
-    	//scene.add(this.mesh);
-
-    	/*
-    	if (Cube.totalCubesGeom === undefined){
-    		console.log("HEY");
-    		Cube.totalCubesGeom = geom;
-    	}
-    	else{
-    		mesh.updateMatrix();
-    		console.log(Cube.totalCubesGeom);
-    		Cube.totalCubesGeom.merge(mesh.geometry, mesh.matrix);
-    	}
-    	*/
     }
 
     reset(){
@@ -249,6 +236,8 @@ Cube.edgeToVerticesIndices = [
 ];	
 
 //Cube.material = new THREE.MeshBasicMaterial({color: 0xFF4466, transparent: true, opacity: 0.7, side: THREE.DoubleSide});
+//Cube.material = new THREE.MeshLambertMaterial({color: 0xFF4466, side: THREE.DoubleSide});
+//Cube.material.flatShading = false;
 
 Cube.material = new THREE.MeshNormalMaterial({
 	color: 0xFF4466, 
@@ -256,6 +245,7 @@ Cube.material = new THREE.MeshNormalMaterial({
 	opacity: 0.7, 
 	side: THREE.DoubleSide
 });
+
 
 //Cube.material = new THREE.MeshNormalMaterial({side: THREE.DoubleSide});
 Cube.totalCubesMesh;
@@ -298,9 +288,9 @@ function main(){
 	}
 
 	const noiseFunc1 = (x, y, z) =>{
-		let nx = 0.1;
-		let ny = 0.1;
-		let nz = 0.1;
+		let nx = 0.01;
+		let ny = 0.01;
+		let nz = 0.01;
 
 		
 		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
@@ -308,11 +298,42 @@ function main(){
 		return n;
 	}
 
+	const noiseFunc2 = (x, y, z) =>{
+		let nx = 0.01;
+		let ny = 0.01;
+		let nz = 0.01;
+
+
+
+		
+		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
+
+		let v = Math.cos(x * y * 100 + n);
+		
+		return v;
+	}
+
 	const sphereFunc1 = (x, y, z) => {
 		let r = 3;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
 		return m;
+	}
+
+	const metaBall1 = (x, y, z) => {
+		let xpos = 6 + 6 * Math.sin(step * 0.1);
+		let ypos = 6 + 6 * Math.sin(step * 0.1);
+		let zpos = 6 + 6 * Math.sin(step * 0.1);
+
+		let d = (x) * (x) + (y) * (y) + (z) * (z);
+
+		let d2 = (x-xpos) * (x-xpos) + (y-ypos) * (y-ypos) + (z-zpos) * (z-zpos);
+
+		let v = 15.0 / Math.sqrt(d);
+		let v2 = 15.0 / Math.sqrt(d2);
+		//console.log(v);
+		return v2 * v;
+
 	}
 
 	const randomSphereFunc = (x, y, z) => {
@@ -341,29 +362,30 @@ function main(){
 	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
 
 //CAMERA
-	const fov = 75;
+	const fov = 60;
 	const aspect = 2; // display aspect of the canvas
 	const near = 0.1;
 	const far = 1000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
-	camera.position.set(0, 0, 20);
+	camera.position.set(0, 0, 200);
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xCCCCCC);
+
 	renderer.render(scene, camera);
 
 // TEST SPACE
 	let testSpace = {
-		width: 10,
-		height: 10,
-		depth: 10
+		width: 240,
+		height: 240,
+		depth: 240
 	}
 // SINGLE CUBE PARAMS
 	let singleCubeParams = {
-		width: 0.5,
-		height: 0.5,
-		depth: 0.5
+		width: 12,
+		height: 12,
+		depth: 12
 	}
 
 	Cube.setDimensions(singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
@@ -392,8 +414,8 @@ function main(){
 	let totalCubesGeom =[];
 	marchingCubes.forEach(function(c){
 		c.setCubeCorners();
-		c.setConfigIndex(randomSphereFunc, 0);
-		c.setMeshVertices(randomSphereFunc, 0);
+		c.setConfigIndex(noiseFunc1, 0.2);
+		c.setMeshVertices(noiseFunc1, 0.2);
 		c.createMesh(scene);
 		if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
 	});
@@ -408,7 +430,7 @@ function main(){
 
 // LIGHTS
 	let dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-	dirLight.position.set(0, 0, 100);
+	dirLight.position.set(0, 0, 20);
 	scene.add(dirLight);
 	
 	const orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -436,27 +458,9 @@ function main(){
 		time *= 0.01;
 		step += 1;
 
-		scene.rotation.x = time * 0.1;
-		scene.rotation.y = time * 0.1;
-		scene.rotation.z = time * 0.1;
-
-		scene.remove(scene.getObjectByName("totalMesh"));
-		totalCubesGeom =[];
-		marchingCubes.forEach(function(c){
-			c.reset();
-			c.setConfigIndex(randomSphereFunc, 0.9 * Math.sin(time * 0.03));
-			c.setMeshVertices(randomSphereFunc, 0.9 * Math.sin(time * 0.03));
-			c.createMesh(scene);
-			if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
-		});
-	
-		mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
-		totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
-		totalMesh.name = "totalMesh";
-		scene.add(totalMesh);
-
-		mergedGeom.dispose();
 		
+		
+		updateCubes();
 		
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
@@ -465,9 +469,29 @@ function main(){
 		}
 		
 
-		dirLight.position.set(50 * Math.sin(time), 50 * Math.cos(time), 0);
+		//dirLight.position.set(50 * Math.sin(time), 50 * Math.cos(time), 0);
 		renderer.render(scene, camera);
 		requestAnimationFrame(render);
+	}
+
+	function updateCubes(){
+		scene.remove(scene.getObjectByName("totalMesh"));
+		totalCubesGeom =[];
+		marchingCubes.forEach(function(c){
+			c.reset();
+			c.setConfigIndex(metaBall1, 0.5);
+			c.setMeshVertices(metaBall1, 0.5);
+			c.createMesh(scene);
+			if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
+		});
+		
+		Cube.material.needsUpdate = true;
+		mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
+		totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
+		totalMesh.name = "totalMesh";
+		scene.add(totalMesh);
+
+		mergedGeom.dispose();
 	}
 
 	function resizeRenderToDisplaySize(renderer){
