@@ -4,6 +4,16 @@ let step = 0;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
+function mix(x, y, k){
+	return x * (1.0 - k) + y * k;
+}
+function clamp(x, min, max){
+	return Math.min(Math.max(x, min), max);
+}
+function smoothUnion(x, y, k){
+	let h = clamp(0.5 + 0.5 * (y - x) / k, 0, 1);
+	return mix(x, y, h) - k * h * (1.0 - h);
+}
 class Cube{
     constructor(centerX, centerY, centerZ){
     	this.centerX = centerX;
@@ -199,6 +209,7 @@ class Cube{
     	this.meshVertArr = [];
     	this.meshNormalsArr = [];
     	this.configIndex = 0;
+    	
     }
     getMeshGeometry(){
     	return this.mesh.geometry;
@@ -239,8 +250,8 @@ Cube.edgeToVerticesIndices = [
 //Cube.material = new THREE.MeshLambertMaterial({color: 0xFF4466, side: THREE.DoubleSide});
 //Cube.material.flatShading = false;
 
-Cube.material = new THREE.MeshNormalMaterial({
-	color: 0xFF4466, 
+
+Cube.material = new THREE.MeshNormalMaterial({ 
 	transparent: false, 
 	opacity: 0.7, 
 	side: THREE.DoubleSide
@@ -288,9 +299,9 @@ function main(){
 	}
 
 	const noiseFunc1 = (x, y, z) =>{
-		let nx = 0.01;
-		let ny = 0.01;
-		let nz = 0.01;
+		let nx = 0.005;
+		let ny = 0.005;
+		let nz = 0.005;
 
 		
 		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
@@ -303,9 +314,6 @@ function main(){
 		let ny = 0.01;
 		let nz = 0.01;
 
-
-
-		
 		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
 
 		let v = Math.cos(x * y * 100 + n);
@@ -320,22 +328,6 @@ function main(){
 		return m;
 	}
 
-	const metaBall1 = (x, y, z) => {
-		let xpos = 6 + 6 * Math.sin(step * 0.1);
-		let ypos = 6 + 6 * Math.sin(step * 0.1);
-		let zpos = 6 + 6 * Math.sin(step * 0.1);
-
-		let d = (x) * (x) + (y) * (y) + (z) * (z);
-
-		let d2 = (x-xpos) * (x-xpos) + (y-ypos) * (y-ypos) + (z-zpos) * (z-zpos);
-
-		let v = 15.0 / Math.sqrt(d);
-		let v2 = 15.0 / Math.sqrt(d2);
-		//console.log(v);
-		return v2 * v;
-
-	}
-
 	const randomSphereFunc = (x, y, z) => {
 		let r = 7;
 		let c = 0.1;
@@ -347,16 +339,74 @@ function main(){
 		return m;
 	}
 
-	const addFunc = (x, y, z) => {
-		let n = noiseFunc1(x, y, z);
-		let s = sphereFunc1(x, y, z);
-		//console.log(n + s);
-		return (n + s) * 0.5;
+
+
+
+
+	class MetaBall{
+		constructor(centerX, centerY, centerZ, radius){
+			this.centerX = centerX;
+			this.centerY = centerY;
+			this.centerZ = centerZ;
+			this.initX = centerX;
+			this.initY = centerY;
+			this.initZ = centerZ;
+			this.radius = radius;
+			this.initR = radius;
+			this.randX = Math.random() * 10;
+			this.randY = Math.random() * 10;
+			this.randZ = Math.random() * 10;
+			this.randD = Math.random() * 50
+		}	
+
+		updatePos(){
+			this.centerX = this.initX + this.randD * Math.sin(step * 0.1 + this.randX);
+			this.centerY = this.initY + this.randD * Math.sin(step * 0.1 + this.randY);
+			this.centerZ = this.initZ + this.randD * Math.sin(step * 0.1 + this.randZ);
+			this.radius = this.initR + Math.sin(step * 0.1 + this.randZ);
+		}
+
+		getValue(x, y, z){
+			let dx = x - this.centerX;
+			let dy = y - this.centerY;
+			let dz = z - this.centerZ;
+
+			let dist = dx * dx + dy * dy + dz * dz;
+			return this.radius / Math.sqrt(dist);
+		}
 	}
 
-	console.log(f2(f1, f1));
+	let metaBallNum = 10;
+	let metaBallArr = [];
+	for (let i = 0; i < metaBallNum; i++){
+		let m = new MetaBall(Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 20 + 20);
+		metaBallArr.push(m);
+	}
 
-	
+	const metaBall1 = (x, y, z) => {
+
+		/*
+		let max = -99999999;
+		metaBallArr.forEach(function(m){
+			let val = m.getValue(x, y, z);
+			m.updatePos();
+			if (val > max) max = val;
+		});
+		return max;
+		*/
+
+		let val = metaBallArr[0].getValue(x, y, z);
+		metaBallArr[0].updatePos();
+		for (let i = 1; i < metaBallArr.length; i++){
+			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 0);
+			metaBallArr[i].updatePos();
+		}
+
+		return val;
+
+	}
+
+
 
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
@@ -383,9 +433,9 @@ function main(){
 	}
 // SINGLE CUBE PARAMS
 	let singleCubeParams = {
-		width: 12,
-		height: 12,
-		depth: 12
+		width: 18,
+		height: 18,
+		depth: 18
 	}
 
 	Cube.setDimensions(singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
@@ -412,6 +462,8 @@ function main(){
 	}
 
 	let totalCubesGeom =[];
+	let mergedGeom;
+	let totalMesh;
 	marchingCubes.forEach(function(c){
 		c.setCubeCorners();
 		c.setConfigIndex(noiseFunc1, 0.2);
@@ -419,11 +471,13 @@ function main(){
 		c.createMesh(scene);
 		if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
 	});
+	if (totalCubesGeom.length > 0){
 	
-	let mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
-	let totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
-	totalMesh.name = "totalMesh";
-	scene.add(totalMesh);
+		mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
+		totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
+		totalMesh.name = "totalMesh";
+		scene.add(totalMesh);
+	}
 
 	//Cube.completeTotalCubesMesh(scene);
 	
@@ -458,7 +512,8 @@ function main(){
 		time *= 0.01;
 		step += 1;
 
-		
+		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
+
 		
 		updateCubes();
 		
@@ -479,19 +534,21 @@ function main(){
 		totalCubesGeom =[];
 		marchingCubes.forEach(function(c){
 			c.reset();
-			c.setConfigIndex(metaBall1, 0.5);
-			c.setMeshVertices(metaBall1, 0.5);
+			c.setConfigIndex(metaBall1, 0.9);
+			c.setMeshVertices(metaBall1, 0.9);
 			c.createMesh(scene);
 			if (!c.empty) totalCubesGeom.push(c.getMeshGeometry());
 		});
 		
 		Cube.material.needsUpdate = true;
-		mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
-		totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
-		totalMesh.name = "totalMesh";
-		scene.add(totalMesh);
+		if (totalCubesGeom.length > 0){
+			mergedGeom = BufferGeometryUtils.mergeBufferGeometries(totalCubesGeom);
+			totalMesh = new THREE.Mesh(mergedGeom, Cube.material);
+			totalMesh.name = "totalMesh";
+			scene.add(totalMesh);
 
-		mergedGeom.dispose();
+			mergedGeom.dispose();
+		}
 	}
 
 	function resizeRenderToDisplaySize(renderer){
