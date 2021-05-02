@@ -242,8 +242,9 @@ Cube.edgeToVerticesIndices = [
 
 
 class MarchingCubes{
-	// test space w, h, d & single cube w, h, d
-	constructor(tw, th, td, sw, sh, sd, shapeFunc, threshold){
+	// test space w, h, d & single cube w, h, d & centerx, centery, centerz
+	constructor(tw, th, td, sw, sh, sd, cx, cy, cz, shapeFunc, threshold){
+
 		this.testSpace = {
 			width: tw,
 			height: th,
@@ -255,6 +256,10 @@ class MarchingCubes{
 			height: sh,
 			depth: sd
 		}
+
+		this.centerX = cx;
+		this.centerY = cy;
+		this.centerZ = cz;
 
 		this.shapeFunc = shapeFunc;
 		this.threshold = threshold;
@@ -286,9 +291,18 @@ class MarchingCubes{
 		let testSpace = this.testSpace;
 		let singleCubeParams = this.singleCubeParams;
 
-		for (let w = testSpace.width * -0.5; w < testSpace.width * 0.5; w += singleCubeParams.width){
-			for (let h = testSpace.height * -0.5; h < testSpace.height * 0.5; h += singleCubeParams.height){
-				for (let d = testSpace.depth * -0.5; d < testSpace.depth * 0.5; d += singleCubeParams.depth){
+		let wStart = testSpace.width * -0.5 + this.centerX;
+		let wEnd = testSpace.width * 0.5 + this.centerX;
+
+		let hStart = testSpace.height * -0.5 + this.centerY;
+		let hEnd = testSpace.height * 0.5 + this.centerY;
+
+		let dStart = testSpace.depth * -0.5 + this.centerZ;
+		let dEnd = testSpace.depth * 0.5 + this.centerZ;
+
+		for (let w = wStart; w < wEnd; w += singleCubeParams.width){
+			for (let h = hStart; h < hEnd; h += singleCubeParams.height){
+				for (let d = dStart; d < dEnd; d += singleCubeParams.depth){
 					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
 					this.marchingCubes.push(cube);
 				}
@@ -505,9 +519,9 @@ function main(){
 
 	renderer.render(scene, camera);
 
-	let cubes = new MarchingCubes(240, 240, 240, 24, 24, 24, metaBall1, 0.5);
+	let cubes = new MarchingCubes(240, 240, 240, 24, 24, 24, 0, 0, 0, metaBall1, 0.5);
 
-	let cubes2 = new MarchingCubes(240, 240, 240, 12, 12, 12, noiseFunc1, 0.2);
+	let cubes2 = new MarchingCubes(240, 240, 240, 12, 12, 12, 100, 100, 100, noiseFunc1, 0.2);
 	cubes2.setMaterial = new THREE.MeshLambertMaterial({color: 0xFF4466, side: THREE.DoubleSide});
 	
 
