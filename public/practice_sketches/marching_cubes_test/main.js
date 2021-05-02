@@ -57,6 +57,7 @@ class Cube{
     	this.empty = false;
 
     	this.normalsCount = 0;
+    	this.prevVertInHashMap = false;
     }
 
     setCubeCorners(){
@@ -180,11 +181,12 @@ class Cube{
     		hy = v1y + v2y;
     		hz = v1z + v2z;
     		// try using the noise function as a hash function
-    		let hn = noise.simplex3(hx * 0.1, hy * 0.1, hz * 0.1);
+    		let hn = noise.simplex3(hx * 0.01, hy * 0.01, hz * 0.01) * noise.simplex3(hx * 0.02, hy * 0.02, hz * 0.02);
 
     		// if the vertex hasn't been used yet, push the vertex to the vertices array
     		// push the index into the indices array and increment it.
     		if (!hashMap.has(hn)){
+    			
     			hashMap.set(hn, {x: mx, y: my, z: mz, index: index.getValue()});
     			vertices.push(mx, my, mz);
     			indices.push(index.getValue());
@@ -192,7 +194,7 @@ class Cube{
 
     			// calculating normals
     			tempForNormals.push([mx, my, mz]);
-    			if (this.normalsCount % 3 == 2){
+    			if (tempForNormals.length > 0 && tempForNormals.length % 3 == 0){
     				let v0 = new THREE.Vector3(tempForNormals[0][0], tempForNormals[0][1], tempForNormals[0][2]);
     				let v1 = new THREE.Vector3(tempForNormals[1][0], tempForNormals[1][1], tempForNormals[1][2]);
     				let v2 = new THREE.Vector3(tempForNormals[2][0], tempForNormals[2][1], tempForNormals[2][2]);
@@ -207,7 +209,9 @@ class Cube{
     				}
     				tempForNormals = [];
     			}
-    			this.normalsCount++;
+    			
+    			//console.log(tempForNormals.length);
+    			this.prevVertInHashMap = false;
     		}
 
     		// else the vertex has been used. 
@@ -215,15 +219,20 @@ class Cube{
     		// push the index of the corresponding vertex into the indices array
     		else{
     			indices.push(hashMap.get(hn).index);
+    			this.prevVertInHashMap = true;
     		}
+
+    		
+
 
 
     		// 4. push the coordinates of the midpoint to meshVertArr
     		this.meshVertArr.push(mx, my, mz);
 
-    		
-    	}
 
+    	}
+    	console.log(vertices.length + " " + normals.length);
+    	this.normalsCount = 0;
 
     	//console.log(this.meshNormalsArr);
     }
@@ -443,10 +452,11 @@ class MarchingCubes{
 			scene.add(this.totalMesh);
 		//}
 
-		
+
 		// reset
 		//console.log(this.vertices);
-		//console.log(this.indices);
+		//console.log(this.indices.length % 3 == 0);
+		//console.log(this.vertices.length + " " + this.normals.length);
 		this.hashMap.clear();
 		this.vertices = [];
 		this.indices = [];
@@ -644,7 +654,7 @@ function main(){
 
 	renderer.render(scene, camera);
 
-	let cubes = new MarchingCubes(240, 240, 240, 12, 12, 12, 0, 0, 0, metaBall1, 0.5);
+	let cubes = new MarchingCubes(240, 240, 240, 60, 60, 60, 0, 0, 0, metaBall1, 0.5);
 
 	
 	
