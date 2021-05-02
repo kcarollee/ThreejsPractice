@@ -58,6 +58,12 @@ class Cube{
 
     	this.normalsCount = 0;
     	this.prevVertInHashMap = false;
+
+    	this.id = ++Cube.id;
+    }
+
+    hashFunc(){
+
     }
 
     setCubeCorners(){
@@ -119,7 +125,7 @@ class Cube{
     	//console.log(this.triangulationEdgeIndices);
     }
 
-    setMeshVertices(f, threshold, interpolate, hashMap, vertices, normals, indices, index){
+    setMeshVertices(f, threshold, interpolate, hashMap, vertices,  indices, index){
 
     	let tempForNormals = [];
     	for (let i = 0; i < 16; i++){
@@ -150,106 +156,68 @@ class Cube{
     		
     
     		let mx, my, mz;
-    		// 3.5. get the intepolated point between the two vertices
-    		if (interpolate){
-    			let v1f = f(v1x, v1y, v1z);
-    			let v2f = f(v2x, v2y, v2z);
-    			let r = v1f < v2f ? mapLinear(threshold, v1f, v2f, 0, 1) : mapLinear(threshold, v2f, v1f, 0, 1);
-    			
-    			if (v1f < v2f){
-    				mx = v1x + (v2x - v1x) * r;
-    				my = v1y + (v2y - v1y) * r;
-    				mz = v1z + (v2z - v1z) * r;
-    			}
-
-    			else{
-    				mx = v2x + (v1x - v2x) * r;
-    				my = v2y + (v1y - v2y) * r;
-    				mz = v2z + (v1z - v2z) * r;
-    			}
-    		}
-    		// 3. get the midpoint of the two vertices
-    		else{
-    			mx = (v1x + v2x) * 0.5;
-				my = (v1y + v2y) * 0.5;
-				mz = (v1z + v2z) * 0.5;
-    		}
+    		
 
     		// hashMap
+
+    		/*
     		let hx, hy, hz;
     		hx = v1x + v2x;
     		hy = v1y + v2y;
     		hz = v1z + v2z;
     		// try using the noise function as a hash function
-    		let hn = noise.simplex3(hx * 0.01, hy * 0.01, hz * 0.01) * noise.simplex3(hx * 0.02, hy * 0.02, hz * 0.02);
+    		let hn = noise.simplex3(hx * 0.0001, hy * 0.0001, hz * 0.0001) * 100;
+			*/
+    		// THIS IS PERFECT HASHING
+    		let hn = this.id * 10000000 + edgeIndex;
+
 
     		// if the vertex hasn't been used yet, push the vertex to the vertices array
     		// push the index into the indices array and increment it.
-    		if (!hashMap.has(hn)){
+    		if (!hashMap.has(hn)){    			
+    			// 3.5. get the intepolated point between the two vertices
+    			if (interpolate){
+    				let v1f = f(v1x, v1y, v1z);
+    				let v2f = f(v2x, v2y, v2z);
+    				let r = v1f < v2f ?
+    				 mapLinear(threshold, v1f, v2f, 0, 1) : 
+    				 mapLinear(threshold, v2f, v1f, 0, 1);
     			
-    			hashMap.set(hn, {x: mx, y: my, z: mz, index: index.getValue()});
+    				if (v1f < v2f){
+    					mx = v1x + (v2x - v1x) * r;
+    					my = v1y + (v2y - v1y) * r;
+    					mz = v1z + (v2z - v1z) * r;
+    				}
+
+    				else{
+    					mx = v2x + (v1x - v2x) * r;
+    					my = v2y + (v1y - v2y) * r;
+    					mz = v2z + (v1z - v2z) * r;
+    				}
+    			}
+    			// 3. get the midpoint of the two vertices
+    			else{
+    				mx = (v1x + v2x) * 0.5;
+					my = (v1y + v2y) * 0.5;
+					mz = (v1z + v2z) * 0.5;
+    			}
+    			hashMap.set(hn, {index: index.getValue()});
     			vertices.push(mx, my, mz);
     			indices.push(index.getValue());
     			index.increment();
-
-    			// calculating normals
-    			tempForNormals.push([mx, my, mz]);
-    			if (tempForNormals.length > 0 && tempForNormals.length % 3 == 0){
-    				let v0 = new THREE.Vector3(tempForNormals[0][0], tempForNormals[0][1], tempForNormals[0][2]);
-    				let v1 = new THREE.Vector3(tempForNormals[1][0], tempForNormals[1][1], tempForNormals[1][2]);
-    				let v2 = new THREE.Vector3(tempForNormals[2][0], tempForNormals[2][1], tempForNormals[2][2]);
-
-    				let s0 = new THREE.Vector3().subVectors(v1, v0);
-    				let s1 = new THREE.Vector3().subVectors(v2, v0);
-    				//console.log(s1);
-    				let norm = new THREE.Vector3().crossVectors(s0, s1).normalize();
-
-    				for (let j = 0; j < 3; j++){
-    					normals.push(norm.getComponent(0), norm.getComponent(1), norm.getComponent(2));
-    				}
-    				tempForNormals = [];
-    			}
-    			
-    			//console.log(tempForNormals.length);
-    			this.prevVertInHashMap = false;
     		}
 
     		// else the vertex has been used. 
     		// no need to push the vertex to the vertices array -> solves the redundancy issue
     		// push the index of the corresponding vertex into the indices array
-    		else{
-    			indices.push(hashMap.get(hn).index);
-    			this.prevVertInHashMap = true;
-    		}
-
-    		
-
-
-
+    		else indices.push(hashMap.get(hn).index);
+    			
     		// 4. push the coordinates of the midpoint to meshVertArr
     		this.meshVertArr.push(mx, my, mz);
-
-
     	}
-    	console.log(vertices.length + " " + normals.length);
-    	this.normalsCount = 0;
 
-    	//console.log(this.meshNormalsArr);
     }
 
-    /*
-    createMesh(){
-    	if (!this.empty){
-    		let geom = new THREE.BufferGeometry();
-    		let vertices = new Float32Array(this.meshVertArr);
-    		let normals = new Float32Array(this.meshNormalsArr);
-    		geom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-    		geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-    		geom.computeVertexNormals();
-    		this.mesh = new THREE.Mesh(geom);
-    	}
-    }
-	*/
     reset(){
     	//if (!this.empty) this.mesh.geometry.dispose();
     	this.empty = false;
@@ -280,6 +248,7 @@ Cube.edgeToVerticesIndices = [
 	[2, 6], // edge number 10
 	[3, 7]  // edge number 11
 ];	
+Cube.id = 0;
 
 
 class MarchingCubes{
@@ -306,28 +275,31 @@ class MarchingCubes{
 		this.threshold = threshold;
 
 		this.hashMap = new Map();
-		console.log(this.hashMap);
 		this.vertices = [];
 		this.indices = [];
-		this.normals = [];
+
 		this.indexCount = new IndexObject(0);
 
 		this.marchingCubes = [];
 		this.initCubes();
 		
-
-		this.totalCubesGeom = [];
-		this.mergedGeom;
 		this.totalMesh;
-
 		this.setCubes();
 
 		this.material = new THREE.MeshNormalMaterial({ 
 			transparent: false, 
 			opacity: 0.7, 
-			side: THREE.DoubleSide
+			side: THREE.DoubleSide,
+			wireframe: false,
+			//flatShading: true
 		});
 
+/*
+		this.material = new THREE.MeshLambertMaterial({
+			color: 0xFCFCAC,
+			flatShading: true
+		});
+*/
 		this.interpolate = true;
 
 		this.id = ++MarchingCubes.id;
@@ -360,115 +332,50 @@ class MarchingCubes{
 	}
 
 	setCubes(){
-		let func = this.shapeFunc;
-		let tcg = this.totalCubesGeom;
-		let interpolate = this.interpolate;
-		let threshold = this.threshold;
-		let hashMap = this.hashMap;
-		let vertices = this.vertices;
-		let indices = this.indices;
-		let index = this.indexCount;
-		let normals = this.normals;
-		//console.log(func);
 		this.marchingCubes.forEach(function(c){
 			c.setCubeCorners();
-			c.setConfigIndex(func, threshold);
-			c.setMeshVertices(func, threshold, interpolate, hashMap, vertices, normals, indices, index);
-			//c.createMesh(scene);
-			//if (!c.empty) tcg.push(c.getMeshGeometry());
 		});
-
-		//if (this.totalCubesGeom.length > 0){
-			
-			/*
-			this.mergedGeom = BufferGeometryUtils.mergeBufferGeometries(this.totalCubesGeom);
-			this.totalMesh = new THREE.Mesh(this.mergedGeom, this.material);
-			this.totalMesh.name = "totalMesh";
-			scene.add(this.totalMesh);
-			*/
-
-			this.totalGeom = new THREE.BufferGeometry();
-			this.totalGeom.setIndex(this.indices);
-			
-			let verts = new Float32Array(this.vertices);
-			let norms = new Float32Array(this.normals);
-			this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-			this.totalGeom.setAttribute('normal', new THREE.BufferAttribute(norms, 3));
-			this.totalGeom.computeVertexNormals();
-			this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
-			this.totalMesh.name = "totalMesh";
-			scene.add(this.totalMesh);
-		//}
-		//console.log(this.indices);
-		//console.log(this.vertices);
-		this.hashMap.clear();
-		this.vertices = [];
-		this.indices = [];
-		this.normals = [];
-		this.indexCount.reset();
-		this.totalMesh.geometry.dispose();
 	}
 
 	updateCubes(){
-		//console.log(this.hashMap.size);
-		//this.vertices = [];
+		
 		scene.remove(scene.getObjectByName("totalMesh"));
-		this.totalCubesGeom = [];
+		
 		let func = this.shapeFunc;
-		let tcg = this.totalCubesGeom;
 		let interpolate = this.interpolate;
 		let threshold = this.threshold;
 		let hashMap = this.hashMap;
 		let vertices = this.vertices;
 		let indices = this.indices;
 		let index = this.indexCount;
-		let normals = this.normals;
+
 		this.marchingCubes.forEach(function(c){
 			c.reset();
 			c.setConfigIndex(func, threshold);
-			c.setMeshVertices(func, threshold, interpolate, hashMap, vertices, normals, indices, index);
-			//c.createMesh(scene);
-			//if (!c.empty) tcg.push(c.getMeshGeometry());
+			c.setMeshVertices(func, threshold, interpolate, hashMap, vertices, indices, index);
 		});
 
-		//if (this.totalCubesGeom.length > 0){
-			/*
-			this.mergedGeom = BufferGeometryUtils.mergeBufferGeometries(this.totalCubesGeom);
-			this.totalMesh = new THREE.Mesh(this.mergedGeom, this.material);
-			this.totalMesh.name = "totalMesh";
-			scene.add(this.totalMesh);
-			*/
-
-			this.totalGeom = new THREE.BufferGeometry();
-			this.totalGeom.setIndex(this.indices);
+		this.totalGeom = new THREE.BufferGeometry();
+		this.totalGeom.setIndex(this.indices);
 			
-			let verts = new Float32Array(this.vertices);
-			let norms = new Float32Array(this.normals);
-			this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-			this.totalGeom.setAttribute('normal', new THREE.BufferAttribute(norms, 3));
-			this.totalGeom.computeVertexNormals();
-			this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
-			this.totalMesh.name = "totalMesh";
-			scene.add(this.totalMesh);
-		//}
+		let verts = new Float32Array(this.vertices);
+		this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+		this.totalGeom.computeVertexNormals();
+		this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
+		this.totalMesh.name = "totalMesh";
+		scene.add(this.totalMesh);
+		
 
 
 		// reset
-		//console.log(this.vertices);
-		//console.log(this.indices.length % 3 == 0);
-		//console.log(this.vertices.length + " " + this.normals.length);
 		this.hashMap.clear();
 		this.vertices = [];
 		this.indices = [];
-		this.normals = [];
 		this.indexCount.reset();
 		this.totalMesh.geometry.dispose();
-		//console.log(this.vertices.length);
+		
 	}
 
-	createMesh(){
-
-	}
 
 	setShapeFunc(newFunc){
 		this.shapeFunc = newFunc;
@@ -484,7 +391,7 @@ class MarchingCubes{
 	}
 
 }
-MarchingCubes.id = 0;
+
 
 
 class IndexObject{
@@ -532,12 +439,12 @@ function main(){
 	}
 
 	const noiseFunc1 = (x, y, z) =>{
-		let nx = 0.005;
-		let ny = 0.005;
-		let nz = 0.005;
+		let nx = 0.009;
+		let ny = 0.009;
+		let nz = 0.009;
 
 		
-		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
+		let n = noise.simplex3(x * nx + step * 0.03, y * ny + step * 0.03, z * nz + step * 0.03);
 		
 		return n;
 	}
@@ -562,11 +469,11 @@ function main(){
 	}
 
 	const randomSphereFunc = (x, y, z) => {
-		let r = 7;
-		let c = 0.1;
-		let v = 0.03;
+		let r = 100;
+		let c = 0.01;
+		let v = 0.003;
 		let n = noise.simplex3(x * c + step * v, y * c + step * v, z * c + step * v);
-		r += 2.0 * n;
+		r += 20.0 * n;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
 		return m;
@@ -617,6 +524,7 @@ function main(){
 	}
 
 	const metaBall1 = (x, y, z) => {
+		/*
 		let max = -99999999;
 		metaBallArr.forEach(function(m){
 			let val = m.getValue(x, y, z);
@@ -624,16 +532,17 @@ function main(){
 			if (val > max) max = val;
 		});
 		return max;
-		/*
+		*/
+		
 		let val = metaBallArr[0].getValue(x, y, z);
 		metaBallArr[0].updatePos();
 		for (let i = 1; i < metaBallArr.length; i++){
-			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 1);
+			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 0.1);
 			metaBallArr[i].updatePos();
 		}
 
 		return val;
-		*/
+		
 	}
 
 // CANVAS & RENDERER
@@ -641,7 +550,7 @@ function main(){
 	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
 
 // CAMERA
-	const fov = 60;
+	const fov = 45;
 	const aspect = 2; // display aspect of the canvas
 	const near = 0.1;
 	const far = 1000;
@@ -654,7 +563,7 @@ function main(){
 
 	renderer.render(scene, camera);
 
-	let cubes = new MarchingCubes(240, 240, 240, 60, 60, 60, 0, 0, 0, metaBall1, 0.5);
+	let cubes = new MarchingCubes(240, 240, 240, 12, 12, 12, 0, 0, 0, noiseFunc1, 0.2);
 
 	
 	
@@ -680,8 +589,7 @@ function main(){
 	}
 	gui.add(controls, 'outputObj');
 	gui.add(controls, 'interpolate').onChange(function(e) {
-		scene.children.forEach(c => c.interpolate = !c.interpolate);
-		
+		cubes.interpolate = !cubes.interpolate;
 	});
 
 
