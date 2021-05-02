@@ -16,7 +16,6 @@ function smoothUnion(x, y, k){
 	return mix(x, y, h) - k * h * (1.0 - h);
 }
 
-
 class Cube{
     constructor(centerX, centerY, centerZ, w, h, d){
     	this.centerX = centerX;
@@ -117,7 +116,8 @@ class Cube{
     	//console.log(this.triangulationEdgeIndices);
     }
 
-    setMeshVertices(f, threshold, interpolate){
+    setMeshVertices(f, threshold, interpolate, hashMap, vertices, indices, index){
+
     	let tempForNormals = [];
     	for (let i = 0; i < 16; i++){
     		if (this.triangulationEdgeIndices[i] == -1){
@@ -171,7 +171,30 @@ class Cube{
 				my = (v1y + v2y) * 0.5;
 				mz = (v1z + v2z) * 0.5;
     		}
-    		
+
+    		// hashMap
+    		let hx, hy, hz;
+    		hx = v1x + v2x;
+    		hy = v1y + v2y;
+    		hz = v1z + v2z;
+    		// try using the noise function as a hash function
+    		let hn = noise.simplex3(hx * 0.1, hy * 0.1, hz * 0.1);
+
+    		// if the vertex hasn't been used yet, push the vertex to the vertices array
+    		// push the index into the indices array and increment it.
+    		if (!hashMap.has(hn)){
+    			hashMap.set(hn, {x: mx, y: my, z: mz, index: index.getValue()});
+    			vertices.push(mx, my, mz);
+    			indices.push(index.getValue());
+    			index.increment();
+    		}
+
+    		// else the vertex has been used. 
+    		// no need to push the vertex to the vertices array -> solves the redundancy issue
+    		// push the index of the corresponding vertex into the indices array
+    		else{
+    			indices.push(hashMap.get(hn).index);
+    		}
 
     		// 4. push the coordinates of the midpoint to meshVertArr
     		this.meshVertArr.push(mx, my, mz);
@@ -264,6 +287,12 @@ class MarchingCubes{
 		this.shapeFunc = shapeFunc;
 		this.threshold = threshold;
 
+		this.hashMap = new Map();
+		console.log(this.hashMap);
+		this.vertices = [];
+		this.indices = [];
+		this.indexCount = new IndexObject(0);
+
 		this.marchingCubes = [];
 		this.initCubes();
 		
@@ -284,6 +313,7 @@ class MarchingCubes{
 
 		this.id = ++MarchingCubes.id;
 
+		
 	}
 
 
@@ -315,11 +345,15 @@ class MarchingCubes{
 		let tcg = this.totalCubesGeom;
 		let interpolate = this.interpolate;
 		let threshold = this.threshold;
+		let hashMap = this.hashMap;
+		let vertices = this.vertices;
+		let indices = this.indices;
+		let index = this.indexCount;
 		//console.log(func);
 		this.marchingCubes.forEach(function(c){
 			c.setCubeCorners();
 			c.setConfigIndex(func, threshold);
-			c.setMeshVertices(func, threshold, interpolate);
+			c.setMeshVertices(func, threshold, interpolate, hashMap, vertices, indices, index);
 			c.createMesh(scene);
 			if (!c.empty) tcg.push(c.getMeshGeometry());
 		});
@@ -331,19 +365,26 @@ class MarchingCubes{
 			this.totalMesh.name = "totalMesh";
 			scene.add(this.totalMesh);
 		}
+		console.log(this.indices);
 	}
 
 	updateCubes(){
+		//console.log(this.hashMap.size);
+		//this.vertices = [];
 		scene.remove(scene.getObjectByName("totalMesh"));
 		this.totalCubesGeom = [];
 		let func = this.shapeFunc;
 		let tcg = this.totalCubesGeom;
 		let interpolate = this.interpolate;
 		let threshold = this.threshold;
+		let hashMap = this.hashMap;
+		let vertices = this.vertices;
+		let indices = this.indices;
+		let index = this.indexCount;
 		this.marchingCubes.forEach(function(c){
 			c.reset();
 			c.setConfigIndex(func, threshold);
-			c.setMeshVertices(func, threshold, interpolate);
+			c.setMeshVertices(func, threshold, interpolate, hashMap, vertices, indices, index);
 			c.createMesh(scene);
 			if (!c.empty) tcg.push(c.getMeshGeometry());
 		});
@@ -354,6 +395,7 @@ class MarchingCubes{
 			this.totalMesh.name = "totalMesh";
 			scene.add(this.totalMesh);
 		}
+
 	}
 
 	setShapeFunc(newFunc){
@@ -372,9 +414,30 @@ class MarchingCubes{
 }
 MarchingCubes.id = 0;
 
+
+class IndexObject{
+	constructor(i){
+		this.value = i;
+	}
+	increment(){
+		this.value++;
+	}
+	getValue(){
+		return this.value;
+	}
+	reset(){
+		this.value = 0;
+	}
+}
+
+
 function main(){
 // NOISE
 	noise.seed(Math.random());
+// INDEX OBJECT
+	
+
+
 
 // TEST SHAPE FUNCTIONS
 	const f1 = (x, y, z) =>{
@@ -519,10 +582,9 @@ function main(){
 
 	renderer.render(scene, camera);
 
-	let cubes = new MarchingCubes(240, 240, 240, 24, 24, 24, 0, 0, 0, metaBall1, 0.5);
+	let cubes = new MarchingCubes(240, 240, 240, 48, 48, 48, 0, 0, 0, metaBall1, 0.5);
 
-	let cubes2 = new MarchingCubes(240, 240, 240, 12, 12, 12, 100, 100, 100, noiseFunc1, 0.2);
-	cubes2.setMaterial = new THREE.MeshLambertMaterial({color: 0xFF4466, side: THREE.DoubleSide});
+	
 	
 
 // LIGHTS
@@ -558,7 +620,7 @@ function main(){
 		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 
 		cubes.updateCubes();
-		cubes2.updateCubes();
+		
 		
 		
 		if (resizeRenderToDisplaySize(renderer)){
