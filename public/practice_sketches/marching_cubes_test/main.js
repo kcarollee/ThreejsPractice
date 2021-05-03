@@ -2,6 +2,7 @@ import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/example
 import {BufferGeometryUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/BufferGeometryUtils.js";
 let step = 0;
 let scene;
+let seedAlt = 0;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -125,7 +126,7 @@ class Cube{
     	//console.log(this.triangulationEdgeIndices);
     }
 
-    setMeshVertices(f, threshold, interpolate, hashMap, vertices,  indices, index){
+    setMeshVertices(f, threshold, interpolate, hashMap, vertices,  indices, index, useDifferentHashFunc = false){
 
     	let tempForNormals = [];
     	for (let i = 0; i < 16; i++){
@@ -161,16 +162,16 @@ class Cube{
     		// hashMap
 
     		
-    		let hx, hy, hz;
-    		hx = v1x + v2x;
-    		hy = v1y + v2y;
-    		hz = v1z + v2z;
-    		// try using the noise function as a hash function
-    		//let hn = noise.simplex3(hx * 0.0001, hy * 0.0001, hz * 0.0001);
-			
+    		let hn;
     		// THIS IS PERFECT HASHING
-    		let hn = this.id * 10000000 + edgeIndex;
-
+    		if (!useDifferentHashFunc) hn = this.id * 10000000 + edgeIndex;
+    		else {
+    			let hx, hy, hz;
+    			hx = v1x + v2x;
+    			hy = v1y + v2y;
+    			hz = v1z + v2z;
+    			hn = noise.simplex3(hx * 0.0001, hy * 0.0001, hz * 0.0001);
+    		}
 
     		// if the vertex hasn't been used yet, push the vertex to the vertices array
     		// push the index into the indices array and increment it.
@@ -305,6 +306,7 @@ class MarchingCubes{
 		this.id = ++MarchingCubes.id;
 
 		this.totalGeom;
+		this.useDifferentHashFunc = false;
 	}
 
 
@@ -348,11 +350,11 @@ class MarchingCubes{
 		let vertices = this.vertices;
 		let indices = this.indices;
 		let index = this.indexCount;
-
+		let useDifferentHashFunc = this.useDifferentHashFunc;
 		this.marchingCubes.forEach(function(c){
 			c.reset();
 			c.setConfigIndex(func, threshold);
-			c.setMeshVertices(func, threshold, interpolate, hashMap, vertices, indices, index);
+			c.setMeshVertices(func, threshold, interpolate, hashMap, vertices, indices, index, useDifferentHashFunc);
 		});
 
 		this.totalGeom = new THREE.BufferGeometry();
@@ -361,7 +363,7 @@ class MarchingCubes{
 		let verts = new Float32Array(this.vertices);
 		this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
 		this.totalGeom.computeVertexNormals();
-		this.totalGeom.computeFaceNormals();
+		//this.totalGeom.computeFaceNormals();
 		//this.totalGeom.normalizeNormals();
 		this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
 		this.totalMesh.name = "totalMesh" + this.id;
@@ -375,7 +377,14 @@ class MarchingCubes{
 		this.indices = [];
 		this.indexCount.reset();
 		this.totalMesh.geometry.dispose();
-		
+	}
+
+	useDifferentHashFunc(){
+		this.useDifferentHashFunc = true;
+	}
+
+	useDefaultHashFunc(){
+		this.useDefaultHashFunc = false;
 	}
 
 	getMesh(){
@@ -477,10 +486,10 @@ function main(){
 	}
 
 	const randomSphereFunc = (x, y, z) => {
-		let r = 100 + 50 * Math.sin(step * 0.01);
-		let c = 0.005;
+		let r = 50;
+		let c = 0.009;
 		let v = 0.009;
-		let n = noise.simplex3(x * c + step * v, y * c + step * v, z * c + step * v);
+		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
 		r += 20.0 * n;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
@@ -497,7 +506,7 @@ function main(){
 		let octaves = 8;
 		let noiseSum = 0;
 		for (let i = 0; i < octaves; i++){
-			noiseSum += noise.simplex2(x * i * 0.01 + step * v, z * i * 0.01 + step * v);
+			noiseSum += noise.simplex2(x * i * 0.01 + step * v + seedAlt, z * i * 0.01 + step * v + seedAlt);
 		}
 		noiseSum /= octaves;
 
@@ -505,7 +514,7 @@ function main(){
 		
 		let val = y - c1 * noiseSum;
 
-				val += 50 * noise.simplex3(x * nc2 + step * v, y * nc2 + step * v, z * nc2 + step * v);
+		val += 50 * noise.simplex3(x * nc2 + step * v + seedAlt, y * nc2 + step * v + seedAlt, z * nc2 + step * v + seedAlt);
 		//val += 10 * noise.simplex3(val * nc2 * x, val * nc2 * y, val * nc2 * z);
 		//val = Math.floor(2.0 * val);
 		let m = mapLinear(val, -240 - c1, 240 + c1, -1, 1);
@@ -581,6 +590,8 @@ function main(){
 // CANVAS & RENDERER
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+	const raycaster = new THREE.Raycaster();
+	const mouse = new THREE.Vector2();
 
 // CAMERA
 	const fov = 45;
@@ -592,27 +603,47 @@ function main(){
 	camera.position.set(0, 0, 200);
 
 	scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xCCCCCC);
+	scene.background = new THREE.Color(0x000000);
 
 	renderer.render(scene, camera);
 
-	let terrainCubes = new MarchingCubes(
-		480, 120, 480, 
-		5, 5, 5, 
-		0, 0, 0, 
-		terrainTest, 0
-	);
-	terrainCubes.updateCubes();
 
-	let objectCubes1 = new MarchingCubes(
-		240, 240, 240,
-		12, 12, 12,
-		0, 0, 0,
-		randomSphereFunc, 0.9
-	);
-	objectCubes1.updateCubes();
+	let terrainArr = [];
+	let terrainNum = 4;
+	let terrainIndex = 0;
+	for (let i = 0; i < terrainNum; i++){
+		let terrainCubes = new MarchingCubes(
+			480, 120, 480, 
+			8, 8, 8, 
+			0, 0, 0, 
+			terrainTest, 0
+		);
+		terrainCubes.updateCubes();
+		if (i != 0) terrainCubes.getMesh().visible = false; 
+		terrainArr.push(terrainCubes);
+		seedAlt += 10;
+	}
 
-	
+	let visibleTerrain = terrainArr[terrainIndex];
+
+
+
+
+	let objArr = [];
+	let objNum = 3;
+	for (let i = 0; i < objNum; i++){
+		seedAlt += 10;
+		let objectCubes1 = new MarchingCubes(
+			240, 240, 240,
+			18, 18, 18,
+			0,
+			0,
+			0,
+			randomSphereFunc, 0.9
+		);
+		objectCubes1.useDifferentHashFunc = false;
+		objArr.push(objectCubes1);
+	}
 	
 
 // LIGHTS
@@ -641,17 +672,44 @@ function main(){
 
 
 	function render(time){
-		time *= 0.01;
+		time *= 0.001;
 		step += 1;
+
+		raycaster.setFromCamera(mouse, camera);
+		let intersects = raycaster.intersectObjects(scene.children);
+		//console.log(intersects);
+
+		if (intersects.length > 0){
+			//console.log(intersects[0].object);
+			
+		}
 
 		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 
 		//terrainCubes.updateCubes();
 		//cubes.getMesh().position.set(50 * Math.sin(time), 0, 0);
 		//console.log(cubes);
-		objectCubes1.updateCubes();
+		//objectCubes1.updateCubes();
+		objArr.forEach(function(o, i){
+			o.updateCubes();
+			o.getMesh().position.set(100 * Math.cos(time + i * Math.PI * 0.66),  
+				150 + 25 * Math.sin(time + i * 10), 
+				100 * Math.sin(time + i * Math.PI * 0.66));
+			let rot = step * 0.01 + i * 10.0;
+			o.getMesh().rotation.x = rot;
+			o.getMesh().rotation.y = rot;
+			o.getMesh().rotation.z = rot;
+		});
+
+		if (step % 30 == 0){
+			terrainIndex++;
+			terrainIndex %= terrainNum;
+			visibleTerrain.getMesh().visible = false;
+			visibleTerrain = terrainArr[terrainIndex];
+			visibleTerrain.getMesh().visible = true;
+		}
 		
-		
+		visibleTerrain.getMesh().rotation.y = step * 0.003;
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -679,6 +737,12 @@ function main(){
 		return needResize;
 	}
 	requestAnimationFrame(render);
+
+	function onMouseMove(){
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        //debugCube.position.set(mouse.x, mouse.y);
+    }
 }
 
 window.onload = main;
