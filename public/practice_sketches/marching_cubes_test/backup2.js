@@ -1,3 +1,4 @@
+// this is the version before manually setting normals
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 import {BufferGeometryUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/BufferGeometryUtils.js";
 let step = 0;
@@ -154,20 +155,20 @@ class Cube{
     		let v2z = this.cubeVertArr[vertIndex2 * 3 + 2];
 
     		
-    		// coordinates of the point between the two vertices
+    
     		let mx, my, mz;
     		
 
     		// hashMap
 
-    		
+    		/*
     		let hx, hy, hz;
     		hx = v1x + v2x;
     		hy = v1y + v2y;
     		hz = v1z + v2z;
     		// try using the noise function as a hash function
-    		//let hn = noise.simplex3(hx * 0.0001, hy * 0.0001, hz * 0.0001);
-			
+    		let hn = noise.simplex3(hx * 0.0001, hy * 0.0001, hz * 0.0001) * 100;
+			*/
     		// THIS IS PERFECT HASHING
     		let hn = this.id * 10000000 + edgeIndex;
 
@@ -212,7 +213,7 @@ class Cube{
     		// push the index of the corresponding vertex into the indices array
     		else indices.push(hashMap.get(hn).index);
     			
-    		// 4. push the coordinates of the resulting point to meshVertArr
+    		// 4. push the coordinates of the midpoint to meshVertArr
     		this.meshVertArr.push(mx, my, mz);
     	}
 
@@ -339,7 +340,7 @@ class MarchingCubes{
 
 	updateCubes(){
 		
-		scene.remove(scene.getObjectByName("totalMesh" + this.id));
+		scene.remove(scene.getObjectByName("totalMesh"));
 		
 		let func = this.shapeFunc;
 		let interpolate = this.interpolate;
@@ -361,10 +362,9 @@ class MarchingCubes{
 		let verts = new Float32Array(this.vertices);
 		this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
 		this.totalGeom.computeVertexNormals();
-		this.totalGeom.computeFaceNormals();
-		//this.totalGeom.normalizeNormals();
+		this.totalGeom.normalizeNormals();
 		this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
-		this.totalMesh.name = "totalMesh" + this.id;
+		this.totalMesh.name = "totalMesh";
 		scene.add(this.totalMesh);
 		
 
@@ -397,8 +397,6 @@ class MarchingCubes{
 	}
 
 }
-
-MarchingCubes.id = 0;
 
 
 
@@ -452,7 +450,7 @@ function main(){
 		let nz = 0.009;
 
 		
-		let n = noise.simplex3(x * nx + step * 0.003, y * ny + step * 0.003, z * nz + step * 0.003);
+		let n = noise.simplex3(x * nx + step * 0.03, y * ny + step * 0.03, z * nz + step * 0.03);
 		
 		return n;
 	}
@@ -484,31 +482,6 @@ function main(){
 		r += 20.0 * n;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
-		return m;
-	}
-
-	const terrainTest = (x, y, z) => {
-
-		let c1 = 20.0;
-		let nc = 0.0025;
-		let nc2 = 0.01;
-		let v = 0.01;
-
-		let octaves = 8;
-		let noiseSum = 0;
-		for (let i = 0; i < octaves; i++){
-			noiseSum += noise.simplex2(x * i * 0.01 + step * v, z * i * 0.01 + step * v);
-		}
-		noiseSum /= octaves;
-
-
-		
-		let val = y - c1 * noiseSum;
-
-				val += 50 * noise.simplex3(x * nc2 + step * v, y * nc2 + step * v, z * nc2 + step * v);
-		//val += 10 * noise.simplex3(val * nc2 * x, val * nc2 * y, val * nc2 * z);
-		//val = Math.floor(2.0 * val);
-		let m = mapLinear(val, -240 - c1, 240 + c1, -1, 1);
 		return m;
 	}
 
@@ -596,21 +569,7 @@ function main(){
 
 	renderer.render(scene, camera);
 
-	let terrainCubes = new MarchingCubes(
-		480, 120, 480, 
-		5, 5, 5, 
-		0, 0, 0, 
-		terrainTest, 0
-	);
-	terrainCubes.updateCubes();
-
-	let objectCubes1 = new MarchingCubes(
-		240, 240, 240,
-		12, 12, 12,
-		0, 0, 0,
-		randomSphereFunc, 0.9
-	);
-	objectCubes1.updateCubes();
+	let cubes = new MarchingCubes(240, 240, 240, 18, 18, 18, 0, 0, 0, randomSphereFunc, 0.2);
 
 	
 	
@@ -646,10 +605,9 @@ function main(){
 
 		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 
-		//terrainCubes.updateCubes();
+		cubes.updateCubes();
 		//cubes.getMesh().position.set(50 * Math.sin(time), 0, 0);
-		//console.log(cubes);
-		objectCubes1.updateCubes();
+		
 		
 		
 		if (resizeRenderToDisplaySize(renderer)){
