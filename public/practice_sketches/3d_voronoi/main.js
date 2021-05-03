@@ -458,171 +458,50 @@ function main(){
 	noise.seed(Math.random());
 // INDEX OBJECT
 	
-
-
+	
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color(0xEEEEEE);
 
 // TEST SHAPE FUNCTIONS
-	const f1 = (x, y, z) =>{
-		let val = 10000.0 / 
-			(
-				Math.pow(x, 2) +
-				Math.pow(y, 2) + 
-				Math.pow(z, 2)
-			);
-		return  val > 999 ? 1 : val;
-	} 
+	let voronoiCount = 0;
+	let voronoiSum = 0;
+	let pointNum = 50;
+	let pointArr = [];
+	let boxMat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+	let boxGeom = new THREE.BoxGeometry(1, 1, 1);
+	for (let i = 0; i < pointNum; i++){
+		let x = Math.random() * 100 - 50;
+		let y = Math.random() * 100 - 50;
+		let z = Math.random() * 100 - 50;
+		pointArr.push([x, y, z]);
 
-	const f2 = (g, h) => {
-		console.log(g);
-		return g(1, 1, 1) + h(2, 2, 2);
+		let boxMesh = new THREE.Mesh(boxGeom, boxMat);
+		boxMesh.position.set(x, y, z);
+		scene.add(boxMesh);
 	}
 
-	const f3 = (x, y, z) => {
-		return Math.sin(x * 1 + y * 1 + z * z);
-	}
+	const voronoi = (x, y, z) => {
+		let dxi = pointArr[0][0] - x;
+		let dyi = pointArr[0][1] - y;
+		let dzi = pointArr[0][2] - z;
+		let dist = Math.sqrt(dxi*dxi+dyi*dyi+dzi*dzi);
+		for (let i = 0; i < pointNum; i++){
+			let dx = pointArr[i][0] - x;
+			let dy = pointArr[i][1] - y;
+			let dz = pointArr[i][2] - z;
 
-	const noiseFunc1 = (x, y, z) =>{
-		let nx = 0.009;
-		let ny = 0.009;
-		let nz = 0.009;
 
-		
-		let n = noise.simplex3(x * nx + step * 0.003, y * ny + step * 0.003, z * nz + step * 0.003);
-		
-		return n;
-	}
-
-	const noiseFunc2 = (x, y, z) =>{
-		let nx = 0.01;
-		let ny = 0.01;
-		let nz = 0.01;
-
-		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
-
-		let v = Math.cos(x * y * 100 + n);
-		
-		return v;
-	}
-
-	const sphereFunc1 = (x, y, z) => {
-		let r = 3;
-		let ds = x*x + y*y + z*z;
-		let m = mapLinear(ds, 0, r*r, -1, 1);
-		return m;
-	}
-
-	const randomSphereFunc = (x, y, z) => {
-		let r = 50;
-		let c = 0.009;
-		let v = 0.009;
-		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
-		r += 20.0 * n;
-		let ds = x*x + y*y + z*z;
-		let m = mapLinear(ds, 0, r*r, -1, 1);
-		return m;
-	}
-
-	const randomSphereFunc2 = (x, y, z) => {
-		let r = 450;
-		let c = 0.003;
-		let v = 0.009;
-		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
-		r += 20.0 * n;
-		let ds = x*x + y*y + z*z;
-		let m = mapLinear(ds, 0, r*r, -1, 1);
-		return m;
-	}
-
-	const terrainTest = (x, y, z) => {
-
-		let c1 = 20.0;
-		let nc = 0.0025;
-		let nc2 = 0.008;
-		let v = 0.01;
-
-		let octaves = 8;
-		let noiseSum = 0;
-		for (let i = 0; i < octaves; i++){
-			noiseSum += noise.simplex2(x * i * 0.01 + step * v + seedAlt, z * i * 0.01 + step * v + seedAlt);
+			let current = Math.sqrt(dx*dx+dy*dy+dz*dz);
+			if (current < dist){
+				dist = current;
+			}
 		}
-		noiseSum /= octaves;
-
-
-		
-		let val = y - c1 * noiseSum;
-
-		val += 50 * noise.simplex3(x * nc2 + step * v + seedAlt, y * nc2 + step * v + seedAlt, z * nc2 + step * v + seedAlt);
-		//val += 10 * noise.simplex3(val * nc2 * x, val * nc2 * y, val * nc2 * z);
-		//val = Math.floor(2.0 * val);
-		let m = mapLinear(val, -240 - c1, 240 + c1, -1, 1);
-		return m;
-	}
-
-
-
-// METABALL
-
-	class MetaBall{
-		constructor(centerX, centerY, centerZ, radius){
-			this.centerX = centerX;
-			this.centerY = centerY;
-			this.centerZ = centerZ;
-			this.initX = centerX;
-			this.initY = centerY;
-			this.initZ = centerZ;
-			this.radius = radius;
-			this.initR = radius;
-			this.randX = Math.random() * 10;
-			this.randY = Math.random() * 10;
-			this.randZ = Math.random() * 10;
-			this.randD = Math.random() * 50
-		}	
-
-		updatePos(){
-			this.centerX = this.initX + this.randD * Math.sin(step * 0.1 + this.randX);
-			this.centerY = this.initY + this.randD * Math.sin(step * 0.1 + this.randY);
-			this.centerZ = this.initZ + this.randD * Math.sin(step * 0.1 + this.randZ);
-			this.radius = this.initR + Math.sin(step * 0.1 + this.randZ);
-		}
-
-		getValue(x, y, z){
-			let dx = x - this.centerX;
-			let dy = y - this.centerY;
-			let dz = z - this.centerZ;
-
-			let dist = dx * dx + dy * dy + dz * dz;
-			return this.radius / Math.sqrt(dist);
-		}
-	}
-
-	let metaBallNum = 5;
-	let metaBallArr = [];
-	for (let i = 0; i < metaBallNum; i++){
-		let m = new MetaBall(Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 20 + 20);
-		metaBallArr.push(m);
-	}
-
-	const metaBall1 = (x, y, z) => {
-		/*
-		let max = -99999999;
-		metaBallArr.forEach(function(m){
-			let val = m.getValue(x, y, z);
-			m.updatePos();
-			if (val > max) max = val;
-		});
-		return max;
-		*/
-		
-		let val = metaBallArr[0].getValue(x, y, z);
-		metaBallArr[0].updatePos();
-		for (let i = 1; i < metaBallArr.length; i++){
-			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 0.1);
-			metaBallArr[i].updatePos();
-		}
-
-		return val;
-		
-	}
+		let d = mapLinear(dist, 0, 87, -1, 1);
+		let md = mapLinear(d, -1, 1, 0, 1);
+		let md2 = mapLinear(1 - md, 0, 1, -1, 1);
+		return md2;
+	};
+	
 
 // CANVAS & RENDERER
 	const canvas = document.querySelector('#c');
@@ -639,57 +518,13 @@ function main(){
 
 	camera.position.set(0, 0, 200);
 
-	scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xEEEEEE);
+	
 
 	renderer.render(scene, camera);
 
-
-	let terrainArr = [];
-	let terrainNum = 4;
-	let terrainIndex = 0;
-	for (let i = 0; i < terrainNum; i++){
-		let terrainCubes = new MarchingCubes(
-			480, 120, 480, 
-			6, 6, 6, 
-			0, 0, 0, 
-			terrainTest, 0
-		);
-		terrainCubes.updateCubes();
-		if (i != 0) terrainCubes.getMesh().visible = false; 
-		terrainArr.push(terrainCubes);
-		seedAlt += 10;
-	}
-
-	let visibleTerrain = terrainArr[terrainIndex];
-
-
-
-
-	let objArr = [];
-	let objNum = 3;
-	for (let i = 0; i < objNum; i++){
-		seedAlt += 10;
-		let objectCubes1 = new MarchingCubes(
-			240, 240, 240,
-			18, 18, 18,
-			0,
-			0,
-			0,
-			randomSphereFunc, 0.9
-		);
-		objectCubes1.useDifferentHashFunc = false;
-		objArr.push(objectCubes1);
-	}
-
-	let outerObj = new MarchingCubes(
-		504, 504, 504,
-		24, 24, 24,
-		0, 0, 0,
-		randomSphereFunc2, 0
-	);
-	outerObj.updateCubes();
-	outerObj.getMesh().material.wireframe = true;
+// MARCHING CUBES
+	let voronoiCube = new MarchingCubes(100, 100, 100, 2.5, 2.5, 2.5, 0, 0, 0, voronoi, 0.5);
+	voronoiCube.updateCubes();
 
 // LIGHTS
 	let dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -720,76 +555,20 @@ function main(){
 		time *= 0.001;
 		step += 1;
 
-		raycaster.setFromCamera(mouse, camera);
-		let intersects = raycaster.intersectObjects(scene.children);
-		//console.log(intersects);
+		
 
 		
 
 		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 
-		//terrainCubes.updateCubes();
-		//cubes.getMesh().position.set(50 * Math.sin(time), 0, 0);
-		//console.log(cubes);
-		//objectCubes1.updateCubes();
-		objArr.forEach(function(o, i){
-			o.updateCubes();
-			o.getMesh().position.set(100 * Math.cos(time + i * Math.PI * 0.66),  
-				125 + 25 * Math.sin(time + i * 10), 
-				100 * Math.sin(time + i * Math.PI * 0.66));
-			let rot = step * 0.01 + i * 10.0;
-			o.getMesh().rotation.x = rot;
-			o.getMesh().rotation.y = rot;
-			o.getMesh().rotation.z = rot;
-		});
 
-		outerObj.updateCubes();
-		let rot = -step * 0.01;
-		outerObj.getMesh().rotation.x = rot;
-		outerObj.getMesh().rotation.y = rot;
-		outerObj.getMesh().rotation.z = rot;
-
-		if (step % 20 == 0){
-			terrainIndex++;
-			terrainIndex %= terrainNum;
-			visibleTerrain.getMesh().visible = false;
-			visibleTerrain = terrainArr[terrainIndex];
-			visibleTerrain.getMesh().visible = true;
-		}
-		/*
-
-		if (step % 10 == 0){
-			let vis = visibleTerrain.getMesh().material;
-			vis.wireframe = !vis.wireframe; 
-		}
-		*/
-
-		
-		if (step % 20 == 0){
-			let index = Math.floor(Math.random() * objNum);
-			objArr[index].useDifferentHashFunc = !objArr[index].useDifferentHashFunc;
-			objArr[index].hashFuncIndex = Math.floor(Math.random() * 4);
-		}
-
-		/*
-		
-		if (step % 18 == 0){
-			let index = Math.floor(Math.random() * objNum);
-			let m = objArr[index].getMesh().material;
-			m.wireframe = !m.wireframe;
-		}
-		*/
-		
-		visibleTerrain.getMesh().rotation.y = step * 0.003;
+		//dirLight.position.set(50 * Math.sin(time), 50 * Math.cos(time), 0);
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
 		}
 
-		
-
-		//dirLight.position.set(50 * Math.sin(time), 50 * Math.cos(time), 0);
 		renderer.render(scene, camera);
 		requestAnimationFrame(render);
 	}
