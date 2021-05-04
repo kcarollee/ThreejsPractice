@@ -3,6 +3,7 @@ import {BufferGeometryUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/ex
 let step = 0;
 let scene;
 let seedAlt = 0;
+let stats;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -330,6 +331,8 @@ class MarchingCubes{
 		this.totalGeom;
 		this.useDifferentHashFunc = false;
 		this.hashFuncIndex = 0;
+
+		this.pushedToScene = false;
 	}
 
 
@@ -364,7 +367,7 @@ class MarchingCubes{
 
 	updateCubes(){
 		
-		scene.remove(scene.getObjectByName("totalMesh" + this.id));
+		//scene.remove(scene.getObjectByName("totalMesh" + this.id));
 		
 		let func = this.shapeFunc;
 		let interpolate = this.interpolate;
@@ -383,20 +386,41 @@ class MarchingCubes{
 				useDifferentHashFunc, hashFuncIndex);
 		});
 
-		this.totalGeom = new THREE.BufferGeometry();
-		this.totalGeom.setIndex(this.indices);
+		
 			
 		let verts = new Float32Array(this.vertices);
-		this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-		this.totalGeom.computeVertexNormals();
-		//this.totalGeom.computeFaceNormals();
-		//this.totalGeom.normalizeNormals();
-		this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
-		this.totalMesh.name = "totalMesh" + this.id;
-		scene.add(this.totalMesh);
 		
+		// this is the best i could do for now.
+		if (!this.pushedToScene) {
+			this.totalGeom = new THREE.BufferGeometry();
+			this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+			this.totalGeom.setIndex(this.indices);
+			this.totalGeom.computeVertexNormals();
+			this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
+			this.totalMesh.name = "totalMesh" + this.id;
+			scene.add(this.totalMesh);
+			this.pushedToScene = true;
+			this.totalGeom.dispose();
+			this.material.dispose();
+		}
+		else{
+			let ref = scene.getObjectByName("totalMesh" + this.id);
+			//ref.geometry.setDrawRange(0, this.vertices.length);
+			ref.geometry = new THREE.BufferGeometry();
+			ref.geometry.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+			ref.geometry.setIndex(this.indices);
+			ref.geometry.computeVertexNormals();
+			ref.geometry.attributes.position.needsUpdate = true;
+			ref.geometry.attributes.normal.needsUpdate = true;
+			
+
+			// disposing the material after being done with it is also a must.
+			ref.geometry.dispose();
+			ref.material.dispose();
+		}
 
 
+		//console.log(scene.getObjectByName("totalMesh" + this.id).geometry);
 		// reset
 		this.hashMap.clear();
 		this.vertices = [];
@@ -456,9 +480,9 @@ class IndexObject{
 function main(){
 // NOISE
 	noise.seed(Math.random());
-// INDEX OBJECT
+// 
 	
-
+	initStats();
 
 
 // TEST SHAPE FUNCTIONS
@@ -667,7 +691,7 @@ function main(){
 
 
 	let objArr = [];
-	let objNum = 3;
+	let objNum = 10;
 	for (let i = 0; i < objNum; i++){
 		seedAlt += 10;
 		let objectCubes1 = new MarchingCubes(
@@ -682,6 +706,7 @@ function main(){
 		objArr.push(objectCubes1);
 	}
 
+/*
 	let outerObj = new MarchingCubes(
 		504, 504, 504,
 		24, 24, 24,
@@ -690,7 +715,7 @@ function main(){
 	);
 	outerObj.updateCubes();
 	outerObj.getMesh().material.wireframe = true;
-
+*/
 // LIGHTS
 	let dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
 	dirLight.position.set(0, 0, 20);
@@ -720,9 +745,9 @@ function main(){
 		time *= 0.001;
 		step += 1;
 
-		raycaster.setFromCamera(mouse, camera);
-		let intersects = raycaster.intersectObjects(scene.children);
-		//console.log(intersects);
+		stats.update();
+
+
 
 		
 
@@ -743,11 +768,13 @@ function main(){
 			o.getMesh().rotation.z = rot;
 		});
 
+/*
 		outerObj.updateCubes();
 		let rot = -step * 0.01;
 		outerObj.getMesh().rotation.x = rot;
 		outerObj.getMesh().rotation.y = rot;
 		outerObj.getMesh().rotation.z = rot;
+*/
 
 		if (step % 20 == 0){
 			terrainIndex++;
@@ -756,6 +783,7 @@ function main(){
 			visibleTerrain = terrainArr[terrainIndex];
 			visibleTerrain.getMesh().visible = true;
 		}
+		
 		/*
 
 		if (step % 10 == 0){
@@ -764,13 +792,13 @@ function main(){
 		}
 		*/
 
-		
+		/*
 		if (step % 20 == 0){
 			let index = Math.floor(Math.random() * objNum);
 			objArr[index].useDifferentHashFunc = !objArr[index].useDifferentHashFunc;
 			objArr[index].hashFuncIndex = Math.floor(Math.random() * 4);
 		}
-
+*/
 		/*
 		
 		if (step % 18 == 0){
@@ -780,7 +808,7 @@ function main(){
 		}
 		*/
 		
-		visibleTerrain.getMesh().rotation.y = step * 0.003;
+		//visibleTerrain.getMesh().rotation.y = step * 0.003;
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -814,6 +842,16 @@ function main(){
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         //debugCube.position.set(mouse.x, mouse.y);
     }
+
+	function initStats(){
+		stats = new Stats();
+	  	stats.setMode(0);
+	  	stats.domElement.style.position = 'absolute';
+	  	stats.domElement.style.left = '0px';
+	  	stats.domElement.style.top = '0px';
+	  	document.body.appendChild(stats.domElement);
+	  	return stats;
+	}
 }
 
 window.onload = main;
