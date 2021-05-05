@@ -4,6 +4,7 @@ let step = 0;
 let scene;
 let seedAlt = 0;
 let stats;
+let texture;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -127,7 +128,7 @@ class Cube{
     	//console.log(this.triangulationEdgeIndices);
     }
 
-    setMeshVertices(f, threshold, interpolate, hashMap, vertices,  indices, index, useDifferentHashFunc = false, funcIndex = 0){
+    setMeshVertices(f, threshold, interpolate, hashMap, vertices,  indices, uvs, index, useDifferentHashFunc = false, funcIndex = 0){
 
     	let tempForNormals = [];
     	for (let i = 0; i < 16; i++){
@@ -218,6 +219,9 @@ class Cube{
     			}
     			hashMap.set(hn, {index: index.getValue()});
     			vertices.push(mx, my, mz);
+
+    			let uvIndex = (index.getValue() % 4) * 2;
+    			//uvs.push(Cube.uvs[uvIndex], Cube.uvs[uvIndex + 1]);
     			indices.push(index.getValue());
     			index.increment();
     		}
@@ -228,7 +232,7 @@ class Cube{
     		else indices.push(hashMap.get(hn).index);
     			
     		// 4. push the coordinates of the resulting point to meshVertArr
-    		this.meshVertArr.push(mx, my, mz);
+    		//this.meshVertArr.push(mx, my, mz);
     	}
 
     }
@@ -263,6 +267,12 @@ Cube.edgeToVerticesIndices = [
 	[2, 6], // edge number 10
 	[3, 7]  // edge number 11
 ];	
+Cube.uvs = [
+	0, 0,
+	0, 1,
+	1, 1,
+	1, 0
+];
 Cube.id = 0;
 
 
@@ -292,6 +302,7 @@ class MarchingCubes{
 		this.hashMap = new Map();
 		this.vertices = [];
 		this.indices = [];
+		this.uvs = [];
 
 		this.indexCount = new IndexObject(0);
 
@@ -301,21 +312,44 @@ class MarchingCubes{
 		this.totalMesh;
 		this.setCubes();
 
+		this.vertShader = document.getElementById('vert').innerHTML;
+		this.fragShader = document.getElementById('frag').innerHTML;
+		this.uniforms = {
+			time: {type: 'f', value: 0},
+			resolution: {type: 'v2', value: new THREE.Vector2()},
+
+		}
+		this.uniforms.resolution.value.x = window.innerWidth;
+		this.uniforms.resolution.value.y = window.innerHeight;
+
 		this.materialArr = [
-			 new THREE.MeshNormalMaterial({ 
+			new THREE.MeshNormalMaterial({
+				side: THREE.DoubleSide,
+			}),
+
+			new THREE.MeshBasicMaterial({ 
 				transparent: false, 
 				opacity: 0.7, 
 				side: THREE.DoubleSide,
 				wireframe: false,
+				map: texture
 				//flatShading: true
 			}),
-			 new THREE.MeshLambertMaterial({
+
+			new THREE.MeshLambertMaterial({
 			 	color: 0xFFFFFF * Math.random(),
 			 	side: THREE.DoubleSide
-			 }),
+			}),
+
+			new THREE.ShaderMaterial({
+			 	uniforms: this.uniforms,
+			 	vertexShader: this.vertShader,
+			 	fragmentShader: this.fragShader,
+			 	side: THREE.DoubleSide
+			})
 		];
 
-		this.material = this.materialArr[0];
+		this.material = this.materialArr[1];
 
 
 /*
@@ -333,6 +367,11 @@ class MarchingCubes{
 		this.hashFuncIndex = 0;
 
 		this.pushedToScene = false;
+	}
+
+	updateShaderMaterial(){
+		let ref = scene.getObjectByName("totalMesh" + this.id);
+		ref.material.uniforms.time.value = step * 0.01;
 	}
 
 
@@ -376,24 +415,26 @@ class MarchingCubes{
 		let vertices = this.vertices;
 		let indices = this.indices;
 		let index = this.indexCount;
+		let uvs = this.uvs;
 		let useDifferentHashFunc = this.useDifferentHashFunc;
 		let hashFuncIndex = this.hashFuncIndex;
 		this.marchingCubes.forEach(function(c){
 			c.reset();
 			c.setConfigIndex(func, threshold);
 			c.setMeshVertices(func, threshold, interpolate, hashMap, 
-				vertices, indices, index, 
+				vertices, indices, uvs, index, 
 				useDifferentHashFunc, hashFuncIndex);
 		});
 
 		
 			
-		let verts = new Float32Array(this.vertices);
-		
+		let vertFloat = new Float32Array(this.vertices);
+		let uvFloat = new Float32Array(this.uvs);
 		// this is the best i could do for now.
 		if (!this.pushedToScene) {
 			this.totalGeom = new THREE.BufferGeometry();
-			this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+			this.totalGeom.setAttribute('position', new THREE.BufferAttribute(vertFloat, 3));
+			this.totalGeom.setAttribute('uv', new THREE.BufferAttribute(uvFloat, 2));
 			this.totalGeom.setIndex(this.indices);
 			this.totalGeom.computeVertexNormals();
 			this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
@@ -408,11 +449,20 @@ class MarchingCubes{
 			let ref = scene.getObjectByName("totalMesh" + this.id);
 			//ref.geometry.setDrawRange(0, this.vertices.length);
 			ref.geometry = new THREE.BufferGeometry();
-			ref.geometry.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-			ref.geometry.setIndex(this.indices);
+			ref.geometry.setAttribute('position', new THREE.BufferAttribute(vertFloat, 3));
 			ref.geometry.computeVertexNormals();
+
+			let u = this.uvs;
+			ref.geometry.attributes.position.array.forEach(function(n, i){
+				if (i % 3 != 1) u.push(mapLinear(n, -100, 100, 0, 1));
+			});
+			uvFloat = new Float32Array(this.uvs);
+			ref.geometry.setAttribute('uv', new THREE.BufferAttribute(uvFloat, 2));
+			ref.geometry.setIndex(this.indices);
+			
 			ref.geometry.attributes.position.needsUpdate = true;
 			ref.geometry.attributes.normal.needsUpdate = true;
+
 			
 
 			// disposing the material after being done with it is also a must.
@@ -428,6 +478,7 @@ class MarchingCubes{
 		this.hashMap.clear();
 		this.vertices = [];
 		this.indices = [];
+		this.uvs = [];
 		this.indexCount.reset();
 		
 	}
@@ -490,8 +541,10 @@ function main(){
 // NOISE
 	noise.seed(Math.random());
 // 
-	
-	initStats();
+	texture = new THREE.TextureLoader().load("test.png");
+	//texture.wrapS = THREE.RepeatWrapping;
+	//texture.wrapT = THREE.RepeatWrapping;
+	//initStats();
 
 
 // TEST SHAPE FUNCTIONS
@@ -515,9 +568,10 @@ function main(){
 	}
 
 	const noiseFunc1 = (x, y, z) =>{
-		let nx = 0.009;
-		let ny = 0.009;
-		let nz = 0.009;
+		let nx = 0.01;
+		let ny = 0.01;
+		let nz = 0.01;
+
 
 		
 		let n = noise.simplex3(x * nx + step * 0.003, y * ny + step * 0.003, z * nz + step * 0.003);
@@ -546,10 +600,10 @@ function main(){
 
 	const randomSphereFunc = (x, y, z) => {
 		let r = 50;
-		let c = 0.009;
-		let v = 0.009;
+		let c = 0.01;
+		let v = 0.003;
 		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
-		r += 20.0 * n;
+		r += 150.0 * n;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
 		return m;
@@ -557,10 +611,10 @@ function main(){
 
 	const randomSphereFunc2 = (x, y, z) => {
 		let r = 450;
-		let c = 0.003;
+		let c = 0.0008;
 		let v = 0.009;
 		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
-		r += 20.0 * n;
+		r += 100.0 * n;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
 		return m;
@@ -645,7 +699,7 @@ function main(){
 			m.updatePos();
 			if (val > max) max = val;
 		});
-		
+
 		return max;
 		
 		
@@ -677,12 +731,12 @@ function main(){
 	camera.position.set(0, 0, 200);
 
 	scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xEEEEEE);
+	scene.background = new THREE.Color(0xbbccbb);
 
 	renderer.render(scene, camera);
 
 
-	let metaBalls = new MarchingCubes(200, 200, 200, 15, 15, 15, 0, 0, 0, metaBall1, 0.5);
+	let metaBalls = new MarchingCubes(240, 240, 240, 10, 10, 10, 0, 0, 0, noiseFunc1, 0.0);
 	metaBalls.updateCubes();
 	
 
@@ -704,10 +758,19 @@ function main(){
 			scene.children.forEach(c => console.log(c));
 		}
 		this.interpolate = true;
+		this.switchFunction = true;
+		this.threshold = 0.25;
 	}
 	gui.add(controls, 'outputObj');
 	gui.add(controls, 'interpolate').onChange(function(e) {
 		cubes.interpolate = !cubes.interpolate;
+	});
+	gui.add(controls, 'switchFunction').onChange(function(e) {
+		if (e) metaBalls.setShapeFunc( randomSphereFunc);
+		else metaBalls.setShapeFunc( noiseFunc1);
+	});
+	gui.add(controls, 'threshold', 0, 1.0).onChange(function(e) {
+		metaBalls.setThreshold(e);
 	});
 
 
@@ -715,10 +778,12 @@ function main(){
 		time *= 0.001;
 		step += 1;
 
-		stats.update();
+		//stats.update();
 
+		
 
 		metaBalls.updateCubes();
+		//metaBalls.updateShaderMaterial();
 
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
