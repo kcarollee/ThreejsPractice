@@ -3,6 +3,7 @@ import {BufferGeometryUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/ex
 let step = 0;
 let scene;
 let seedAlt = 0;
+let stats;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -330,6 +331,8 @@ class MarchingCubes{
 		this.totalGeom;
 		this.useDifferentHashFunc = false;
 		this.hashFuncIndex = 0;
+
+		this.pushedToScene = false;
 	}
 
 
@@ -364,7 +367,7 @@ class MarchingCubes{
 
 	updateCubes(){
 		
-		scene.remove(scene.getObjectByName("totalMesh" + this.id));
+		//scene.remove(scene.getObjectByName("totalMesh" + this.id));
 		
 		let func = this.shapeFunc;
 		let interpolate = this.interpolate;
@@ -383,26 +386,56 @@ class MarchingCubes{
 				useDifferentHashFunc, hashFuncIndex);
 		});
 
-		this.totalGeom = new THREE.BufferGeometry();
-		this.totalGeom.setIndex(this.indices);
+		
 			
 		let verts = new Float32Array(this.vertices);
-		this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-		this.totalGeom.computeVertexNormals();
-		//this.totalGeom.computeFaceNormals();
-		//this.totalGeom.normalizeNormals();
-		this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
-		this.totalMesh.name = "totalMesh" + this.id;
-		scene.add(this.totalMesh);
 		
+		// this is the best i could do for now.
+		if (!this.pushedToScene) {
+			this.totalGeom = new THREE.BufferGeometry();
+			this.totalGeom.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+			this.totalGeom.setIndex(this.indices);
+			this.totalGeom.computeVertexNormals();
+			this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
+			this.totalMesh.name = "totalMesh" + this.id;
+			scene.add(this.totalMesh);
+			this.pushedToScene = true;
+			this.totalGeom.dispose();
+			this.material.dispose();
+
+		}
+		else{
+			let ref = scene.getObjectByName("totalMesh" + this.id);
+			//ref.geometry.setDrawRange(0, this.vertices.length);
+			ref.geometry = new THREE.BufferGeometry();
+			ref.geometry.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+			ref.geometry.setIndex(this.indices);
+			ref.geometry.computeVertexNormals();
+			ref.geometry.attributes.position.needsUpdate = true;
+			ref.geometry.attributes.normal.needsUpdate = true;
+			
+
+			// disposing the material after being done with it is also a must.
+			ref.geometry.dispose();
+			ref.material.dispose();
+		}
 
 
+		//console.log(scene.getObjectByName("totalMesh" + this.id).geometry);
 		// reset
+
+		// reseting attributes
 		this.hashMap.clear();
 		this.vertices = [];
 		this.indices = [];
 		this.indexCount.reset();
+		
+	}
+
+	// use this for instances that aren't updated every frame
+	manageResources(){	
 		this.totalMesh.geometry.dispose();
+		this.totalMesh.material.dispose();
 	}
 
 	useDifferentHashFunc(){
@@ -456,52 +489,177 @@ class IndexObject{
 function main(){
 // NOISE
 	noise.seed(Math.random());
-// INDEX OBJECT
+// 
 	
-	
-	scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xEEEEEE);
+	initStats();
+
 
 // TEST SHAPE FUNCTIONS
-	let voronoiCount = 0;
-	let voronoiSum = 0;
-	let pointNum = 50;
-	let pointArr = [];
-	let boxMat = new THREE.MeshBasicMaterial({color: 0xFF0000});
-	let boxGeom = new THREE.BoxGeometry(1, 1, 1);
-	for (let i = 0; i < pointNum; i++){
-		let x = Math.random() * 100 - 50;
-		let y = Math.random() * 100 - 50;
-		let z = Math.random() * 100 - 50;
-		pointArr.push([x, y, z]);
+	const f1 = (x, y, z) =>{
+		let val = 10000.0 / 
+			(
+				Math.pow(x, 2) +
+				Math.pow(y, 2) + 
+				Math.pow(z, 2)
+			);
+		return  val > 999 ? 1 : val;
+	} 
 
-		let boxMesh = new THREE.Mesh(boxGeom, boxMat);
-		boxMesh.position.set(x, y, z);
-		scene.add(boxMesh);
+	const f2 = (g, h) => {
+		console.log(g);
+		return g(1, 1, 1) + h(2, 2, 2);
 	}
 
-	const voronoi = (x, y, z) => {
-		let dxi = pointArr[0][0] - x;
-		let dyi = pointArr[0][1] - y;
-		let dzi = pointArr[0][2] - z;
-		let dist = Math.sqrt(dxi*dxi+dyi*dyi+dzi*dzi);
-		for (let i = 0; i < pointNum; i++){
-			let dx = pointArr[i][0] - x;
-			let dy = pointArr[i][1] - y;
-			let dz = pointArr[i][2] - z;
+	const f3 = (x, y, z) => {
+		return Math.sin(x * 1 + y * 1 + z * z);
+	}
 
+	const noiseFunc1 = (x, y, z) =>{
+		let nx = 0.009;
+		let ny = 0.009;
+		let nz = 0.009;
 
-			let current = Math.sqrt(dx*dx+dy*dy+dz*dz);
-			if (current < dist){
-				dist = current;
-			}
+		
+		let n = noise.simplex3(x * nx + step * 0.003, y * ny + step * 0.003, z * nz + step * 0.003);
+		
+		return n;
+	}
+
+	const noiseFunc2 = (x, y, z) =>{
+		let nx = 0.01;
+		let ny = 0.01;
+		let nz = 0.01;
+
+		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
+
+		let v = Math.cos(x * y * 100 + n);
+		
+		return v;
+	}
+
+	const sphereFunc1 = (x, y, z) => {
+		let r = 3;
+		let ds = x*x + y*y + z*z;
+		let m = mapLinear(ds, 0, r*r, -1, 1);
+		return m;
+	}
+
+	const randomSphereFunc = (x, y, z) => {
+		let r = 50;
+		let c = 0.009;
+		let v = 0.009;
+		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
+		r += 20.0 * n;
+		let ds = x*x + y*y + z*z;
+		let m = mapLinear(ds, 0, r*r, -1, 1);
+		return m;
+	}
+
+	const randomSphereFunc2 = (x, y, z) => {
+		let r = 450;
+		let c = 0.003;
+		let v = 0.009;
+		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
+		r += 20.0 * n;
+		let ds = x*x + y*y + z*z;
+		let m = mapLinear(ds, 0, r*r, -1, 1);
+		return m;
+	}
+
+	const terrainTest = (x, y, z) => {
+
+		let c1 = 20.0;
+		let nc = 0.0025;
+		let nc2 = 0.008;
+		let v = 0.01;
+
+		let octaves = 12;
+		let noiseSum = 0;
+		let nc3 = 0.01;
+		for (let i = 0; i < octaves; i++){
+			noiseSum += noise.simplex2(x * i * nc3 + step * v + seedAlt, z * i * nc3 + step * v + seedAlt);
 		}
-		let d = mapLinear(dist, 0, 87, -1, 1);
-		let md = mapLinear(d, -1, 1, 0, 1);
-		let md2 = mapLinear(1 - md, 0, 1, -1, 1);
-		return md2;
-	};
-	
+		noiseSum /= octaves;
+
+
+		
+		let val = y - c1 * noiseSum;
+
+		val += 50 * noise.simplex3(x * nc2 + step * v + seedAlt, y * nc2 + step * v + seedAlt, z * nc2 + step * v + seedAlt);
+		//val += 10 * noise.simplex3(val * nc2 * x, val * nc2 * y, val * nc2 * z);
+		//val = Math.floor(2.0 * val);
+		let m = mapLinear(val, -240 - c1, 240 + c1, -1, 1);
+		return m;
+	}
+
+
+
+// METABALL
+
+	class MetaBall{
+		constructor(centerX, centerY, centerZ, radius){
+			this.centerX = centerX;
+			this.centerY = centerY;
+			this.centerZ = centerZ;
+			this.initX = centerX;
+			this.initY = centerY;
+			this.initZ = centerZ;
+			this.radius = radius;
+			this.initR = radius;
+			this.randX = Math.random() * 10;
+			this.randY = Math.random() * 10;
+			this.randZ = Math.random() * 10;
+			this.randD = Math.random() * 50
+		}	
+
+		updatePos(){
+			this.centerX = this.initX + this.randD * Math.sin(step * 0.1 + this.randX);
+			this.centerY = this.initY + this.randD * Math.sin(step * 0.1 + this.randY);
+			this.centerZ = this.initZ + this.randD * Math.sin(step * 0.1 + this.randZ);
+			this.radius = this.initR + Math.sin(step * 0.1 + this.randZ);
+		}
+
+		getValue(x, y, z){
+			let dx = x - this.centerX;
+			let dy = y - this.centerY;
+			let dz = z - this.centerZ;
+
+			let dist = dx * dx + dy * dy + dz * dz;
+			return this.radius / Math.sqrt(dist);
+		}
+	}
+
+	let metaBallNum = 10;
+	let metaBallArr = [];
+	for (let i = 0; i < metaBallNum; i++){
+		let m = new MetaBall(Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 20 + 20);
+		metaBallArr.push(m);
+	}
+
+	const metaBall1 = (x, y, z) => {
+		
+		let max = -99999999;
+		metaBallArr.forEach(function(m){
+			let val = m.getValue(x, y, z);
+			//val += 10000* noise.simplex3(x, y, z);
+			m.updatePos();
+			if (val > max) max = val;
+		});
+		
+		return max;
+		
+		
+		/*
+		let val = metaBallArr[0].getValue(x, y, z);
+		metaBallArr[0].updatePos();
+		for (let i = 1; i < metaBallArr.length; i++){
+			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 0.1);
+			metaBallArr[i].updatePos();
+		}
+
+		return val;
+		*/
+	}
 
 // CANVAS & RENDERER
 	const canvas = document.querySelector('#c');
@@ -510,7 +668,7 @@ function main(){
 	const mouse = new THREE.Vector2();
 
 // CAMERA
-	const fov = 45;
+	const fov = 60;
 	const aspect = 2; // display aspect of the canvas
 	const near = 0.1;
 	const far = 5000;
@@ -518,13 +676,15 @@ function main(){
 
 	camera.position.set(0, 0, 200);
 
-	
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color(0xEEEEEE);
 
 	renderer.render(scene, camera);
 
-// MARCHING CUBES
-	let voronoiCube = new MarchingCubes(100, 100, 100, 2.5, 2.5, 2.5, 0, 0, 0, voronoi, 0.5);
-	voronoiCube.updateCubes();
+
+	let metaBalls = new MarchingCubes(200, 200, 200, 15, 15, 15, 0, 0, 0, metaBall1, 0.5);
+	metaBalls.updateCubes();
+	
 
 // LIGHTS
 	let dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -555,20 +715,17 @@ function main(){
 		time *= 0.001;
 		step += 1;
 
-		
-
-		
-
-		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
+		stats.update();
 
 
-		//dirLight.position.set(50 * Math.sin(time), 50 * Math.cos(time), 0);
+		metaBalls.updateCubes();
+
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
 		}
-
+		
 		renderer.render(scene, camera);
 		requestAnimationFrame(render);
 	}
@@ -593,6 +750,16 @@ function main(){
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         //debugCube.position.set(mouse.x, mouse.y);
     }
+
+	function initStats(){
+		stats = new Stats();
+	  	stats.setMode(0);
+	  	stats.domElement.style.position = 'absolute';
+	  	stats.domElement.style.left = '0px';
+	  	stats.domElement.style.top = '0px';
+	  	document.body.appendChild(stats.domElement);
+	  	return stats;
+	}
 }
 
 window.onload = main;

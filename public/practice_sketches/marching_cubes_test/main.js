@@ -402,6 +402,7 @@ class MarchingCubes{
 			this.pushedToScene = true;
 			this.totalGeom.dispose();
 			this.material.dispose();
+
 		}
 		else{
 			let ref = scene.getObjectByName("totalMesh" + this.id);
@@ -422,11 +423,19 @@ class MarchingCubes{
 
 		//console.log(scene.getObjectByName("totalMesh" + this.id).geometry);
 		// reset
+
+		// reseting attributes
 		this.hashMap.clear();
 		this.vertices = [];
 		this.indices = [];
 		this.indexCount.reset();
+		
+	}
+
+	// use this for instances that aren't updated every frame
+	manageResources(){	
 		this.totalMesh.geometry.dispose();
+		this.totalMesh.material.dispose();
 	}
 
 	useDifferentHashFunc(){
@@ -691,7 +700,7 @@ function main(){
 
 
 	let objArr = [];
-	let objNum = 10;
+	let objNum = 3;
 	for (let i = 0; i < objNum; i++){
 		seedAlt += 10;
 		let objectCubes1 = new MarchingCubes(
@@ -702,6 +711,7 @@ function main(){
 			0,
 			randomSphereFunc, 0.9
 		);
+		objectCubes1.updateCubes();
 		objectCubes1.useDifferentHashFunc = false;
 		objArr.push(objectCubes1);
 	}
@@ -757,6 +767,7 @@ function main(){
 		//cubes.getMesh().position.set(50 * Math.sin(time), 0, 0);
 		//console.log(cubes);
 		//objectCubes1.updateCubes();
+		
 		objArr.forEach(function(o, i){
 			o.updateCubes();
 			o.getMesh().position.set(100 * Math.cos(time + i * Math.PI * 0.66),  
@@ -768,6 +779,12 @@ function main(){
 			o.getMesh().rotation.z = rot;
 		});
 
+
+
+		terrainArr.forEach(function(t){
+			t.manageResources();
+		});
+
 /*
 		outerObj.updateCubes();
 		let rot = -step * 0.01;
@@ -775,6 +792,7 @@ function main(){
 		outerObj.getMesh().rotation.y = rot;
 		outerObj.getMesh().rotation.z = rot;
 */
+
 
 		if (step % 20 == 0){
 			terrainIndex++;
