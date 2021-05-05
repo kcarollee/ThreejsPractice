@@ -1,5 +1,4 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
-import {BufferGeometryUtils} from "https://cdn.jsdelivr.net/npm/three@0.124.0/examples/jsm/utils/BufferGeometryUtils.js";
 let step = 0;
 let scene;
 let seedAlt = 0;
@@ -301,12 +300,15 @@ class MarchingCubes{
 				side: THREE.DoubleSide,
 			}),
 
+			// when using envMap, TURN OFF THREE.DOUBLESIDE
+
 			new THREE.MeshBasicMaterial({ 
 				transparent: false, 
 				opacity: 0.7, 
-				side: THREE.DoubleSide,
+				refractionRatio: 0.9,
+				//side: THREE.DoubleSide,
 				wireframe: false,
-				map: texture
+				envMap: texture
 				//flatShading: true
 			}),
 
@@ -424,10 +426,10 @@ class MarchingCubes{
 			ref.geometry.attributes.position.array.forEach(function(n, i){
 				switch(i % 3){
 					case 0: // x
-						u.push(mapLinear(n, -testSpace.width * 0.5, testSpace.width * 0.5, 0, 1)); 
+						u.push(mapLinear(n, -testSpace.width * 0.5, testSpace.width * 0.5, 0.0, 1.0)); 
 						break;
-					case 1: // y
-						u.push(mapLinear(n, -testSpace.height * 0.5, testSpace.height * 0.5, 0, 1)); 
+					case 2: // y
+						u.push(mapLinear(n, -testSpace.height * 0.5, testSpace.height * 0.5, 0.0, 1.0)); 
 						break;
 				}
 			});
@@ -439,6 +441,7 @@ class MarchingCubes{
 			ref.geometry.computeVertexNormals();
 			ref.geometry.attributes.position.needsUpdate = true;
 			ref.geometry.attributes.normal.needsUpdate = true;
+			ref.geometry.attributes.uv.needsUpdate = true;
 
 			// disposing the material after being done with it is also a must.
 			ref.geometry.dispose();
@@ -513,9 +516,7 @@ function main(){
 	noise.seed(Math.random());
 // 
 	texture = new THREE.TextureLoader().load("test.png");
-	//texture.wrapS = THREE.RepeatWrapping;
-	//texture.wrapT = THREE.RepeatWrapping;
-	//initStats();
+	texture.mapping = THREE.EquirectangularRefractionMapping;
 
 
 // TEST SHAPE FUNCTIONS
@@ -565,12 +566,12 @@ function main(){
 	camera.position.set(0, 0, 200);
 
 	scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xbbccbb);
+	scene.background = texture;
 
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(240, 240, 240, 10, 10, 10, 0, 0, 0, noiseFunc1, 0.0);
+	let marchingCubes = new MarchingCubes(240, 240, 240, 12, 12, 12, 0, 0, 0, noiseFunc1, 0.0);
 	marchingCubes.updateCubes();
 	
 
@@ -617,7 +618,7 @@ function main(){
 		
 
 		marchingCubes.updateCubes();
-		//metaBalls.updateShaderMaterial();
+		
 
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
