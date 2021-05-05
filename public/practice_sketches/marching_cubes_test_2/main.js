@@ -25,9 +25,8 @@ class Cube{
     	this.centerY = centerY;
     	this.centerZ = centerZ;
     	this.cubeVertArr = []; // [x0, y0, z0, x1, y1, z1..., x7, y7, z7]
-    	this.meshVertArr = [];
-    	this.meshNormalsArr = [];
-    	this.mesh;
+
+
 
     	this.width = w;
     	this.height = h;
@@ -103,12 +102,12 @@ class Cube{
     				break;
     		}
     	}
-    	//console.log(this.cubeVertArr);
     }
 
 
     // f is a shape function that takes x, y, z as arguments
     // threshold is a threshold value over which we define as being 'inside' (1)
+    // if f is a perlin noise function, it yields a value between -1 and 1.
     setConfigIndex(f, threshold){
     	// start from vert # 7 since that's how the configIndex is generated.
     	for (let i = 7; i > -1; i--){
@@ -117,19 +116,15 @@ class Cube{
     		let z = this.cubeVertArr[i * 3 + 2];
     		if (f(x, y, z) > threshold) {
     			this.configIndex |= 1 << i;
-
-    			// if f is a perlin noise function, it yields a value between -1 and 1.
     		}
     	}
-    	//console.log(this.configIndex);
+    	
 
     	// set the array of triangulation edge indices based on the configIndex.
     	this.triangulationEdgeIndices = Cube.triangulationTable[this.configIndex];
-    	//console.log(this.triangulationEdgeIndices);
     }
 
-    setMeshVertices(f, threshold, interpolate, hashMap, vertices,  indices, uvs, index, useDifferentHashFunc = false, funcIndex = 0){
-
+    setMeshVertices(f, threshold, interpolate, hashMap, vertices,  indices, index, useDifferentHashFunc = false, funcIndex = 0){
     	let tempForNormals = [];
     	for (let i = 0; i < 16; i++){
     		if (this.triangulationEdgeIndices[i] == -1){
@@ -160,13 +155,11 @@ class Cube{
     		// coordinates of the point between the two vertices
     		let mx, my, mz;
     		
-
-    		// hashMap
-
-    		
+    		// hash value. 
     		let hn;
-    		// THIS IS PERFECT HASHING
+    		// THIS IS PERFECT HASHING, as in this function gaurantees that every vertex is paired with an unique index. 
     		if (!useDifferentHashFunc) hn = this.id * 10000000 + edgeIndex;
+    		// the functions below yields overlapping values for some of the vertices, resulting in distorted shapes.
     		else {
     			let hx, hy, hz;
     			hx = v1x + v2x;
@@ -191,7 +184,7 @@ class Cube{
     		// if the vertex hasn't been used yet, push the vertex to the vertices array
     		// push the index into the indices array and increment it.
     		if (!hashMap.has(hn)){    			
-    			// 3.5. get the intepolated point between the two vertices
+    			// 3. get the intepolated point between the two vertices
     			if (interpolate){
     				let v1f = f(v1x, v1y, v1z);
     				let v2f = f(v2x, v2y, v2z);
@@ -211,7 +204,7 @@ class Cube{
     					mz = v2z + (v1z - v2z) * r;
     				}
     			}
-    			// 3. get the midpoint of the two vertices
+    			// 3.5 else get the midpoint of the two vertices
     			else{
     				mx = (v1x + v2x) * 0.5;
 					my = (v1y + v2y) * 0.5;
@@ -219,29 +212,19 @@ class Cube{
     			}
     			hashMap.set(hn, {index: index.getValue()});
     			vertices.push(mx, my, mz);
-
-    			let uvIndex = (index.getValue() % 4) * 2;
-    			//uvs.push(Cube.uvs[uvIndex], Cube.uvs[uvIndex + 1]);
     			indices.push(index.getValue());
     			index.increment();
     		}
-
     		// else the vertex has been used. 
     		// no need to push the vertex to the vertices array -> solves the redundancy issue
     		// push the index of the corresponding vertex into the indices array
     		else indices.push(hashMap.get(hn).index);
-    			
-    		// 4. push the coordinates of the resulting point to meshVertArr
-    		//this.meshVertArr.push(mx, my, mz);
     	}
 
     }
 
     reset(){
-    	//if (!this.empty) this.mesh.geometry.dispose();
     	this.empty = false;
-    	this.meshVertArr = [];
-    	this.meshNormalsArr = [];
     	this.configIndex = 0;
     	this.normalsCount = 0;
     	
@@ -309,19 +292,10 @@ class MarchingCubes{
 		this.marchingCubes = [];
 		this.initCubes();
 		
-		this.totalMesh;
+		this.marchingCubesMesh;
 		this.setCubes();
 
-		this.vertShader = document.getElementById('vert').innerHTML;
-		this.fragShader = document.getElementById('frag').innerHTML;
-		this.uniforms = {
-			time: {type: 'f', value: 0},
-			resolution: {type: 'v2', value: new THREE.Vector2()},
-
-		}
-		this.uniforms.resolution.value.x = window.innerWidth;
-		this.uniforms.resolution.value.y = window.innerHeight;
-
+	
 		this.materialArr = [
 			new THREE.MeshNormalMaterial({
 				side: THREE.DoubleSide,
@@ -341,23 +315,13 @@ class MarchingCubes{
 			 	side: THREE.DoubleSide
 			}),
 
-			new THREE.ShaderMaterial({
-			 	uniforms: this.uniforms,
-			 	vertexShader: this.vertShader,
-			 	fragmentShader: this.fragShader,
+			new THREE.MeshNormalMaterial({
 			 	side: THREE.DoubleSide
-			})
+			}),
 		];
 
 		this.material = this.materialArr[1];
 
-
-/*
-		this.material = new THREE.MeshLambertMaterial({
-			color: 0xFCFCAC,
-			flatShading: true
-		});
-*/
 		this.interpolate = true;
 
 		this.id = ++MarchingCubes.id;
@@ -366,11 +330,11 @@ class MarchingCubes{
 		this.useDifferentHashFunc = false;
 		this.hashFuncIndex = 0;
 
-		this.pushedToScene = false;
+		this.addedToScene = false; // set to true as soon as mesh is added to scene
 	}
 
 	updateShaderMaterial(){
-		let ref = scene.getObjectByName("totalMesh" + this.id);
+		let ref = scene.getObjectByName("marchingCubesMesh" + this.id);
 		ref.material.uniforms.time.value = step * 0.01;
 	}
 
@@ -406,7 +370,6 @@ class MarchingCubes{
 
 	updateCubes(){
 		
-		//scene.remove(scene.getObjectByName("totalMesh" + this.id));
 		
 		let func = this.shapeFunc;
 		let interpolate = this.interpolate;
@@ -418,52 +381,64 @@ class MarchingCubes{
 		let uvs = this.uvs;
 		let useDifferentHashFunc = this.useDifferentHashFunc;
 		let hashFuncIndex = this.hashFuncIndex;
+		
+
+		// note that the vertices and indices arrays are passed as arguments to the cubes, but not the uv array.
+		// the uv array is filled AFTER vertices and indices are calculated. 
 		this.marchingCubes.forEach(function(c){
 			c.reset();
 			c.setConfigIndex(func, threshold);
 			c.setMeshVertices(func, threshold, interpolate, hashMap, 
-				vertices, indices, uvs, index, 
+				vertices, indices, index, 
 				useDifferentHashFunc, hashFuncIndex);
 		});
 
-		
 			
 		let vertFloat = new Float32Array(this.vertices);
 		let uvFloat = new Float32Array(this.uvs);
-		// this is the best i could do for now.
-		if (!this.pushedToScene) {
+		// this is the best i could do for now for optimization.
+		if (!this.addedToScene) {
 			this.totalGeom = new THREE.BufferGeometry();
 			this.totalGeom.setAttribute('position', new THREE.BufferAttribute(vertFloat, 3));
 			this.totalGeom.setAttribute('uv', new THREE.BufferAttribute(uvFloat, 2));
 			this.totalGeom.setIndex(this.indices);
 			this.totalGeom.computeVertexNormals();
-			this.totalMesh = new THREE.Mesh(this.totalGeom, this.material);
-			this.totalMesh.name = "totalMesh" + this.id;
-			scene.add(this.totalMesh);
-			this.pushedToScene = true;
+			this.marchingCubesMesh = new THREE.Mesh(this.totalGeom, this.material);
+			this.marchingCubesMesh.name = "marchingCubesMesh" + this.id;
+			scene.add(this.marchingCubesMesh);
+			this.addedToScene = true;
+
 			this.totalGeom.dispose();
 			this.material.dispose();
-
 		}
 		else{
-			let ref = scene.getObjectByName("totalMesh" + this.id);
-			//ref.geometry.setDrawRange(0, this.vertices.length);
+			let ref = scene.getObjectByName("marchingCubesMesh" + this.id); // reference to the mesh in scene
+			
 			ref.geometry = new THREE.BufferGeometry();
 			ref.geometry.setAttribute('position', new THREE.BufferAttribute(vertFloat, 3));
-			ref.geometry.computeVertexNormals();
+			
 
+			// push only the x and y coordinates of the position array.
 			let u = this.uvs;
+			let testSpace = this.testSpace;
 			ref.geometry.attributes.position.array.forEach(function(n, i){
-				if (i % 3 != 1) u.push(mapLinear(n, -100, 100, 0, 1));
+				switch(i % 3){
+					case 0: // x
+						u.push(mapLinear(n, -testSpace.width * 0.5, testSpace.width * 0.5, 0, 1)); 
+						break;
+					case 1: // y
+						u.push(mapLinear(n, -testSpace.height * 0.5, testSpace.height * 0.5, 0, 1)); 
+						break;
+				}
 			});
 			uvFloat = new Float32Array(this.uvs);
 			ref.geometry.setAttribute('uv', new THREE.BufferAttribute(uvFloat, 2));
+
 			ref.geometry.setIndex(this.indices);
-			
+			// COMPUTE VERTICES AFTER SETTING THE INDICES
+			ref.geometry.computeVertexNormals();
 			ref.geometry.attributes.position.needsUpdate = true;
 			ref.geometry.attributes.normal.needsUpdate = true;
-
-			
 
 			// disposing the material after being done with it is also a must.
 			ref.geometry.dispose();
@@ -471,22 +446,18 @@ class MarchingCubes{
 		}
 
 
-		//console.log(scene.getObjectByName("totalMesh" + this.id).geometry);
-		// reset
-
 		// reseting attributes
 		this.hashMap.clear();
 		this.vertices = [];
 		this.indices = [];
 		this.uvs = [];
-		this.indexCount.reset();
-		
+		this.indexCount.reset();	
 	}
 
 	// use this for instances that aren't updated every frame
 	manageResources(){	
-		this.totalMesh.geometry.dispose();
-		this.totalMesh.material.dispose();
+		this.marchingCubesMesh.geometry.dispose();
+		this.marchingCubesMesh.material.dispose();
 	}
 
 	useDifferentHashFunc(){
@@ -498,7 +469,7 @@ class MarchingCubes{
 	}
 
 	getMesh(){
-		return this.totalMesh;
+		return this.marchingCubesMesh;
 	}
 
 
@@ -548,25 +519,7 @@ function main(){
 
 
 // TEST SHAPE FUNCTIONS
-	const f1 = (x, y, z) =>{
-		let val = 10000.0 / 
-			(
-				Math.pow(x, 2) +
-				Math.pow(y, 2) + 
-				Math.pow(z, 2)
-			);
-		return  val > 999 ? 1 : val;
-	} 
-
-	const f2 = (g, h) => {
-		console.log(g);
-		return g(1, 1, 1) + h(2, 2, 2);
-	}
-
-	const f3 = (x, y, z) => {
-		return Math.sin(x * 1 + y * 1 + z * z);
-	}
-
+	
 	const noiseFunc1 = (x, y, z) =>{
 		let nx = 0.01;
 		let ny = 0.01;
@@ -579,24 +532,7 @@ function main(){
 		return n;
 	}
 
-	const noiseFunc2 = (x, y, z) =>{
-		let nx = 0.01;
-		let ny = 0.01;
-		let nz = 0.01;
-
-		let n = noise.simplex3(x * nx + step * 0.01, y * ny + step * 0.01, z * nz + step * 0.01);
-
-		let v = Math.cos(x * y * 100 + n);
-		
-		return v;
-	}
-
-	const sphereFunc1 = (x, y, z) => {
-		let r = 3;
-		let ds = x*x + y*y + z*z;
-		let m = mapLinear(ds, 0, r*r, -1, 1);
-		return m;
-	}
+	
 
 	const randomSphereFunc = (x, y, z) => {
 		let r = 50;
@@ -609,111 +545,9 @@ function main(){
 		return m;
 	}
 
-	const randomSphereFunc2 = (x, y, z) => {
-		let r = 450;
-		let c = 0.0008;
-		let v = 0.009;
-		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
-		r += 100.0 * n;
-		let ds = x*x + y*y + z*z;
-		let m = mapLinear(ds, 0, r*r, -1, 1);
-		return m;
-	}
-
-	const terrainTest = (x, y, z) => {
-
-		let c1 = 20.0;
-		let nc = 0.0025;
-		let nc2 = 0.008;
-		let v = 0.01;
-
-		let octaves = 12;
-		let noiseSum = 0;
-		let nc3 = 0.01;
-		for (let i = 0; i < octaves; i++){
-			noiseSum += noise.simplex2(x * i * nc3 + step * v + seedAlt, z * i * nc3 + step * v + seedAlt);
-		}
-		noiseSum /= octaves;
+	
 
 
-		
-		let val = y - c1 * noiseSum;
-
-		val += 50 * noise.simplex3(x * nc2 + step * v + seedAlt, y * nc2 + step * v + seedAlt, z * nc2 + step * v + seedAlt);
-		//val += 10 * noise.simplex3(val * nc2 * x, val * nc2 * y, val * nc2 * z);
-		//val = Math.floor(2.0 * val);
-		let m = mapLinear(val, -240 - c1, 240 + c1, -1, 1);
-		return m;
-	}
-
-
-
-// METABALL
-
-	class MetaBall{
-		constructor(centerX, centerY, centerZ, radius){
-			this.centerX = centerX;
-			this.centerY = centerY;
-			this.centerZ = centerZ;
-			this.initX = centerX;
-			this.initY = centerY;
-			this.initZ = centerZ;
-			this.radius = radius;
-			this.initR = radius;
-			this.randX = Math.random() * 10;
-			this.randY = Math.random() * 10;
-			this.randZ = Math.random() * 10;
-			this.randD = Math.random() * 50
-		}	
-
-		updatePos(){
-			this.centerX = this.initX + this.randD * Math.sin(step * 0.1 + this.randX);
-			this.centerY = this.initY + this.randD * Math.sin(step * 0.1 + this.randY);
-			this.centerZ = this.initZ + this.randD * Math.sin(step * 0.1 + this.randZ);
-			this.radius = this.initR + Math.sin(step * 0.1 + this.randZ);
-		}
-
-		getValue(x, y, z){
-			let dx = x - this.centerX;
-			let dy = y - this.centerY;
-			let dz = z - this.centerZ;
-
-			let dist = dx * dx + dy * dy + dz * dz;
-			return this.radius / Math.sqrt(dist);
-		}
-	}
-
-	let metaBallNum = 10;
-	let metaBallArr = [];
-	for (let i = 0; i < metaBallNum; i++){
-		let m = new MetaBall(Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 20 + 20);
-		metaBallArr.push(m);
-	}
-
-	const metaBall1 = (x, y, z) => {
-		
-		let max = -99999999;
-		metaBallArr.forEach(function(m){
-			let val = m.getValue(x, y, z);
-			//val += 10000* noise.simplex3(x, y, z);
-			m.updatePos();
-			if (val > max) max = val;
-		});
-
-		return max;
-		
-		
-		/*
-		let val = metaBallArr[0].getValue(x, y, z);
-		metaBallArr[0].updatePos();
-		for (let i = 1; i < metaBallArr.length; i++){
-			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 0.1);
-			metaBallArr[i].updatePos();
-		}
-
-		return val;
-		*/
-	}
 
 // CANVAS & RENDERER
 	const canvas = document.querySelector('#c');
@@ -736,8 +570,8 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let metaBalls = new MarchingCubes(240, 240, 240, 10, 10, 10, 0, 0, 0, noiseFunc1, 0.0);
-	metaBalls.updateCubes();
+	let marchingCubes = new MarchingCubes(240, 240, 240, 10, 10, 10, 0, 0, 0, noiseFunc1, 0.0);
+	marchingCubes.updateCubes();
 	
 
 // LIGHTS
@@ -766,11 +600,11 @@ function main(){
 		cubes.interpolate = !cubes.interpolate;
 	});
 	gui.add(controls, 'switchFunction').onChange(function(e) {
-		if (e) metaBalls.setShapeFunc( randomSphereFunc);
-		else metaBalls.setShapeFunc( noiseFunc1);
+		if (e) marchingCubes.setShapeFunc( randomSphereFunc);
+		else marchingCubes.setShapeFunc( noiseFunc1);
 	});
 	gui.add(controls, 'threshold', 0, 1.0).onChange(function(e) {
-		metaBalls.setThreshold(e);
+		marchingCubes.setThreshold(e);
 	});
 
 
@@ -782,7 +616,7 @@ function main(){
 
 		
 
-		metaBalls.updateCubes();
+		marchingCubes.updateCubes();
 		//metaBalls.updateShaderMaterial();
 
 		if (resizeRenderToDisplaySize(renderer)){
