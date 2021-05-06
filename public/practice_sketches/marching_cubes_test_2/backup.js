@@ -23,7 +23,7 @@ class Cube{
     	this.centerX = centerX;
     	this.centerY = centerY;
     	this.centerZ = centerZ;
-    	this.cubeVertArr = []; // [x0, y0, z0, x1, y1, z1..., x7, y7, z7]
+    	this.cubeVertArr = []; // [x0, y0, z0, x1, y1, z1.., x7, y7, z7]
     	this.meshVertArr = [];
     	this.meshNormalsArr = [];
     	this.mesh;
