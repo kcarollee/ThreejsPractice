@@ -7,36 +7,70 @@
     <script src="edge_indices.js"></script>
     <script src="triangulation_table.js"></script>
     <script src="perlin.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.3.1/p5.min.js"></script>
     <script id="vert" type="x-shader/x-vertex">
-      uniform float time;
-      varying vec2 vUv;
-      varying float height;
+      // wouldn't have been possible without the following link:
+      // https://tympanus.net/codrops/2019/10/29/real-time-multiside-refraction-in-three-steps/
 
+      uniform float time;
+      
+      varying vec2 vUv; // uv coordinates of each pixel
+      varying vec3 norm;
+      varying vec3 eyeVector;
+      varying vec3 worldNormal;
+      
       void main()
       {
-         // vUv = uv;
+          vUv = uv;
+          norm = normalize(normal);
           vec3 posChanged = position;
-          height = 0.5 + 0.5 * sin(position.y );
-      
+
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          eyeVector = normalize(worldPosition.xyz - cameraPosition);
+          worldNormal = normalize(modelViewMatrix * vec4(normal, 0.0)).xyz;
+         
+          
           gl_Position = projectionMatrix * modelViewMatrix * vec4(posChanged,1.0);
       }
 
   </script>
 
   <script id="frag" type="x-shader/x-fragment">
+      // wouldn't have been possible without the following link:
+      // https://tympanus.net/codrops/2019/10/29/real-time-multiside-refraction-in-three-steps/
+
       precision highp float;
       uniform float time;
       uniform vec2 resolution;
-      uniform vec3 normal;
-      varying vec2 vUv;
+      uniform sampler2D tex;
 
-      varying float height;
-      void main(void)
+      varying vec2 vUv;
+      varying vec3 norm;
+      varying vec3 eyeVector;
+      varying vec3 worldNormal;
+
+      float fresnel(vec3 eyeVector, vec3 worldNormal){
+        return  pow(1.0 + dot(eyeVector, worldNormal), 1.0); 
+      }
+
+      void main(void) 
       {
-       vec2 uv = vUv;
-        vec3 outCol = vec3(height, .0, .0);
+        vec2 uv = vUv;
+        vec2 sc = gl_FragCoord.xy / resolution; // screen coordinates
+        vec3 n = worldNormal;
+        vec3 refracted = refract(eyeVector, n, 1.0 / 0.89);
+        sc += refracted.xy  *0.25;
+        uv += refracted.xy;
+
+        vec4 t =  texture2D(tex, sc);
+
+        float f = fresnel(eyeVector, n);
+
+
         
-  
+        vec3 outCol = t.rgb;
+        
+        outCol = mix(outCol, vec3(1.0), f);
         gl_FragColor = vec4(outCol, 1.0);
       }
 

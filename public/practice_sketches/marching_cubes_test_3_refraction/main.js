@@ -4,6 +4,10 @@ let scene;
 let seedAlt = 0;
 let stats;
 let texture;
+let vertShader, fragShader;
+let uniforms;
+
+let p5Canvas;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -308,7 +312,7 @@ class MarchingCubes{
 				refractionRatio: 0.9,
 				//side: THREE.DoubleSide,
 				wireframe: false,
-				envMap: texture
+				
 				//flatShading: true
 			}),
 
@@ -317,12 +321,16 @@ class MarchingCubes{
 			 	side: THREE.DoubleSide
 			}),
 
-			new THREE.MeshNormalMaterial({
-			 	side: THREE.DoubleSide
+			new THREE.ShaderMaterial({
+			 	uniforms: uniforms,
+			 	vertexShader: vertShader,
+			 	fragmentShader: fragShader,
+			 	//side: THREE.DoubleSide
+			 	
 			}),
 		];
 
-		this.material = this.materialArr[1];
+		this.material = this.materialArr[3];
 
 		this.interpolate = true;
 
@@ -439,6 +447,7 @@ class MarchingCubes{
 			ref.geometry.setIndex(this.indices);
 			// COMPUTE VERTICES AFTER SETTING THE INDICES
 			ref.geometry.computeVertexNormals();
+			
 			ref.geometry.attributes.position.needsUpdate = true;
 			ref.geometry.attributes.normal.needsUpdate = true;
 			ref.geometry.attributes.uv.needsUpdate = true;
@@ -510,15 +519,59 @@ class IndexObject{
 	}
 }
 
-
+let p5texture;
+let p5Font;
 function main(){
+
+// P5 SKETCH
+	const p5Sketch = (sketch) => {
+
+		let textSize = 100;
+        sketch.setup = () => {
+			sketch.createCanvas(1000, 1000);
+			sketch.textSize(textSize);
+			
+		}
+		sketch.draw = () => {
+            sketch.smooth();
+			sketch.background(0);
+            
+           
+            sketch.noStroke();
+           
+            let rectNum = 100;
+            let rectHeight = sketch.height / rectNum;
+            for (var i = 0; i < rectNum; i++){
+            	sketch.fill(i * textSize  *0.1, 255 - i * textSize * 0.1, 100 + 100 * Math.sin(sketch.frameCount));
+                sketch.text("CREATIVE BANKRUPTCY", 0, i * textSize);
+            }
+
+			if (p5texture) p5texture.needsUpdate = true;
+		}
+    };
 // NOISE
 	noise.seed(Math.random());
 // 
 	texture = new THREE.TextureLoader().load("test.png");
-	texture.mapping = THREE.EquirectangularRefractionMapping;
+	texture.wrapS = THREE.RepeatWrapping;
+	texture.wrapT = THREE.RepeatWrapping;
+	//texture.mapping = THREE.EquirectangularRefractionMapping;
+	p5Canvas = new p5(p5Sketch);
+	p5texture = new THREE.CanvasTexture(p5Canvas.canvas);
+	p5texture.wrapS = THREE.RepeatWrapping;
+	p5texture.wrapT = THREE.RepeatWrapping;
+	p5texture.needsUpdate = true;
 
-
+// SHADERS
+	vertShader = document.getElementById('vert').innerHTML;
+	fragShader = document.getElementById('frag').innerHTML;
+	uniforms = {
+		time: {type: 'f', value: 0.0},
+		resolution: {type: 'v2', value: new THREE.Vector2()},
+		tex: {type: 't', value: p5texture}
+	}
+	uniforms.resolution.value.x = window.innerWidth;
+	uniforms.resolution.value.y = window.innerHeight;
 // TEST SHAPE FUNCTIONS
 	
 	const noiseFunc1 = (x, y, z) =>{
@@ -540,7 +593,7 @@ function main(){
 		let c = 0.01;
 		let v = 0.003;
 		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
-		r += 150.0 * n;
+		r += 10.0 * n;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
 		return m;
@@ -562,16 +615,16 @@ function main(){
 	const near = 0.1;
 	const far = 5000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-
+	//const camera = new THREE.OrthographicCamera(window.innerWidth * -0.5, window.innerWidth * 0.5, window.innerHeight * 0.5, window.innerHeight  *-0.5, 1, 1000);
 	camera.position.set(0, 0, 200);
 
 	scene = new THREE.Scene();
-	scene.background = texture;
+	scene.background = p5texture;
 
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(240, 240, 240, 12, 12, 12, 0, 0, 0, noiseFunc1, 0.0);
+	let marchingCubes = new MarchingCubes(240, 240, 240, 10, 10, 10, 0, 0, 0, noiseFunc1, 0.0);
 	marchingCubes.updateCubes();
 	
 
@@ -618,7 +671,7 @@ function main(){
 		
 
 		marchingCubes.updateCubes();
-		
+		marchingCubes.updateShaderMaterial();
 
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;

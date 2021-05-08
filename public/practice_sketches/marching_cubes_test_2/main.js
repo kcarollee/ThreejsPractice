@@ -306,6 +306,7 @@ class MarchingCubes{
 				transparent: false, 
 				opacity: 0.7, 
 				refractionRatio: 0.9,
+				reflectivity: 0.8,
 				//side: THREE.DoubleSide,
 				wireframe: false,
 				envMap: texture
