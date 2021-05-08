@@ -62,6 +62,8 @@
         vec2 uv = vUv;
         vec2 sc = gl_FragCoord.xy / resolution; // screen coordinates
         vec3 n = worldNormal;
+
+        // make an r, g, b version of the line below for ca.
         vec3 refracted = refract(eyeVector, n, 1.0 / 0.89);
         vec4 texcopy = texture2D(tex, sc); // texture before refraction
 
@@ -69,7 +71,7 @@
         
         
 
-        sc += refracted.xy  * 0.25;
+        sc += refracted.xy  * 0.1;
         uv += refracted.xy;
 
         vec4 t =  texture2D(tex, sc);
@@ -85,15 +87,22 @@
 
         float cbd = 2.0; // chromatic aberration dist
 
-        vec4 rt = texture2D(tex, pc(vec2(cbd, .0)) + refracted.xy * 0.25);
+        vec4 rt = texture2D(tex, pc(vec2(cbd, .0)) + refracted.xy * 0.1);
         if (rt.r > 0.5) outCol.r += 1.0;
 
-        vec4 gt = texture2D(tex, pc(vec2(.0, cbd)) + refracted.xy * 0.25);
+        vec4 gt = texture2D(tex, pc(vec2(.0, cbd)) + refracted.xy * 0.1);
         if (gt.g > 0.5) outCol.g += 1.0;
 
-        vec4 bt = texture2D(tex, pc(vec2(-cbd, -cbd)) + refracted.xy * 0.25);
+        vec4 bt = texture2D(tex, pc(vec2(-cbd, -cbd)) + refracted.xy * 0.1);
         if (bt.b > 0.5) outCol.b += 1.0;
-        
+
+        // https://gamedev.stackexchange.com/questions/58408/how-would-you-implement-chromatic-aberration#:~:text=Chromatic%20aberration%20is%20caused%20when,channel%20in%20a%20fragment%20shader.&text=This%20is%20similar%20to%20how,that%20are%20reflective%20or%20refractive.
+        vec3 rRefVec = refract(eyeVector, n, 1.0 / 0.9);
+        vec3 gRefVec = refract(eyeVector, n , 1.0 / 0.91);
+        vec3 bRefVec = refract(eyeVector, n, 1.0 / 0.92);
+
+        vec3 ca;
+
         
         outCol = mix(outCol, vec3(1.0), f);
 
