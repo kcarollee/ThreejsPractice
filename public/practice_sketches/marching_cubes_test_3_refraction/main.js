@@ -7,7 +7,6 @@ let texture;
 let vertShader, fragShader;
 let uniforms;
 
-let p5Canvas;
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -521,22 +520,50 @@ class IndexObject{
 
 let p5texture;
 let p5Font;
+let p5Canvas;
 function main(){
 
 // P5 SKETCH
 	const p5Sketch = (sketch) => {
 
-		let textSize = 100;
-		sketch.preload = () => {
+		let textSize = 130;
+		let testString;
+		let mainFont;
+		class StringManager{
+			constructor(str, textSize, shiftInterval, posx, posy){
+				this.mainString = str + str;
+				this.textSize = textSize;
+				this.shiftInterval = shiftInterval;
+				this.posx = posx;
+				this.posy = posy;
+			}
+			shiftString(){
+				if (sketch.frameCount % this.shiftInterval == 0){
+					let size = this.mainString.length;
+					this.mainString = this.mainString[size - 1] + this.mainString.substring(0, size - 1);
+				}
+			}
+			getString(){
+				return this.mainString;
+			}
 
+			drawString(){
+
+			}
 		}
-		
+
         sketch.setup = () => {
-			sketch.createCanvas(1000, 1000);
+        	
+			sketch.createCanvas(window.innerWidth, window.innerHeight);
 			sketch.textSize(textSize);
-			
+			mainFont = sketch.loadFont('helvetica_bold.ttf', sketch.drawText);
+
+			testString = new StringManager("CREATIVEBANKRUPTCY", 150, 10);
 		}
 		sketch.draw = () => {
+			//console.log(testFont.font);
+			testString.shiftString();
+			console.log(testString.getString());
             sketch.smooth();
 			sketch.background(0);
             
@@ -544,23 +571,24 @@ function main(){
             sketch.noStroke();
             sketch.fill(255);
            
-            let rectNum = 100;
-            let rectHeight = sketch.height / rectNum;
+            let rectNum = 10;
             for (var i = 0; i < rectNum; i++){
             	//sketch.fill(i * textSize  *0.1, 255 - i * textSize * 0.1, 100 + 100 * Math.sin(sketch.frameCount));
-                sketch.text("CREATIVE BANKRUPTCY", 0, i * textSize);
+                sketch.text(testString.getString(), 0, i * textSize);
             }
 
 			if (p5texture) p5texture.needsUpdate = true;
 		}
+
+		// use callbacks instead of async functions to load assets.
+
+		sketch.drawText = (f) => {
+			sketch.textFont(f, textSize);
+		}
     };
 // NOISE
 	noise.seed(Math.random());
-// 
-	texture = new THREE.TextureLoader().load("test.png");
-	texture.wrapS = THREE.RepeatWrapping;
-	texture.wrapT = THREE.RepeatWrapping;
-	//texture.mapping = THREE.EquirectangularRefractionMapping;
+
 	p5Canvas = new p5(p5Sketch);
 	p5texture = new THREE.CanvasTexture(p5Canvas.canvas);
 	p5texture.wrapS = THREE.RepeatWrapping;
