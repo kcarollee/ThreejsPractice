@@ -50,7 +50,11 @@
       varying vec3 worldNormal;
 
       float fresnel(vec3 eyeVector, vec3 worldNormal){
-        return  pow(1.0 + dot(eyeVector, worldNormal), 1.0); 
+        return  pow(1.0 + dot(eyeVector, worldNormal), 2.0); 
+      }
+
+      vec2 pc(vec2 d){
+        return (gl_FragCoord.xy - d) / resolution.xy;
       }
 
       void main(void) 
@@ -59,18 +63,40 @@
         vec2 sc = gl_FragCoord.xy / resolution; // screen coordinates
         vec3 n = worldNormal;
         vec3 refracted = refract(eyeVector, n, 1.0 / 0.89);
-        sc += refracted.xy  *0.25;
+        vec4 texcopy = texture2D(tex, sc); // texture before refraction
+
+
+        
+        
+
+        sc += refracted.xy  * 0.25;
         uv += refracted.xy;
 
         vec4 t =  texture2D(tex, sc);
 
+        
+
+        
+
         float f = fresnel(eyeVector, n);
 
 
-        
         vec3 outCol = t.rgb;
+
+        float cbd = 2.0; // chromatic aberration dist
+
+        vec4 rt = texture2D(tex, pc(vec2(cbd, .0)) + refracted.xy * 0.25);
+        if (rt.r > 0.5) outCol.r += 1.0;
+
+        vec4 gt = texture2D(tex, pc(vec2(.0, cbd)) + refracted.xy * 0.25);
+        if (gt.g > 0.5) outCol.g += 1.0;
+
+        vec4 bt = texture2D(tex, pc(vec2(-cbd, -cbd)) + refracted.xy * 0.25);
+        if (bt.b > 0.5) outCol.b += 1.0;
+        
         
         outCol = mix(outCol, vec3(1.0), f);
+
         gl_FragColor = vec4(outCol, 1.0);
       }
 

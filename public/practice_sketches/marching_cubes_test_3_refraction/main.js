@@ -527,6 +527,10 @@ function main(){
 	const p5Sketch = (sketch) => {
 
 		let textSize = 100;
+		sketch.preload = () => {
+
+		}
+		
         sketch.setup = () => {
 			sketch.createCanvas(1000, 1000);
 			sketch.textSize(textSize);
@@ -538,11 +542,12 @@ function main(){
             
            
             sketch.noStroke();
+            sketch.fill(255);
            
             let rectNum = 100;
             let rectHeight = sketch.height / rectNum;
             for (var i = 0; i < rectNum; i++){
-            	sketch.fill(i * textSize  *0.1, 255 - i * textSize * 0.1, 100 + 100 * Math.sin(sketch.frameCount));
+            	//sketch.fill(i * textSize  *0.1, 255 - i * textSize * 0.1, 100 + 100 * Math.sin(sketch.frameCount));
                 sketch.text("CREATIVE BANKRUPTCY", 0, i * textSize);
             }
 
