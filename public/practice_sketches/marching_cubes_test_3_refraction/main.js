@@ -637,6 +637,12 @@ function main(){
 			if (p5texture) p5texture.needsUpdate = true;
 		}
 
+		sketch.windowResized = () => {
+			sketch.resizeCanvas(window.width, window.height);
+			sketch.createCanvas(window.innerWidth, window.innerHeight);
+			 p5texture.needsUpdate = true;
+		}
+
 		// use callbacks instead of async functions to load assets.
 
 		sketch.drawText = (f) => {
@@ -808,6 +814,14 @@ function main(){
 	  	document.body.appendChild(stats.domElement);
 	  	return stats;
 	}
+
+	function onResize(){
+    	camera.aspect = window.innerWidth / window.innerHeight;
+    	camera.updateProjectionMatrix();
+    	renderer.setSize(window.innerWidth, window.innerHeight);
+  	}
+  
+  	window.addEventListener('resize', onResize, false);
 }
 
 window.onload = main;
