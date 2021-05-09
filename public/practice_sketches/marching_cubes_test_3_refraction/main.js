@@ -526,11 +526,11 @@ function main(){
 // P5 SKETCH
 	const p5Sketch = (sketch) => {
 
-		let textSize = 120;
+		let textSize = 130;
 		let testString, testString2;
 		let mainFont;
 		let stringArr = [];
-		let stringNum = 10;
+		let stringNum = 8;
 		class StringManager{
 			constructor(str, textSize, posx, posy, mode){
 				this.mainString = str;
@@ -580,7 +580,7 @@ function main(){
 							
 							//sketch.textAlign(sketch.RIGHT);
 							if(this.textBoundary.x + this.textBoundary.w  > sketch.width){
-								this.posx -=  Math.abs(this.posx - sketch.width) / 10.0;
+								this.posx -=  Math.abs(sketch.width - this.textBoundary.w - this.posx) / 10.0;
 							}
 							//sketch.textAlign(sketch.RIGHT);
 							sketch.text(this.mainString, this.posx, this.posy);
@@ -603,17 +603,17 @@ function main(){
 
 		
 			for (let i = 0; i < stringNum; i++){
-				let r = Math.floor(Math.random() * 2);
+				let r = i % 2;
 
 				let str;
 				switch(r){
 					case 0:
-						str = new StringManager("CREATIVE", textSize, -800, textSize * i, 0);
+						str = new StringManager("CREATIVE", textSize, -2000, textSize * i, 0);
 						stringArr.push(str);
 					break;
 
 					case 1:
-						str = new StringManager("BANKRUPTCY", textSize, sketch.width + 800, textSize * i, 1);
+						str = new StringManager("BANKRUPTCY", textSize, sketch.width + 2000, textSize * i, 1);
 						stringArr.push(str);
 					break;
 				}
@@ -681,10 +681,10 @@ function main(){
 
 	const randomSphereFunc = (x, y, z) => {
 		let r = 50;
-		let c = 0.01;
+		let c = 0.012;
 		let v = 0.003;
 		let n = noise.simplex3(x * c + step * v + seedAlt, y * c + step * v + seedAlt, z * c + step * v + seedAlt);
-		r += 10.0 * n;
+		r += 30.0 * n;
 		let ds = x*x + y*y + z*z;
 		let m = mapLinear(ds, 0, r*r, -1, 1);
 		return m;
@@ -733,17 +733,21 @@ function main(){
 // GUI
 	const gui = new dat.GUI();
 	const controls = new function(){
+		/*
 		this.outputObj = function(){
 			scene.children.forEach(c => console.log(c));
 		}
 		this.interpolate = true;
+		*/
 		this.switchFunction = true;
 		this.threshold = 0.25;
 	}
+	/*
 	gui.add(controls, 'outputObj');
 	gui.add(controls, 'interpolate').onChange(function(e) {
 		cubes.interpolate = !cubes.interpolate;
 	});
+	*/
 	gui.add(controls, 'switchFunction').onChange(function(e) {
 		if (e) marchingCubes.setShapeFunc( randomSphereFunc);
 		else marchingCubes.setShapeFunc( noiseFunc1);
