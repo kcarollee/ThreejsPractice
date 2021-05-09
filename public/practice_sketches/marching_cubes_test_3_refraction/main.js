@@ -526,25 +526,68 @@ function main(){
 // P5 SKETCH
 	const p5Sketch = (sketch) => {
 
-		let textSize = 130;
-		let testString;
+		let textSize = 120;
+		let testString, testString2;
 		let mainFont;
+		let stringArr = [];
+		let stringNum = 10;
 		class StringManager{
-			constructor(str, textSize, shiftInterval, posx, posy){
-				this.mainString = str + str;
+			constructor(str, textSize, posx, posy, mode){
+				this.mainString = str;
 				this.textSize = textSize;
-				this.shiftInterval = shiftInterval;
+
 				this.posx = posx;
 				this.posy = posy;
+
+				this.initPosx = posx;
+				this.initPosy = posy;
+				this.textBoundary;
+				this.textBoundarySet = false;
+				this.mode = mode; // 0: left, 1: right
+				
 			}
-			shiftString(){
-				if (sketch.frameCount % this.shiftInterval == 0){
-					let size = this.mainString.length;
-					this.mainString = this.mainString[size - 1] + this.mainString.substring(0, size - 1);
+			
+			checkForBounds(){
+				if (mainFont.font !== undefined){
+					this.textBoundary = mainFont.textBounds(this.mainString, this.posx, this.posy, this.textSize);
 				}
 			}
-			getString(){
-				return this.mainString;
+			moveStringY(){
+				this.posy += 2;
+			}
+
+			resetPosition(){
+				if (this.posy > sketch.height + textSize){
+					this.posx = this.initPosx;
+					this.posy = 0;
+				}
+			}
+			
+			moveStringX(){
+				this.checkForBounds();
+				try{	
+					
+						if (this.mode == 0){
+
+							sketch.textAlign(sketch.LEFT);
+							if(this.textBoundary.x < 0){
+								this.posx += Math.abs(this.posx) / 5.0;
+							}
+							sketch.textAlign(sketch.LEFT);
+							sketch.text(this.mainString, this.posx, this.posy);
+							}
+						else if (this.mode == 1){
+							
+							//sketch.textAlign(sketch.RIGHT);
+							if(this.textBoundary.x + this.textBoundary.w  > sketch.width){
+								this.posx -=  Math.abs(this.posx - sketch.width) / 10.0;
+							}
+							//sketch.textAlign(sketch.RIGHT);
+							sketch.text(this.mainString, this.posx, this.posy);
+							
+						}
+					
+				}catch{}
 			}
 
 			drawString(){
@@ -558,12 +601,27 @@ function main(){
 			sketch.textSize(textSize);
 			mainFont = sketch.loadFont('helvetica_bold.ttf', sketch.drawText);
 
-			testString = new StringManager("CREATIVEBANKRUPTCY", 150, 10);
+		
+			for (let i = 0; i < stringNum; i++){
+				let r = Math.floor(Math.random() * 2);
+
+				let str;
+				switch(r){
+					case 0:
+						str = new StringManager("CREATIVE", textSize, -800, textSize * i, 0);
+						stringArr.push(str);
+					break;
+
+					case 1:
+						str = new StringManager("BANKRUPTCY", textSize, sketch.width + 800, textSize * i, 1);
+						stringArr.push(str);
+					break;
+				}
+			}
 		}
 		sketch.draw = () => {
-			//console.log(testFont.font);
-			testString.shiftString();
-			console.log(testString.getString());
+			
+	
             sketch.smooth();
 			sketch.background(0);
             
@@ -571,12 +629,11 @@ function main(){
             sketch.noStroke();
             sketch.fill(255);
            
-            let rectNum = 10;
-            for (var i = 0; i < rectNum; i++){
-            	//sketch.fill(i * textSize  *0.1, 255 - i * textSize * 0.1, 100 + 100 * Math.sin(sketch.frameCount));
-                sketch.text(testString.getString(), 0, i * textSize);
-            }
-
+           	stringArr.forEach(function (s, i){
+           		s.moveStringX();
+           		s.moveStringY();
+           		s.resetPosition();
+           	});
 			if (p5texture) p5texture.needsUpdate = true;
 		}
 
@@ -584,6 +641,7 @@ function main(){
 
 		sketch.drawText = (f) => {
 			sketch.textFont(f, textSize);
+
 		}
     };
 // NOISE
@@ -657,7 +715,7 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(240, 240, 240, 10, 10, 10, 0, 0, 0, noiseFunc1, 0.0);
+	let marchingCubes = new MarchingCubes(240, 240, 240, 12, 12, 12, 0, 0, 0, noiseFunc1, 0.0);
 	marchingCubes.updateCubes();
 	
 
