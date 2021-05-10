@@ -542,7 +542,9 @@ function main(){
 		sketch.draw = () => {
 			try{
 				p5Shader.setUniform('resolution', [sketch.width, sketch.height]);
-				sketch.shader(p5Shader);
+                p5Shader.setUniform('time', sketch.frameCount * 0.03);
+				
+                sketch.shader(p5Shader);
 				sketch.quad(-1, -1, 1, -1, 1, 1, -1, 1);
            	} catch{}
 			if (p5texture) p5texture.needsUpdate = true;
@@ -610,7 +612,8 @@ function main(){
 		return m;
 	}
 // METABALL
-
+// check out the following link:
+// https://takumi0125.github.io/threejsMarchingCubesMetaball/
 	class MetaBall{
 		constructor(centerX, centerY, centerZ, radius){
 			this.centerX = centerX;
@@ -640,7 +643,7 @@ function main(){
 			let dz = z - this.centerZ;
 
 			let dist = dx * dx + dy * dy + dz * dz;
-			return this.radius / Math.sqrt(dist);
+			return this.radius * 10.0 / Math.pow(Math.sqrt(dist), 2.0);
 		}
 	}
 
@@ -652,7 +655,7 @@ function main(){
 	}
 
 	const metaBall = (x, y, z) => {
-		/*
+		
 		let max = -99999999;
 		metaBallArr.forEach(function(m){
 			let val = m.getValue(x, y, z);
@@ -660,8 +663,9 @@ function main(){
 			if (val > max) max = val;
 		});
 		return max;
-		*/
 		
+        
+        /*
 		let val = metaBallArr[0].getValue(x, y, z);
 		metaBallArr[0].updatePos();
 		for (let i = 1; i < metaBallArr.length; i++){
@@ -670,7 +674,7 @@ function main(){
 		}
 
 		return val;
-		
+		*/
 	}
 	
 
@@ -697,7 +701,7 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(240, 240, 240, 12, 12, 12, 0, 0, 0, metaBall, 0.65);
+	let marchingCubes = new MarchingCubes(300, 300, 300, 15, 15, 15, 0, 0, 0, metaBall, 0.65);
 	marchingCubes.updateCubes();
 	
 
