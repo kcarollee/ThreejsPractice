@@ -19,7 +19,7 @@ float noise(vec2 n) {
 float metaball(vec2 uv, vec2 pos){
 	float dist = length(uv - pos);
     float val = 0.01 / pow(dist, 1.2);
-    val = smoothstep(0.1, 0.9, val);
+   // val = smoothstep(0.1, 0.9, val);
     return val;
 }
 

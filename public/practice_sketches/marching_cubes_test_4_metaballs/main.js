@@ -17,8 +17,8 @@ function clamp(x, min, max){
 	return Math.min(Math.max(x, min), max);
 }
 function smoothUnion(x, y, k){
-	let h = clamp(0.5 + 0.5 * (y - x) / k, 0, 1);
-	return mix(x, y, h) - k * h * (1.0 - h);
+	let h = clamp(0.5 + 0.5 * (y - x) / (1 - k), 0, 1);
+	return mix(x, y, h) - (1 - k) * h * (1.0 - h);
 }
 
 class Cube{
@@ -586,7 +586,7 @@ function main(){
 	uniforms.resolution.value.x = window.innerWidth;
 	uniforms.resolution.value.y = window.innerHeight;
 // TEST SHAPE FUNCTIONS
-	
+	let smoothUnionVal = 0.1;
 	const noiseFunc1 = (x, y, z) =>{
 		let nx = 0.01;
 		let ny = 0.01;
@@ -614,6 +614,8 @@ function main(){
 // METABALL
 // check out the following link:
 // https://takumi0125.github.io/threejsMarchingCubesMetaball/
+// check out the addBall function in the following link:
+// https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/objects/MarchingCubes.js
 	class MetaBall{
 		constructor(centerX, centerY, centerZ, radius){
 			this.centerX = centerX;
@@ -627,35 +629,67 @@ function main(){
 			this.randX = Math.random() * 10;
 			this.randY = Math.random() * 10;
 			this.randZ = Math.random() * 10;
-			this.randD = Math.random() * 50
+            this.randD = Math.random() * 5;
+            
+            this.movementRadius = Math.random() * 10.0;
+            this.movementRadiusInit = this.movementRadius;
+            
 		}	
 
 		updatePos(){
+
+            
 			this.centerX = this.initX + this.randD * Math.sin(step * 0.1 + this.randX);
 			this.centerY = this.initY + this.randD * Math.sin(step * 0.1 + this.randY);
 			this.centerZ = this.initZ + this.randD * Math.sin(step * 0.1 + this.randZ);
-			this.radius = this.initR + Math.sin(step * 0.1 + this.randZ);
-		}
+           // this.radius = this.initR + Math.sin(step * 0.1 + this.randZ);
+            
+            /*
+            let randDeg1 = noise.simplex2(step * 0.01 + this.randX, this.randY) * Math.PI * 2;
+            let randDeg2 = 0; //noise.simplex2(step * 0.01 + this.randY, this.randZ);
+            let pos = this.getPos(randDeg1, randDeg2);
+            this.centerX = pos[0];
+            this.centerY = pos[1];
+            this.centerZ = pos[2];
+            */
+        }
+        
+        getPos(deg1, deg2){
+            let x = this.movementRadius * Math.cos(deg1) * Math.cos(deg2);
+            let y = this.movementRadius * Math.sin(deg1) * Math.cos(deg2);
+            let z = this.movementRadius * Math.sin(deg2);
+        
+            return [x, y, z];
+        }
 
 		getValue(x, y, z){
 			let dx = x - this.centerX;
 			let dy = y - this.centerY;
 			let dz = z - this.centerZ;
 
-			let dist = dx * dx + dy * dy + dz * dz;
-			return this.radius * 10.0 / Math.pow(Math.sqrt(dist), 2.0);
+            let dist = dx * dx + dy * dy + dz * dz;
+			return this.radius / dist;
 		}
 	}
 
 	let metaBallNum = 5;
 	let metaBallArr = [];
 	for (let i = 0; i < metaBallNum; i++){
-		let m = new MetaBall(Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 200 - 100, Math.random() * 20 + 20);
+        let m = new MetaBall(
+            Math.random() * 20.0 - 10.0, 
+            Math.random() * 20.0 - 10.0, 
+            Math.random() * 20.0 - 10.0,
+            Math.random() * 2.0 + 2.0
+        );
 		metaBallArr.push(m);
-	}
+    }
+    
+    const planeX = (x, y, z) => {
+        return x;
+    }
 
 	const metaBall = (x, y, z) => {
-		
+		/*
 		let max = -99999999;
 		metaBallArr.forEach(function(m){
 			let val = m.getValue(x, y, z);
@@ -663,18 +697,28 @@ function main(){
 			if (val > max) max = val;
 		});
 		return max;
-		
+        */
         
-        /*
+        
+        
+        
 		let val = metaBallArr[0].getValue(x, y, z);
 		metaBallArr[0].updatePos();
 		for (let i = 1; i < metaBallArr.length; i++){
-			val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), 0.1);
-			metaBallArr[i].updatePos();
-		}
+            let nextVal = metaBallArr[i].getValue(x, y, z);
+            if (val < nextVal){
+                val = smoothUnion(val, metaBallArr[i].getValue(x, y, z), smoothUnionVal);
+            }
+			
+			//metaBallArr[i].updatePos();
+        }
+
+   
+        
+        metaBallArr.forEach(m => m.updatePos());
 
 		return val;
-		*/
+		
 	}
 	
 
@@ -693,7 +737,7 @@ function main(){
 	const far = 5000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 	//const camera = new THREE.OrthographicCamera(window.innerWidth * -0.5, window.innerWidth * 0.5, window.innerHeight * 0.5, window.innerHeight  *-0.5, 1, 1000);
-	camera.position.set(0, 0, 200);
+	camera.position.set(0, 0, 50);
 
 	scene = new THREE.Scene();
 	scene.background = p5texture;
@@ -701,8 +745,11 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(300, 300, 300, 15, 15, 15, 0, 0, 0, metaBall, 0.65);
-	marchingCubes.updateCubes();
+	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 1.25, 1.25, 1.25, 0, 0, 0, metaBall, 0.65);
+    marchingCubes.updateCubes();
+    
+    //let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 1.25, 1.25, 1.25, 20, -20, 0, randomSphereFunc, 0.65);
+	//marchingCubes2.updateCubes();
 	
 
 // LIGHTS
@@ -726,7 +773,8 @@ function main(){
 		this.interpolate = true;
 		*/
 		this.switchFunction = true;
-		this.threshold = 0.25;
+        this.threshold = 0.25;
+        this.smoothUnionVal = 0.1;
 	}
 	/*
 	gui.add(controls, 'outputObj');
@@ -740,6 +788,9 @@ function main(){
 	});
 	gui.add(controls, 'threshold', 0, 1.0).onChange(function(e) {
 		marchingCubes.setThreshold(e);
+    });
+    gui.add(controls, 'smoothUnionVal', 0, 1.0).onChange(function(e) {
+		smoothUnionVal = e;
 	});
 
 
