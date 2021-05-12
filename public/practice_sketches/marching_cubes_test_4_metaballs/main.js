@@ -300,7 +300,8 @@ class MarchingCubes{
 	
 		this.materialArr = [
 			new THREE.MeshNormalMaterial({
-				side: THREE.DoubleSide,
+                side: THREE.DoubleSide,
+                wireframe: true
 			}),
 
 			// when using envMap, TURN OFF THREE.DOUBLESIDE
@@ -343,8 +344,10 @@ class MarchingCubes{
 	}
 
 	updateShaderMaterial(){
-		let ref = scene.getObjectByName("marchingCubesMesh" + this.id);
-		ref.material.uniforms.time.value = step * 0.01;
+        if (this.material instanceof THREE.ShaderMaterial){
+		    let ref = scene.getObjectByName("marchingCubesMesh" + this.id);
+            ref.material.uniforms.time.value = step * 0.01;
+        }
 	}
 
 
@@ -522,6 +525,7 @@ let p5texture;
 let p5Font;
 let p5Canvas;
 function main(){
+    initStats();
 
 // P5 SKETCH
 	const p5Sketch = (sketch) => {
@@ -668,12 +672,22 @@ function main(){
 			let dz = z - this.centerZ;
 
             let dist = dx * dx + dy * dy + dz * dz;
-			return this.radius / dist;
-		}
+			return this.radius * this.radius / dist;
+        }
+        
+        getInfluence(x, y, z){
+            let dx = x - this.centerX;
+			let dy = y - this.centerY;
+			let dz = z - this.centerZ;
+
+            let dist = dx * dx + dy * dy + dz * dz;
+            return dist;
+        }
 	}
 
 	let metaBallNum = 5;
-	let metaBallArr = [];
+    let metaBallArr = [];
+    let influenceCoef = 0.5;
 	for (let i = 0; i < metaBallNum; i++){
         let m = new MetaBall(
             Math.random() * 20.0 - 10.0, 
@@ -689,7 +703,8 @@ function main(){
     }
 
 	const metaBall = (x, y, z) => {
-		/*
+        
+        /*
 		let max = -99999999;
 		metaBallArr.forEach(function(m){
 			let val = m.getValue(x, y, z);
@@ -698,10 +713,23 @@ function main(){
 		});
 		return max;
         */
+
+
+        // influence method: http://glslsandbox.com/e#27744.8
+        // https://matiaslavik.wordpress.com/computer-graphics/metaball-rendering/
+        let influence = 0;
+        let val = 0;
+        metaBallArr.forEach(function(m, i){
+            influence += m.getInfluence(x, y, z);
+            val += m.getValue(x, y, z) * influence * 1.0 / metaBallNum * influenceCoef;
+            //console.log(val);
+        });
+        val = mapLinear(val, 0, 70, -1, 1);
+        metaBallArr.forEach(m => m.updatePos());
+        return val;
         
         
-        
-        
+        /*
 		let val = metaBallArr[0].getValue(x, y, z);
 		metaBallArr[0].updatePos();
 		for (let i = 1; i < metaBallArr.length; i++){
@@ -717,7 +745,8 @@ function main(){
         
         metaBallArr.forEach(m => m.updatePos());
 
-		return val;
+        return val;
+        */
 		
 	}
 	
@@ -731,7 +760,7 @@ function main(){
 	const mouse = new THREE.Vector2();
 
 // CAMERA
-	const fov = 60;
+	const fov = 90;
 	const aspect = 2; // display aspect of the canvas
 	const near = 0.1;
 	const far = 5000;
@@ -745,7 +774,7 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 1.25, 1.25, 1.25, 0, 0, 0, metaBall, 0.65);
+	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 1.5, 1.5, 1.5, 0, 0, 0, metaBall, 0.65);
     marchingCubes.updateCubes();
     
     //let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 1.25, 1.25, 1.25, 20, -20, 0, randomSphereFunc, 0.65);
@@ -775,6 +804,7 @@ function main(){
 		this.switchFunction = true;
         this.threshold = 0.25;
         this.smoothUnionVal = 0.1;
+        this.influenceCoef = 0.5;
 	}
 	/*
 	gui.add(controls, 'outputObj');
@@ -791,6 +821,9 @@ function main(){
     });
     gui.add(controls, 'smoothUnionVal', 0, 1.0).onChange(function(e) {
 		smoothUnionVal = e;
+    });
+    gui.add(controls, 'influenceCoef', 0, 5.0).onChange(function(e) {
+		influenceCoef = e;
 	});
 
 
@@ -798,7 +831,7 @@ function main(){
 		time *= 0.001;
 		step += 1;
 
-		//stats.update();
+		stats.update();
 
 		
 
@@ -812,7 +845,9 @@ function main(){
 		}
 		
 		renderer.render(scene, camera);
-		requestAnimationFrame(render);
+        requestAnimationFrame(render);
+        
+        p5texture.dispose();
 	}
 
 	
