@@ -24,30 +24,32 @@ float metaball(vec2 uv, vec2 pos){
 }
 
 void main(){
-	vec2 uv = gl_FragCoord.xy / resolution.xy;
+	  vec2 uv = gl_FragCoord.xy / resolution.xy;
   	
     vec3 outCol = vec3(.0);
 
-    /*
-    float nc = 20.0;
+    
+    float nc = 10.0;
     for (float i = .0; i < 10.0; i++){
         float nx = noise(vec2(uv.x * nc + time + i, uv.y * nc + time + i));
         float ny = noise(vec2(uv.x * nc + time * 2.0 + i, uv.y * nc + time * 2.0 + i));
         vec2 npos = vec2(nx, ny);
         outCol += metaball(uv, npos);
     }
-    */
-    float nc2 = 15.0;
+    
 
+    /*
+    float nc2 = 1.0;
     float max = 0.0;
-    for (float i = .0; i < 30.0; i++){
-        float nx = noise(vec2(uv.x * nc2 + time + i, uv.y * nc2 + time + i * 5.0));
-        float ny = noise(vec2(uv.x * nc2 + time + i * 13.0, uv.y * nc2 + time + i * 7.0));
+    for (float i = .0; i < 10.0; i++){
+        float nx = noise(vec2(uv.x * nc2 + time + i, uv.y * nc2 + time + i));
+        float ny = noise(vec2(uv.x * nc2 + time + i , uv.y * nc2 + time + i));
         vec2 npos = vec2(nx, ny);
         float m = metaball(uv, npos);
         if (m > max) max = m;
         //outCol += metaball(uv, npos);
     }
     outCol += max;
+*/
   	gl_FragColor = vec4(outCol, 1.0);
 }

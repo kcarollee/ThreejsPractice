@@ -326,7 +326,6 @@ class MarchingCubes{
 			 	vertexShader: vertShader,
 			 	fragmentShader: fragShader,
 			 	//side: THREE.DoubleSide
-			 	
 			}),
 		];
 
@@ -347,6 +346,7 @@ class MarchingCubes{
         if (this.material instanceof THREE.ShaderMaterial){
 		    let ref = scene.getObjectByName("marchingCubesMesh" + this.id);
             ref.material.uniforms.time.value = step * 0.01;
+            
         }
 	}
 
