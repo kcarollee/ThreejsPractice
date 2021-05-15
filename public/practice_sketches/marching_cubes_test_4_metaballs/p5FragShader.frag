@@ -37,12 +37,17 @@ float noise(vec2 x) {
   return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
 }
 
-float metaball(vec2 uv, vec2 pos){
+float metaball(vec2 uv, vec2 pos, float r){
 	float dist = length(uv - pos);
-    float val = 0.001 / pow(dist, 2.2);
+    float val = 0.0001 * r / pow(dist, 2.5);
     val = smoothstep(0.1, 0.9, val);
     //val = sin(val * 50.0);
     return val;
+}
+
+// https://gist.github.com/companje/29408948f1e8be54dd5733a74ca49bb9
+float map(float value, float min1, float max1, float min2, float max2) {
+  return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
 }
 
 void main(){
@@ -56,11 +61,14 @@ void main(){
     float nc2 = 1.0;
     float max = 0.0;
 
-    for (float i = .0; i < 20.0; i++){
-        float nx = noise(vec2(time * vc * 0.5 + i,  time * vc * 0.5 + i));
-        float ny = noise(vec2(time * vc * 2.0 + i,  time * vc * 2.0 + i));
+    for (float i = .0; i < 50.0; i++){
+        float r = (i + 1.0) * 0.2;
+        float vdiv = 1.0 - map(r, 1.0, 51.0, .0, 1.0);
+        vdiv = pow(vdiv, 10.0);
+        float nx = noise(vec2(time * vc * 0.5 * vdiv + i,  time * vc * 0.5 * vdiv + i));
+        float ny = noise(vec2(time * vc * 2.0 * vdiv + i,  time * vc * 2.0 * vdiv + i));
         vec2 npos = vec2(nx, ny);
-        float m = metaball(uv, npos);
+        float m = metaball(uv, npos, r);
         if (m > max) max = m;
         outCol += m;
     }

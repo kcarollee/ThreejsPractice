@@ -68,9 +68,9 @@
         vec4 texcopy = texture2D(tex, sc); // texture before refraction
 
         // https://gamedev.stackexchange.com/questions/58408/how-would-you-implement-cromatic-aberration#:~:text=Chromatic%20aberration%20is%20caused%20when,channel20in%20a%20fragment%20shader.&text=This%20is%20similar%20to%20how,that%20are%2reflective%20or%20refractive.
-        vec3 rRefVec = refract(eyeVector, n, 1.0 / 0.40);
-        vec3 gRefVec = refract(eyeVector, n , 1.0 / 0.87);
-        vec3 bRefVec = refract(eyeVector, n, 1.0 / 0.90);
+        vec3 rRefVec = refract(eyeVector, n, 1.0 / 0.90);
+        vec3 gRefVec = refract(eyeVector, n , 1.0 / 0.80);
+        vec3 bRefVec = refract(eyeVector, n, 1.0 / 0.80);
         
         vec3 caCol;
         caCol.r = texture2D(tex, sc + rRefVec.xy * 0.1).r;

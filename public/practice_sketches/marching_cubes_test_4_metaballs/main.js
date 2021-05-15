@@ -525,7 +525,7 @@ let p5texture;
 let p5Font;
 let p5Canvas;
 function main(){
-    initStats();
+   
 
 // P5 SKETCH
 	const p5Sketch = (sketch) => {
@@ -550,6 +550,9 @@ function main(){
 				
                 sketch.shader(p5Shader);
 				sketch.quad(-1, -1, 1, -1, 1, 1, -1, 1);
+
+				sketch.text("HELLO", 0, 0);
+				//console.log(sketch.mouseX, sketch.mouseY);
            	} catch{}
 			if (p5texture) p5texture.needsUpdate = true;
 		}
@@ -575,9 +578,12 @@ function main(){
 
 	p5Canvas = new p5(p5Sketch);
 	p5texture = new THREE.CanvasTexture(p5Canvas.canvas);
+	
+	p5texture.needsUpdate = true;
 	p5texture.wrapS = THREE.RepeatWrapping;
 	p5texture.wrapT = THREE.RepeatWrapping;
-	p5texture.needsUpdate = true;
+	// this hides the p5 canvas
+	p5Canvas.canvas.style.display = "none";
 
 // SHADERS
 	vertShader = document.getElementById('vert').innerHTML;
@@ -635,7 +641,7 @@ function main(){
 			this.randZ = Math.random() * 10;
             this.randD = Math.random() * 5;
             
-            this.movementRadius = Math.random() * 10.0;
+            this.movementRadius = mapLinear(Math.random(), 0, 1, 10, 13);
             this.movementRadiusInit = this.movementRadius;
             
 		}	
@@ -650,8 +656,8 @@ function main(){
            // this.radius = this.initR + Math.sin(step * 0.1 + this.randZ);
             
             
-            let randDeg1 = noise.simplex2(step * 0.005 + this.randX, this.randY) * Math.PI * 2;
-            let randDeg2 = 0; //noise.simplex2(step * 0.01 + this.randY, this.randZ);
+            let randDeg1 = noise.simplex2(step * 0.0025 + this.randX, this.randY) * Math.PI * 2;
+            let randDeg2 = noise.simplex2(step * 0.005 + this.randY, this.randZ);
             let pos = this.getPos(randDeg1, randDeg2);
             this.centerX = pos[0];
             this.centerY = pos[1];
@@ -660,9 +666,9 @@ function main(){
         }
         
         getPos(deg1, deg2){
-            let x = this.movementRadius * Math.cos(deg1) * Math.cos(deg2);
-            let y = this.movementRadius * Math.sin(deg1) * Math.cos(deg2);
-            let z = this.movementRadius * Math.sin(deg2);
+            let x = this.movementRadius  * Math.cos(deg1) * Math.cos(deg2);
+            let y = this.movementRadius  * Math.sin(deg1) * Math.cos(deg2);
+            let z = this.movementRadius  * Math.sin(deg2);
         
             return [x, y, z];
         }
@@ -673,22 +679,28 @@ function main(){
 			let dz = z - this.centerZ;
 
             let dist = dx * dx + dy * dy + dz * dz;
-			return this.radius  / dist;
+			return this.radius * this.radius / dist;
         }
         
-        getInfluence(x, y, z){
-            let dx = x - this.centerX;
+        getInfluence(){
+        	return this.radius * this.radius;
+        }
+
+        getDist(x, y, z){
+        	let dx = x - this.centerX;
 			let dy = y - this.centerY;
 			let dz = z - this.centerZ;
 
             let dist = dx * dx + dy * dy + dz * dz;
             return dist;
         }
+
+
 	}
 
 	let metaBallNum = 6;
     let metaBallArr = [];
-    let influenceCoef = 0.5;
+    let influenceCoef = 3.0;
 	for (let i = 0; i < metaBallNum; i++){
         let m = new MetaBall(
             Math.random() * 20.0 - 10.0, 
@@ -718,13 +730,19 @@ function main(){
 
         // influence method: http://glslsandbox.com/e#27744.8
         // https://matiaslavik.wordpress.com/computer-graphics/metaball-rendering/
+
+        
         let influence = 0;
         let val = 0;
         metaBallArr.forEach(function(m, i){
-            influence += m.getInfluence(x, y, z);
-            val += m.getValue(x, y, z) * influence * 1.0 / metaBallNum * influenceCoef;
+        	
+            let currentInfluence = m.getInfluence();
+            currentInfluence /= m.getDist(x, y, z) * (1.0 / influenceCoef);
+            influence += currentInfluence;
+            
+
         });
-        val = mapLinear(val, 0, 70, -1, 1);
+        val = mapLinear(influence, 0, 3, -1, 1);
         metaBallArr.forEach(m => m.updatePos());
         return val;
         
@@ -766,7 +784,7 @@ function main(){
 	const far = 5000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 	//const camera = new THREE.OrthographicCamera(window.innerWidth * -0.5, window.innerWidth * 0.5, window.innerHeight * 0.5, window.innerHeight  *-0.5, 1, 1000);
-	camera.position.set(0, 0, 30);
+	camera.position.set(0, 0, 20);
 
 	scene = new THREE.Scene();
 	scene.background = p5texture;
@@ -795,45 +813,24 @@ function main(){
 
 // GUI
 	const gui = new dat.GUI();
-	const controls = new function(){
-		/*
-		this.outputObj = function(){
-			scene.children.forEach(c => console.log(c));
-		}
-		this.interpolate = true;
-		*/
-		this.switchFunction = true;
-        this.threshold = 0.25;
-        this.smoothUnionVal = 0.1;
-        this.influenceCoef = 0.5;
+	const controls = new function(){	
+        this.influenceCoef = 3.0;
 	}
-	/*
-	gui.add(controls, 'outputObj');
-	gui.add(controls, 'interpolate').onChange(function(e) {
-		cubes.interpolate = !cubes.interpolate;
-	});
-	*/
-	gui.add(controls, 'switchFunction').onChange(function(e) {
-		if (e) marchingCubes.setShapeFunc( randomSphereFunc);
-		else marchingCubes.setShapeFunc( noiseFunc1);
-	});
-	gui.add(controls, 'threshold', 0, 1.0).onChange(function(e) {
-		marchingCubes.setThreshold(e);
-    });
-    gui.add(controls, 'smoothUnionVal', 0, 1.0).onChange(function(e) {
-		smoothUnionVal = e;
-    });
+	
+	
     gui.add(controls, 'influenceCoef', 0, 5.0).onChange(function(e) {
 		influenceCoef = e;
 	});
 
+	gui.close();
+
 
 	function render(time){
-		
+
 		time *= 0.001;
 		step += 1;
 
-		stats.update();
+		//stats.update();
 
 		
 		scene.rotation.x = step * 0.01;
