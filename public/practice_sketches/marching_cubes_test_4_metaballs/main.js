@@ -263,7 +263,7 @@ Cube.id = 0;
 
 class MarchingCubes{
 	// test space w, h, d & single cube w, h, d & centerx, centery, centerz
-	constructor(tw, th, td, sw, sh, sd, cx, cy, cz, shapeFunc, threshold){
+	constructor(tw, th, td, sw, sh, sd, cx, cy, cz, shapeFunc, threshold, matIndex){
 
 		this.testSpace = {
 			width: tw,
@@ -329,7 +329,7 @@ class MarchingCubes{
 			}),
 		];
 
-		this.material = this.materialArr[3];
+		this.material = this.materialArr[matIndex];
 
 		this.interpolate = true;
 
@@ -592,9 +592,9 @@ function main(){
 // TEST SHAPE FUNCTIONS
 	let smoothUnionVal = 0.1;
 	const noiseFunc1 = (x, y, z) =>{
-		let nx = 0.01;
-		let ny = 0.01;
-		let nz = 0.01;
+		let nx = 0.05;
+		let ny = 0.05;
+		let nz = 0.05;
 
 
 		
@@ -642,20 +642,21 @@ function main(){
 
 		updatePos(){
 
-            
+            /*
 			this.centerX = this.initX + this.randD * Math.sin(step * 0.1 + this.randX);
 			this.centerY = this.initY + this.randD * Math.sin(step * 0.1 + this.randY);
 			this.centerZ = this.initZ + this.randD * Math.sin(step * 0.1 + this.randZ);
+           	*/
            // this.radius = this.initR + Math.sin(step * 0.1 + this.randZ);
             
-            /*
-            let randDeg1 = noise.simplex2(step * 0.01 + this.randX, this.randY) * Math.PI * 2;
+            
+            let randDeg1 = noise.simplex2(step * 0.005 + this.randX, this.randY) * Math.PI * 2;
             let randDeg2 = 0; //noise.simplex2(step * 0.01 + this.randY, this.randZ);
             let pos = this.getPos(randDeg1, randDeg2);
             this.centerX = pos[0];
             this.centerY = pos[1];
             this.centerZ = pos[2];
-            */
+            
         }
         
         getPos(deg1, deg2){
@@ -672,7 +673,7 @@ function main(){
 			let dz = z - this.centerZ;
 
             let dist = dx * dx + dy * dy + dz * dz;
-			return this.radius * this.radius / dist;
+			return this.radius  / dist;
         }
         
         getInfluence(x, y, z){
@@ -685,7 +686,7 @@ function main(){
         }
 	}
 
-	let metaBallNum = 5;
+	let metaBallNum = 6;
     let metaBallArr = [];
     let influenceCoef = 0.5;
 	for (let i = 0; i < metaBallNum; i++){
@@ -722,7 +723,6 @@ function main(){
         metaBallArr.forEach(function(m, i){
             influence += m.getInfluence(x, y, z);
             val += m.getValue(x, y, z) * influence * 1.0 / metaBallNum * influenceCoef;
-            //console.log(val);
         });
         val = mapLinear(val, 0, 70, -1, 1);
         metaBallArr.forEach(m => m.updatePos());
@@ -751,7 +751,7 @@ function main(){
 	}
 	
 
-
+	console.log(metaBall.toString())
 
 // CANVAS & RENDERER
 	const canvas = document.querySelector('#c');
@@ -766,7 +766,7 @@ function main(){
 	const far = 5000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 	//const camera = new THREE.OrthographicCamera(window.innerWidth * -0.5, window.innerWidth * 0.5, window.innerHeight * 0.5, window.innerHeight  *-0.5, 1, 1000);
-	camera.position.set(0, 0, 50);
+	camera.position.set(0, 0, 30);
 
 	scene = new THREE.Scene();
 	scene.background = p5texture;
@@ -774,9 +774,10 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 1.5, 1.5, 1.5, 0, 0, 0, metaBall, 0.65);
+	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 2.0, 2.0, 2.0, 0, 0, 0, metaBall, 0.65, 3);
     marchingCubes.updateCubes();
-    
+
+   
     //let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 1.25, 1.25, 1.25, 20, -20, 0, randomSphereFunc, 0.65);
 	//marchingCubes2.updateCubes();
 	
@@ -828,16 +829,20 @@ function main(){
 
 
 	function render(time){
+		
 		time *= 0.001;
 		step += 1;
 
 		stats.update();
 
 		
-
+		scene.rotation.x = step * 0.01;
+		scene.rotation.y = step * 0.01;
+		scene.rotation.z = step * 0.01;
 		marchingCubes.updateCubes();
 		marchingCubes.updateShaderMaterial();
 
+		
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;

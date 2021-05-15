@@ -39,7 +39,7 @@ float noise(vec2 x) {
 
 float metaball(vec2 uv, vec2 pos){
 	float dist = length(uv - pos);
-    float val = 0.001 / pow(dist, 4.0);
+    float val = 0.001 / pow(dist, 2.2);
     val = smoothstep(0.1, 0.9, val);
     //val = sin(val * 50.0);
     return val;
@@ -50,39 +50,27 @@ void main(){
   	
     vec3 outCol = vec3(.0);
 
-    
-    
-    /*
-    float nc = 1.0;
-    float vc = 0.1;
-    for (float i = .0; i < 20.0; i++){
-        float nx = noise(vec2(time * vc * 0.5 + i,  time * vc * 0.5 + i));
-        float ny = noise(vec2(time * vc * 2.0 + i,  time * vc * 2.0 + i));
-        vec2 npos = vec2(nx, ny);
-        outCol += metaball(uv, npos);
-    }
-    */
-   // outCol = vec3(sin(outCol.r * 50.0));
-
-    
     // take a look at http://glslsandbox.com/e#27744.8 to figure out how to create outer line 
     float nc = 1.0;
-    float vc = 0.4;
+    float vc = 0.2;
     float nc2 = 1.0;
     float max = 0.0;
-    vec3 outCol2 = vec3(.0);
-    for (float i = .0; i < 5.0; i++){
+
+    for (float i = .0; i < 20.0; i++){
         float nx = noise(vec2(time * vc * 0.5 + i,  time * vc * 0.5 + i));
         float ny = noise(vec2(time * vc * 2.0 + i,  time * vc * 2.0 + i));
         vec2 npos = vec2(nx, ny);
         float m = metaball(uv, npos);
         if (m > max) max = m;
-        outCol2 += m;
+        outCol += m;
     }
-    outCol += max;
-    outCol = vec3(sin(outCol.r * 50.0));
-    outCol2 = vec3(sin(outCol2.r * 50.0));
    
-    vec2 tn = vec2(noise(vec2(uv.x * 10.0 + time, uv.y * 10.0 + time)));
-  	gl_FragColor = vec4(outCol2 , 1.0);
+    //outCol = vec3(sin(outCol.r * 50.0));
+
+
+    float th = 0.2;
+    float dt = 0.8;
+    if (outCol.r > th && outCol.r < th + dt) outCol = vec3(sin(outCol.r * 20.0 + time * 10.0));
+    else outCol = vec3(.0);
+  	gl_FragColor = vec4(outCol , 1.0);
 }
