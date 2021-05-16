@@ -533,7 +533,7 @@ function main(){
 
 	
 // TEST SHAPE FUNCTIONS
-const terrainTest = (x, y, z) => {
+	const terrainTest = (x, y, z) => {
 
 		let c1 = 20.0;
 		let nc = 0.0025;
@@ -579,7 +579,7 @@ const terrainTest = (x, y, z) => {
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(400.0, 400.0, 400.0, 5.0, 5.0, 5.0, 0, 0, 0, terrainTest, 0.0, 2);
+	let marchingCubes = new MarchingCubes(400.0, 400.0, 400.0, 20, 20, 20, 0, 0, 0, terrainTest, 0.0, 2);
     marchingCubes.updateCubes();
 
    
@@ -596,7 +596,17 @@ const terrainTest = (x, y, z) => {
     orbitControls.target.copy(scene.position);
     orbitControls.update();
 
+// POST-PROCESSING
+	let renderPass = new THREE.RenderPass(scene, camera);
+	let effectCopy = new THREE.ShaderPass(THREE.CopyShader);
+	effectCopy.renderToScreen = true;
+	let shaderPass = new THREE.ShaderPass(THREE.CustomShader);
+	shaderPass.enabled = true;
 
+	let composer = new THREE.EffectComposer(renderer);
+	composer.addPass(renderPass);
+	composer.addPass(shaderPass);
+	composer.addPass(effectCopy);
 
 // GUI
 	const gui = new dat.GUI();
@@ -610,6 +620,8 @@ const terrainTest = (x, y, z) => {
 	});
 
 	gui.close();
+
+	let clock = new THREE.Clock();
 
 
 	function render(time){
@@ -631,8 +643,10 @@ const terrainTest = (x, y, z) => {
 			camera.updateProjectionMatrix();
 		}
 		
-		renderer.render(scene, camera);
+		//renderer.render(scene, camera);
         requestAnimationFrame(render);
+
+        composer.render(clock.getDelta());
         
       
 	}
