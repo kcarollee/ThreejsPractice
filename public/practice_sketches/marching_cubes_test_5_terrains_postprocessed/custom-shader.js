@@ -6,7 +6,7 @@ THREE.CustomShader = {
         "rPower": {type: "f", value: 0.0126},
         "gPower": {type: "f", value: 0.6152},
         "bPower": {type: "f", value: 0.0722},
-        
+
 
     },
 
@@ -27,10 +27,14 @@ THREE.CustomShader = {
 
     fragmentShader: [
 
+        "#ifdef GL_ES",
+        "precision highp float;",
+        "#endif",
         // pass in our custom uniforms
         "uniform float rPower;",
         "uniform float gPower;",
         "uniform float bPower;",
+
 
         // pass in the image/texture we'll be modifying
         "uniform sampler2D tDiffuse;",
@@ -41,14 +45,18 @@ THREE.CustomShader = {
         // executed, in parallel, for each pixel
         "void main() {",
 
+        
+
+        "vec2 uvo = vUv;", // original uv coords
+        "float m = 0.1;", // pixelate coef
+        "float windowDiv = 100.0;",
+        "//uvo.x = float(floor(uvo.x / windowDiv)) * windowDiv;",
+        "//uvo.y = float(floor(uvo.y / windowDiv)) * windowDiv;",
+
         // get the pixel from the texture we're working with (called a texel)
-        "vec4 texel = texture2D( tDiffuse, vUv );",
-
-        // calculate the new color
-        "float gray = texel.r*rPower + texel.g*gPower + texel.b*bPower;",
-
+        "vec4 texel = texture2D( tDiffuse, uvo );",
         // return this new color
-        "gl_FragColor = vec4( vec3(gray), 1.0 );",
+        "gl_FragColor = vec4( texel.rgb, 1.0 );",
 
         "}"
 

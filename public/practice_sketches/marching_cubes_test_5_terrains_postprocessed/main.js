@@ -598,7 +598,7 @@ function main(){
     orbitControls.update();
 
 // POST-PROCESSING
-	resizeRenderToDisplaySize(renderer);
+	resizeRenderToDisplaySize(renderer); // not calling this function prior to the passes yields low-res frames
 	let renderPass = new THREE.RenderPass(scene, camera);
 	let effectCopy = new THREE.ShaderPass(THREE.CopyShader);
 	effectCopy.renderToScreen = true;
