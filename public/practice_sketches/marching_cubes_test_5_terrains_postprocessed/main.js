@@ -561,12 +561,13 @@ function main(){
 // CANVAS & RENDERER
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+
 	const raycaster = new THREE.Raycaster();
 	const mouse = new THREE.Vector2();
 
 // CAMERA
 	const fov = 90;
-	const aspect = 2; // display aspect of the canvas
+	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 5000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -597,11 +598,15 @@ function main(){
     orbitControls.update();
 
 // POST-PROCESSING
+	resizeRenderToDisplaySize(renderer);
 	let renderPass = new THREE.RenderPass(scene, camera);
 	let effectCopy = new THREE.ShaderPass(THREE.CopyShader);
 	effectCopy.renderToScreen = true;
 	let shaderPass = new THREE.ShaderPass(THREE.CustomShader);
+	//shaderPass.resolution.set(window.innerWidth, window.innerHeight);
 	shaderPass.enabled = true;
+
+	
 
 	let composer = new THREE.EffectComposer(renderer);
 	composer.addPass(renderPass);

@@ -5,7 +5,8 @@ THREE.CustomShader = {
         "tDiffuse": {type: "t", value: null},
         "rPower": {type: "f", value: 0.0126},
         "gPower": {type: "f", value: 0.6152},
-        "bPower": {type: "f", value: 0.0722}
+        "bPower": {type: "f", value: 0.0722},
+        
 
     },
 
