@@ -540,7 +540,7 @@ function main(){
 		let nc2 = 0.006;
 		let v = 0.01;
 
-		let octaves = 8;
+		let octaves = 10;
 		let noiseSum = 0;
 		for (let i = 0; i < octaves; i++){
 			noiseSum += noise.simplex2(x * i * 0.01 + step * v + seedAlt, z * i * 0.01 + step * v + seedAlt);
@@ -638,7 +638,7 @@ function main(){
 
 		
 		
-		//marchingCubes.updateCubes();
+		marchingCubes.updateCubes();
 		//marchingCubes.updateShaderMaterial();
 
 		
