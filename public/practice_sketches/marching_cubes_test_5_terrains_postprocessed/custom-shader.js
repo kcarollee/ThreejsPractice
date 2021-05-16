@@ -49,9 +49,10 @@ THREE.CustomShader = {
 
         "vec2 uvo = vUv;", // original uv coords
         "float m = 0.1;", // pixelate coef
-        "float windowDiv = 100.0;",
-        "//uvo.x = float(floor(uvo.x / windowDiv)) * windowDiv;",
-        "//uvo.y = float(floor(uvo.y / windowDiv)) * windowDiv;",
+        "float divNum = 75.0;",
+        "float windowDiv = 1.0 / divNum;",
+        "uvo.x = float(floor(uvo.x / windowDiv)) * windowDiv;",
+        "uvo.y = float(floor(uvo.y / windowDiv)) * windowDiv;",
 
         // get the pixel from the texture we're working with (called a texel)
         "vec4 texel = texture2D( tDiffuse, uvo );",
