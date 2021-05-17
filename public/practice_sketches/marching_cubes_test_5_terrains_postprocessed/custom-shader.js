@@ -47,11 +47,17 @@ THREE.CustomShader = {
             "return v;",
         "}",
 
+        "float lines(vec2 uv, float gval){",
+            "float greyStep = 10.0;",
+            "gval = float(floor(gval * greyStep));",
+            "return step(0.5, sin(uv.x * gval));",
+        "}",
+
         "float circle(vec2 uv,float gval){",
             "float greyStep = 10.0;",
             "gval = float(floor(gval * greyStep))  / greyStep;",
-            "return 1.0 - smoothstep(gval - 0.2, gval + 0.2, length(uv - vec2(0.5, 0.5)));",
-            //"return 1.0 - step(gval, length(uv - vec2(0.5, 0.5)));",
+            //"return 1.0 - smoothstep(gval - 0.2, gval + 0.2, length(uv - vec2(0.5, 0.5)));",
+            "return 1.0 - step(gval, length(uv - vec2(0.5, 0.5)));",
         "}",
 
         // executed, in parallel, for each pixel
@@ -62,7 +68,7 @@ THREE.CustomShader = {
         "vec2 uvo = vUv;", // original uv coords
         "vec3 outCol = vec3(.0);",
         "float m = 0.1;", // pixelate coef
-        "float divNum = 250.0;",
+        "float divNum = 200.0;",
         "float gridDim = 1.0 / divNum;",
         "uvo.x = float(floor(uvo.x * divNum)) * gridDim;",
         "uvo.y = float(floor(uvo.y * divNum)) * gridDim;",
@@ -77,9 +83,9 @@ THREE.CustomShader = {
 
         "float greyVal = texel.r;",
         "vec2 uvm = (vUv - uvo) * divNum;", // modified uv coord.
-        "outCol += circle(uvm,mGreyVal);",
-        "outCol.r += circle(vec2(uvm.x - 0.5, uvm.y), mGreyVal);",
-        "outCol.bg += circle(vec2(uvm.x + 0.5, uvm.y + 0.5), mGreyVal * 0.5);",
+        "outCol += lines(uvm,mGreyVal);",
+       // "outCol.r += circle(vec2(uvm.x - 0.5, uvm.y), mGreyVal);",
+       // "outCol.bg += circle(vec2(uvm.x + 0.5, uvm.y + 0.5), mGreyVal * 0.5);",
         // return this new color
         "gl_FragColor = vec4( outCol, 1.0 );",
 
