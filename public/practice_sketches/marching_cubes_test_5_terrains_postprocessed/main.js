@@ -617,11 +617,16 @@ function main(){
 	const gui = new dat.GUI();
 	const controls = new function(){	
         this.influenceCoef = 3.0;
+        this.texDiv = 100.0;
 	}
 	
 	
     gui.add(controls, 'influenceCoef', 0, 5.0).onChange(function(e) {
 		influenceCoef = e;
+	});
+	gui.add(controls, 'texDiv', 4, 300).onChange(function(e){
+		shaderPass.uniforms.texDiv.value = e;
+		console.log(shaderPass.uniforms);
 	});
 
 	gui.close();
