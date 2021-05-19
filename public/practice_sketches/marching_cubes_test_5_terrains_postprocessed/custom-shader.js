@@ -37,35 +37,39 @@ THREE.CustomShader = {
 
         // used to determine the correct texel we're working on
         varying vec2 vUv;
-
-  
-        float lines(vec2 uv, float gval){
-            float greyStep = 10.0;
-            gval = float(floor(gval * greyStep));
-            return step(0.5, sin(uv.x * gval));
-        }
-
-        float lines2(vec2 uv, float gval){
-            float greyStep = 10.0;
-            gval = float(floor(gval * greyStep));
-            return step(0.5, sin(uv.x * gval));
+        //https://gist.github.com/companje/29408948f1e8be54dd5733a74ca49bb9
+        float map(float value, float min1, float max1, float min2, float max2) {
+            return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
         }
 
         float circle(vec2 uv,float gval){
             float greyStep = 10.0;
-            gval = float(floor(gval * greyStep))  / greyStep;
-            return 1.0 - smoothstep(gval - 0.2, gval + 0.2, length(uv - vec2(0.5, 0.5)));
+           // gval = float(floor(gval * greyStep))  / greyStep;
+            gval *= 0.5;
+            if (gval < 0.01) return 0.0;
+
+            float c = smoothstep(gval - 0.1, gval + 0.1, length(uv - vec2(0.5, 0.5)));
+            return 1.0 - c;
             //return 1.0 - step(gval, length(uv - vec2(0.5, 0.5)));
         }
         
 
-        
-        float tileViewer(vec2 uv, float funcVal){
-            float v = 0.1;
-            return v;
+        // gval: value between 0 and 0,1
+
+        float lines(vec2 uv, float gval, float gap){
+            float greyStep = 10.0;
+            gval = floor(map(gval, .0, 1.0, 0.0, 10.0));
+            if (gval < 1.0) return 0.0;
+           // if (gval > 8.0) gval = 8.0;
+            vec2 uvcopy = uv;
+            vec2 uvm1 = mod(uv, 1.0 / gval);
+            vec2 uvm2 = mod(1.0 - uv, 1.0 / gval);
+            float v1 = 1.0 - smoothstep(gap - 0.01, gap + 0.01, abs(uvm1.x - uvm1.y));
+            float v2 = 1.0 - smoothstep(gap - 0.01, gap + 0.01, abs(uvm1.x - uvm2.y));
+            return  v1 + v2;
         }
         
-        // executed, in parallel, for each pixel
+       
         void main() {
 
         
@@ -81,29 +85,35 @@ THREE.CustomShader = {
         // get the pixel from the texture we're working with (called a texel)
         vec4 texel = texture2D( tDiffuse, uvo );
         vec4 texel2 = texture2D( tDiffuse, vec2(uvo.x + 1.0, uvo.y));
-        float rm = 0.25;
-        float gm = 0.95;
-        float bm = 0.35;
-        float mGreyVal = (texel.r * rm + texel.g * gm + texel.b * bm) / 3.0;
+
+        float mGreyVal = (texel.r + texel.g + texel.b) / 3.0;
 
         float greyVal = texel.r;
         vec2 uvm = (vUv - uvo) * divNum; // modified uv coord.
-        outCol += circle(uvm,mGreyVal);
 
         vec2 uv2 = vUv;
-        uv2.x = float(floor(uv2.x * 10.0)) * 0.1;
-        uv2.y = float(floor(uv2.y * 10.0)) * 0.1;
-        for (float i = 0.0; i < 10.0; i++){
-            if (abs(uv2.y - 0.5) < 0.001) {
-                outCol = vec3(.0);
-                outCol.r += circle((vUv - uv2) * 10.0, 0.1 * i);
 
-            }
+        float divNum2 = 20.0;
+        float gridDim2 = 1.0 / divNum2;
+        uv2.x = float(floor(uv2.x * divNum2)) * gridDim2;
+        uv2.y = float(floor(uv2.y * divNum2)) * gridDim2;
+        vec2 uvm2 = (vUv - uv2) * divNum2;
+
+        if (uv2.y == 0.85 && uv2.x < 0.5) {
+                outCol = vec3(.0);
+                float testUvx = (1.0 - uv2.x * 2.0);
+                float testGap = 0.025;
+                if (uvm2.x < testGap || uvm2.x > 1.0 - testGap) outCol += vec3(1.0);
+                if (uvm2.y < testGap || uvm2.y > 1.0 - testGap) outCol += vec3(1.0);
+                outCol += lines(uvm2, testUvx, 0.02);
         }
-       // outCol.r += circle(vec2(uvm.x - 0.5, uvm.y), mGreyVal);
-       // outCol.bg += circle(vec2(uvm.x + 0.5, uvm.y + 0.5), mGreyVal * 0.5);
+        else outCol += circle(uvm, mGreyVal)  ;
+        
+        //else outCol += lines(uvm, mGreyVal, 0.01)* texel.rgb;
+        // outCol.r += circle(vec2(uvm.x - 0.5, uvm.y), mGreyVal);
+        // outCol.bg += circle(vec2(uvm.x + 0.5, uvm.y + 0.5), mGreyVal * 0.5);
         // return this new color
-        gl_FragColor = vec4( outCol * texture2D(tDiffuse, uvo).rgb, 1.0 );
+        gl_FragColor = vec4( outCol , 1.0 );
 
         }
     `
