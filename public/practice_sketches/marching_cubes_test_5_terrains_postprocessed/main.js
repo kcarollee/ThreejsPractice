@@ -533,14 +533,16 @@ function main(){
 
 	
 // TEST SHAPE FUNCTIONS
+	let octaves = 10;
+	let noiseHeight = 100;
 	const terrainTest = (x, y, z) => {
 
 		let c1 = 20.0;
-		let nc = 0.0025;
+		let nc = 0.0035;
 		let nc2 = 0.006;
 		let v = 0.01;
 
-		let octaves = 10;
+		
 		let noiseSum = 0;
 		for (let i = 0; i < octaves; i++){
 			noiseSum += noise.simplex2(x * i * 0.01 + step * v + seedAlt, z * i * 0.01 + step * v + seedAlt);
@@ -551,7 +553,7 @@ function main(){
 		
 		let val = y - c1 * noiseSum;
 
-		val += 100 * noise.simplex3(x * nc2 + step * v + seedAlt, y * nc2 + step * v + seedAlt, z * nc2 + step * v + seedAlt);
+		val += noiseHeight * noise.simplex3(x * nc2 + step * v + seedAlt, y * nc2 + step * v + seedAlt, z * nc2 + step * v + seedAlt);
 		//val += 10 * noise.simplex3(val * nc2 * x, val * nc2 * y, val * nc2 * z);
 		//val = Math.floor(2.0 * val);
 		let m = mapLinear(val, -240 - c1, 240 + c1, -1, 1);
@@ -616,17 +618,35 @@ function main(){
 // GUI
 	const gui = new dat.GUI();
 	const controls = new function(){	
-        this.influenceCoef = 3.0;
-        this.texDiv = 100.0;
+		this.octaves = octaves;
+		this.noiseHeight = noiseHeight;
+        this.texDiv = 170.0;
+        this.colorMode = 'circle';
 	}
 	
-	
-    gui.add(controls, 'influenceCoef', 0, 5.0).onChange(function(e) {
-		influenceCoef = e;
+	gui.add(controls, 'octaves', 2, 10).onChange(function(e){
+		octaves = e;
 	});
+
+	gui.add(controls, 'noiseHeight', 10, 100).onChange(function(e){
+		noiseHeight = e;
+	});
+
 	gui.add(controls, 'texDiv', 4, 300).onChange(function(e){
 		shaderPass.uniforms.texDiv.value = e;
-		console.log(shaderPass.uniforms);
+		
+	});
+
+	gui.add(controls, 'colorMode', ['circle', 'lines']).onChange(function(e){
+		
+		switch (e){
+			case 'circle':
+				shaderPass.uniforms.colorMode.value = 0.0;
+				break;
+			case 'lines':
+				shaderPass.uniforms.colorMode.value = 1.0;
+				break;
+		}
 	});
 
 	gui.close();
