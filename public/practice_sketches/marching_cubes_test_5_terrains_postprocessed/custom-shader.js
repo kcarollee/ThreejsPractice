@@ -99,7 +99,7 @@ THREE.CustomShader = {
         uv2.y = float(floor(uv2.y * divNum2)) * gridDim2;
         vec2 uvm2 = (vUv - uv2) * divNum2;
 
-        if (uv2.y == 0.85 && uv2.x < 0.5) {
+        if (uv2.y == 0.85 && uv2.x < 0.5 && uv2.x > 0.025) {
                 outCol = vec3(.0);
                 float testUvx = (1.0 - uv2.x * 2.0);
                 float testGap = 0.025;
