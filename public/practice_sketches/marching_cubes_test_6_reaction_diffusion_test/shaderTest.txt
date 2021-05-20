@@ -1,0 +1,60 @@
+#ifdef GL_ES
+precision highp float;
+#endif
+
+#extension GL_OES_standard_derivatives : enable
+
+uniform float time;
+uniform vec2 mouse;
+uniform vec2 resolution;
+uniform sampler2D backbuffer;
+
+float get(float x, float y){
+	return texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).r;
+}
+float laplacian(vec2 uv){
+	float sum = 0.0;
+	float d = 2.0;
+	sum += get(-d, 0.0) * 0.2;
+	sum += get(-d, -d) * 0.05;
+	sum += get(-d, d) * 0.05;
+	sum += get(d, 0.0) * 0.2;
+	sum += get(d, -d) * 0.05;
+	sum += get(d, d) * 0.05;
+	sum += get(0.0, -d) * 0.2;
+	sum += get(0.0, d) * 0.2;
+	//sum /= 8.0;
+	sum += get(.0, .0) * -1.0;
+	return sum;
+}
+
+float circle(vec2 uv){
+	return 1.0 - step(0.01, length(mouse - uv));
+}
+
+float newAVal(vec2 uv, float a, float b, float da, float f, float t, float k){
+	return a + t * (da * (laplacian(uv)) - a * b * b + f * (1.0 - a));
+}
+
+float newBVal(vec2 uv, float a, float b, float db, float f, float t, float k){
+	return b + t * (db * (laplacian(uv)) + a * b * b - (k + f) * b);
+}
+void main( void ) {
+
+	vec2 uv = ( gl_FragCoord.xy / resolution.xy ) ;
+	float da = 1.0;
+	float db = 0.5;
+	float f = 0.055; // feed rate
+	float k = 0.062; // kill rate
+	
+	float a = laplacian(uv);
+	float b = 1.0 - a;
+	vec3 outColor = vec3(.0);
+	outColor += circle(uv);
+	
+	float newa = newAVal(uv, a, b, da, f, time, k);
+	float newb = newBVal(uv, a, b, da, f, time, k);
+	//outColor +=  newa;
+	gl_FragColor = vec4( outColor, 1.0 );
+
+}
