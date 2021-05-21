@@ -9,12 +9,53 @@ uniform vec2 mouse;
 uniform vec2 resolution;
 uniform sampler2D backbuffer;
 
-float get(float x, float y){
+vec3 get(float x, float y){
+	return texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).rgb;
+}
+
+float getr(float x, float y){
 	return texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).r;
 }
-float laplacian(vec2 uv){
+
+float getg(float x, float y){
+	return texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).g;
+}
+
+float laplacianr(vec2 uv){
 	float sum = 0.0;
-	float d = 2.0;
+	float d = 1.0;
+	sum += getr(-d, 0.0) * 0.2;
+	sum += getr(-d, -d) * 0.05;
+	sum += getr(-d, d) * 0.05;
+	sum += getr(d, 0.0) * 0.2;
+	sum += getr(d, -d) * 0.05;
+	sum += getr(d, d) * 0.05;
+	sum += getr(0.0, -d) * 0.2;
+	sum += getr(0.0, d) * 0.2;
+	//sum /= 8.0;
+	sum += getr(.0, .0) * -1.0;
+	return sum;
+}
+
+float laplaciang(vec2 uv){
+	float sum = 0.0;
+	float d = 1.0;
+	sum += getg(-d, 0.0) * 0.2;
+	sum += getg(-d, -d) * 0.05;
+	sum += getg(-d, d) * 0.05;
+	sum += getg(d, 0.0) * 0.2;
+	sum += getg(d, -d) * 0.05;
+	sum += getg(d, d) * 0.05;
+	sum += getg(0.0, -d) * 0.2;
+	sum += getg(0.0, d) * 0.2;
+	//sum /= 8.0;
+	sum += getg(.0, .0) * -1.0;
+	return sum;
+}
+
+vec3 laplacian(vec2 uv){
+	vec3 sum = vec3(.0);
+	float d = 1.0;
 	sum += get(-d, 0.0) * 0.2;
 	sum += get(-d, -d) * 0.05;
 	sum += get(-d, d) * 0.05;
@@ -24,37 +65,47 @@ float laplacian(vec2 uv){
 	sum += get(0.0, -d) * 0.2;
 	sum += get(0.0, d) * 0.2;
 	//sum /= 8.0;
-	sum += get(.0, .0) * -1.0;
+	sum += getg(.0, .0) * -1.0;
 	return sum;
 }
 
 float circle(vec2 uv){
-	return 1.0 - step(0.01, length(mouse - uv));
+	return 1.0 - step(0.04, length(mouse - uv));
 }
 
 float newAVal(vec2 uv, float a, float b, float da, float f, float t, float k){
-	return a + t * (da * (laplacian(uv)) - a * b * b + f * (1.0 - a));
+	return a +  (da * (laplacian(uv).r) - a * b * b + f * (1.0 - a));
 }
 
 float newBVal(vec2 uv, float a, float b, float db, float f, float t, float k){
-	return b + t * (db * (laplacian(uv)) + a * b * b - (k + f) * b);
+	return b +  (db * (laplacian(uv).g) + a * b * b - (k + f) * b);
 }
+
+
 void main( void ) {
 
 	vec2 uv = ( gl_FragCoord.xy / resolution.xy ) ;
 	float da = 1.0;
 	float db = 0.5;
-	float f = 0.055; // feed rate
-	float k = 0.062; // kill rate
+	float dt = 1.0;
+	float f = 0.05; // feed rate
+	float k = 0.001; // kill rate
 	
-	float a = laplacian(uv);
-	float b = 1.0 - a;
+	// list of cool feed : kill rate pairs
+	/*
+	0.0055 : 0.02
+	0.05 : 0.001
+	*/
+	
+	float a = getr(0.0, 0.0);
+	float b = getg(0.0, 0.0);
 	vec3 outColor = vec3(.0);
-	outColor += circle(uv);
+	outColor += circle(uv) ;
 	
 	float newa = newAVal(uv, a, b, da, f, time, k);
-	float newb = newBVal(uv, a, b, da, f, time, k);
-	//outColor +=  newa;
+	float newb = newBVal(uv, a, b, db, f, time, k);
+	outColor +=  vec3(newa, newb , tan(newa * 10000.0));
+
 	gl_FragColor = vec4( outColor, 1.0 );
 
 }
