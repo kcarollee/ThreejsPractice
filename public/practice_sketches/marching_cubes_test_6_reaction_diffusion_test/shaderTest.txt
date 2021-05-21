@@ -21,50 +21,21 @@ float getg(float x, float y){
 	return texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).g;
 }
 
-float laplacianr(vec2 uv){
-	float sum = 0.0;
-	float d = 1.0;
-	sum += getr(-d, 0.0) * 0.2;
-	sum += getr(-d, -d) * 0.05;
-	sum += getr(-d, d) * 0.05;
-	sum += getr(d, 0.0) * 0.2;
-	sum += getr(d, -d) * 0.05;
-	sum += getr(d, d) * 0.05;
-	sum += getr(0.0, -d) * 0.2;
-	sum += getr(0.0, d) * 0.2;
-	//sum /= 8.0;
-	sum += getr(.0, .0) * -1.0;
-	return sum;
-}
 
-float laplaciang(vec2 uv){
-	float sum = 0.0;
-	float d = 1.0;
-	sum += getg(-d, 0.0) * 0.2;
-	sum += getg(-d, -d) * 0.05;
-	sum += getg(-d, d) * 0.05;
-	sum += getg(d, 0.0) * 0.2;
-	sum += getg(d, -d) * 0.05;
-	sum += getg(d, d) * 0.05;
-	sum += getg(0.0, -d) * 0.2;
-	sum += getg(0.0, d) * 0.2;
-	//sum /= 8.0;
-	sum += getg(.0, .0) * -1.0;
-	return sum;
-}
 
-vec3 laplacian(vec2 uv){
+vec3 laplacian(vec2 uv, float de){
 	vec3 sum = vec3(.0);
-	float d = 1.0;
-	sum += get(-d, 0.0) * 0.2;
-	sum += get(-d, -d) * 0.05;
-	sum += get(-d, d) * 0.05;
-	sum += get(d, 0.0) * 0.2;
-	sum += get(d, -d) * 0.05;
-	sum += get(d, d) * 0.05;
-	sum += get(0.0, -d) * 0.2;
-	sum += get(0.0, d) * 0.2;
-	//sum /= 8.0;
+	float d = de;
+	float sideCoef = 0.2;
+	float cornerCoef = 0.25 - sideCoef;
+	sum += get(-d, 0.0) * sideCoef;
+	sum += get(-d, -d) * cornerCoef;
+	sum += get(-d, d) * cornerCoef;
+	sum += get(d, 0.0) * sideCoef;
+	sum += get(d, -d) * cornerCoef;
+	sum += get(d, d) * cornerCoef;
+	sum += get(0.0, -d) * sideCoef;
+	sum += get(0.0, d) * sideCoef;
 	sum += getg(.0, .0) * -1.0;
 	return sum;
 }
@@ -73,12 +44,12 @@ float circle(vec2 uv){
 	return 1.0 - step(0.04, length(mouse - uv));
 }
 
-float newAVal(vec2 uv, float a, float b, float da, float f, float t, float k){
-	return a +  (da * (laplacian(uv).r) - a * b * b + f * (1.0 - a));
+float newAVal(vec2 uv, float a, float b, float da, float f, float k, float de){
+	return a +  (da * (laplacian(uv, de).r) - a * b * b + f * (1.0 - a));
 }
 
-float newBVal(vec2 uv, float a, float b, float db, float f, float t, float k){
-	return b +  (db * (laplacian(uv).g) + a * b * b - (k + f) * b);
+float newBVal(vec2 uv, float a, float b, float db, float f, float k, float de){
+	return b +  (db * (laplacian(uv, de).g) + a * b * b - (k + f) * b);
 }
 
 
@@ -88,6 +59,7 @@ void main( void ) {
 	float da = 1.0;
 	float db = 0.5;
 	float dt = 1.0;
+	float de = 1.0;
 	float f = 0.05; // feed rate
 	float k = 0.001; // kill rate
 	
@@ -102,9 +74,9 @@ void main( void ) {
 	vec3 outColor = vec3(.0);
 	outColor += circle(uv) ;
 	
-	float newa = newAVal(uv, a, b, da, f, time, k);
-	float newb = newBVal(uv, a, b, db, f, time, k);
-	outColor +=  vec3(newa, newb , tan(newa * 10000.0));
+	float newa = newAVal(uv, a, b, da, f, k, de);
+	float newb = newBVal(uv, a, b, db, f, k, de);
+	outColor +=  vec3(newa, newb , .0);
 
 	gl_FragColor = vec4( outColor, 1.0 );
 
