@@ -36,12 +36,12 @@ vec3 laplacian(vec2 uv, float de){
 	sum += get(d, d) * cornerCoef;
 	sum += get(0.0, -d) * sideCoef;
 	sum += get(0.0, d) * sideCoef;
-	sum += getg(.0, .0) * -1.0;
+	sum += get(.0, .0) * -1.0;
 	return sum;
 }
 
 float circle(vec2 uv){
-	return 1.0 - step(0.04, length(mouse - uv));
+	return 1.0 - step(0.001, length(mouse - uv));
 }
 
 float newAVal(vec2 uv, float a, float b, float da, float f, float k, float de){
@@ -55,28 +55,36 @@ float newBVal(vec2 uv, float a, float b, float db, float f, float k, float de){
 
 void main( void ) {
 
-	vec2 uv = ( gl_FragCoord.xy / resolution.xy ) ;
+	vec2 uv = gl_FragCoord.xy / resolution.xy;
+	vec3 outColor = vec3(.0);
+
 	float da = 1.0;
-	float db = 0.5;
+	float db = 0.1;
 	float dt = 1.0;
 	float de = 1.0;
-	float f = 0.05; // feed rate
-	float k = 0.001; // kill rate
+	float f = .0545; // feed rate
+	float k = .062; // kill rate
 	
-	// list of cool feed : kill rate pairs
-	/*
-	0.0055 : 0.02
-	0.05 : 0.001
-	*/
+	vec3 lap = laplacian(uv, de);
+	vec3 v = get(.0, .0);
 	
-	float a = getr(0.0, 0.0);
-	float b = getg(0.0, 0.0);
-	vec3 outColor = vec3(.0);
-	outColor += circle(uv) ;
+
+	float a = v.r;
+	float b = v.g;
+	float abb = a * b * b;
+
+	float nexta = da * lap.r - abb + f * (1.0 - a);
+	float nextb = db * lap.g + abb - (f + k) * b;
+
+	outColor += vec3(v.r, v.g, .0)  + vec3(nexta, nextb, .0);
+
+	//outColor +=  vec3(newa, newb , .0);
+
 	
-	float newa = newAVal(uv, a, b, da, f, k, de);
-	float newb = newBVal(uv, a, b, db, f, k, de);
-	outColor +=  vec3(newa, newb , .0);
+	outColor += circle(uv);
+	
+	
+	
 
 	gl_FragColor = vec4( outColor, 1.0 );
 
