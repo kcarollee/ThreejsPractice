@@ -153,20 +153,31 @@ void main( void ) {
     float c = (smoothstep(0.1, 0.4, length(uv - vec2(0.5))));
 	float da = 1.0 ;
 	//float db = map(c, 0.0, 1.0, 0.2, 0.8);
-    float db = 0.3;
+    float db = 0.5;
 	float dt = 1.0;
 	float de = 1.0;
 	
 
   float f;
   float k;
-  if (length(uv - vec2(0.5)) < 0.25 + 0.1 * sin(time)){
+  if (length(uv - vec2(0.5)) < 0.35 + 0.1 * sin(time)){
     f = 0.029;
     k = 0.057;
-  
+  	
 
   }
+
+  else if(length(uv - vec2(0.75)) < 0.35 + 0.1 * sin(time)){
+  	f = 0.0195;
+  	k = 0.042;
+  }
+
+  else if(length(uv - vec2(0.25)) < 0.35 + 0.1 * sin(time)){
+  	f = 0.0152;
+  	k = 0.046;
+  }
   else{
+  db = 0.1;
     f = 0.03;
     k = 0.062;
   }
