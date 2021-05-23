@@ -364,9 +364,9 @@ class MarchingCubes{
 		let dStart = testSpace.depth * -0.5 + this.centerZ;
 		let dEnd = testSpace.depth * 0.5 + this.centerZ;
 
-		for (let w = wStart; w < wEnd; w += singleCubeParams.width){
-			for (let h = hStart; h < hEnd; h += singleCubeParams.height){
-				for (let d = dStart; d < dEnd; d += singleCubeParams.depth){
+		for (let h = hStart; h < hEnd; h += singleCubeParams.height){
+			for (let d = dStart; d < dEnd; d += singleCubeParams.depth){
+				for (let w = wStart; w < wEnd; w += singleCubeParams.width){
 					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
 					this.marchingCubes.push(cube);
 				}
@@ -533,32 +533,7 @@ function main(){
 
 	
 // TEST SHAPE FUNCTIONS
-	let octaves = 10;
-	let noiseHeight = 100;
-	const terrainTest = (x, y, z) => {
-
-		let c1 = 20.0;
-		let nc = 0.0035;
-		let nc2 = 0.006;
-		let v = 0.01;
-
-		
-		let noiseSum = 0;
-		for (let i = 0; i < octaves; i++){
-			noiseSum += noise.simplex2(x * i * 0.01 + step * v + seedAlt, z * i * 0.01 + step * v + seedAlt);
-		}
-		noiseSum /= octaves;
-
-
-		
-		let val = y - c1 * noiseSum;
-
-		val += noiseHeight * noise.simplex3(x * nc2 + step * v + seedAlt, y * nc2 + step * v + seedAlt, z * nc2 + step * v + seedAlt);
-		//val += 10 * noise.simplex3(val * nc2 * x, val * nc2 * y, val * nc2 * z);
-		//val = Math.floor(2.0 * val);
-		let m = mapLinear(val, -240 - c1, 240 + c1, -1, 1);
-		return m;
-	}
+	
 
 // CANVAS & RENDERER
 	const canvas = document.querySelector('#c');
@@ -582,9 +557,7 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(400.0, 400.0, 400.0, 20, 20, 20, 0, 0, 0, terrainTest, 0.0, 2);
-    marchingCubes.updateCubes();
-
+	
    
     //let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 1.25, 1.25, 1.25, 20, -20, 0, randomSphereFunc, 0.65);
 	//marchingCubes2.updateCubes();
@@ -599,59 +572,18 @@ function main(){
     orbitControls.target.copy(scene.position);
     orbitControls.update();
 
-// POST-PROCESSING
-	resizeRenderToDisplaySize(renderer); // not calling this function prior to the passes yields low-res frames
-	let renderPass = new THREE.RenderPass(scene, camera);
-	let effectCopy = new THREE.ShaderPass(THREE.CopyShader);
-	effectCopy.renderToScreen = true;
-	let shaderPass = new THREE.ShaderPass(THREE.CustomShader);
-	//shaderPass.resolution.set(window.innerWidth, window.innerHeight);
-	shaderPass.enabled = true;
 
-	
-
-	let composer = new THREE.EffectComposer(renderer);
-	composer.addPass(renderPass);
-	composer.addPass(shaderPass);
-	composer.addPass(effectCopy);
 
 // GUI
 	const gui = new dat.GUI();
-	const controls = new function(){	
-		this.octaves = octaves;
-		this.noiseHeight = noiseHeight;
-        this.texDiv = 170.0;
-        this.colorMode = 'circle';
-	}
+
 	
-	gui.add(controls, 'octaves', 2, 10).onChange(function(e){
-		octaves = e;
-	});
+	
 
-	gui.add(controls, 'noiseHeight', 10, 100).onChange(function(e){
-		noiseHeight = e;
-	});
-
-	gui.add(controls, 'texDiv', 4, 300).onChange(function(e){
-		shaderPass.uniforms.texDiv.value = e;
-		
-	});
-
-	gui.add(controls, 'colorMode', ['circle', 'lines']).onChange(function(e){
-		
-		switch (e){
-			case 'circle':
-				shaderPass.uniforms.colorMode.value = 0.0;
-				break;
-			case 'lines':
-				shaderPass.uniforms.colorMode.value = 1.0;
-				break;
-		}
-	});
 
 	gui.close();
 
-	let clock = new THREE.Clock();
+	
 
 
 	function render(time){
@@ -663,8 +595,7 @@ function main(){
 
 		
 		
-		marchingCubes.updateCubes();
-		//marchingCubes.updateShaderMaterial();
+		
 
 		
 		if (resizeRenderToDisplaySize(renderer)){
@@ -673,10 +604,10 @@ function main(){
 			camera.updateProjectionMatrix();
 		}
 		
-		//renderer.render(scene, camera);
+		renderer.render(scene, camera);
         requestAnimationFrame(render);
 
-        composer.render(clock.getDelta());
+       
         
       
 	}
@@ -694,12 +625,12 @@ function main(){
 		}
 		return needResize;
 	}
-	requestAnimationFrame(render);
+	
 
 	function onMouseMove(){
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-        //debugCube.position.set(mouse.x, mouse.y);
+       
     }
 
 	function initStats(){

@@ -363,10 +363,10 @@ class MarchingCubes{
 
 		let dStart = testSpace.depth * -0.5 + this.centerZ;
 		let dEnd = testSpace.depth * 0.5 + this.centerZ;
-
-		for (let w = wStart; w < wEnd; w += singleCubeParams.width){
-			for (let h = hStart; h < hEnd; h += singleCubeParams.height){
-				for (let d = dStart; d < dEnd; d += singleCubeParams.depth){
+		
+		for (let h = hStart; h < hEnd; h += singleCubeParams.height){
+			for (let d = dStart; d < dEnd; d += singleCubeParams.depth){
+				for (let w = wStart; w < wEnd; w += singleCubeParams.width){
 					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
 					this.marchingCubes.push(cube);
 				}
