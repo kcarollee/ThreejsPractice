@@ -364,13 +364,29 @@ class MarchingCubes{
 		let dStart = testSpace.depth * -0.5 + this.centerZ;
 		let dEnd = testSpace.depth * 0.5 + this.centerZ;
 
+		let wi = 0;
+		let hi = 0;
+		let di = 0;
+
+		let dnum = this.testSpace.depth / this.singleCubeParams.depth;
+		let hnum = this.testSpace.height / this.singleCubeParams.height;
+		let wnum = this.testSpace.width / this.singleCubeParams.width;
+
 		for (let h = hStart; h < hEnd; h += singleCubeParams.height){
 			for (let d = dStart; d < dEnd; d += singleCubeParams.depth){
 				for (let w = wStart; w < wEnd; w += singleCubeParams.width){
 					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
+					cube.index3 = [wi, di, hi];
+					cube.indexFlat = wi + wnum * (di + dnum * hi);
+					console.log(cube.index3 + " " + cube.indexFlat);
+					wi++;
 					this.marchingCubes.push(cube);
 				}
-			}	
+				di++;
+				wi = 0;
+			}
+			hi++;
+			di = 0;	
 		}
 	}
 
@@ -558,8 +574,8 @@ function main(){
 
 
 	
-   
-    //let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 1.25, 1.25, 1.25, 20, -20, 0, randomSphereFunc, 0.65);
+    var f = (x, y, z) => {}
+    let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 10, 5, 6, 20, -20, 0, f, 0.65);
 	//marchingCubes2.updateCubes();
 	
 
