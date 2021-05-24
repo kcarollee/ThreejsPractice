@@ -373,13 +373,23 @@ class MarchingCubes{
 		let wnum = this.testSpace.width / this.singleCubeParams.width;
 
 		var flatten = (w, d, h) =>{
-			return w + wnum * (d + dnum * hi);
+			return w + wnum * (d + dnum * h);
+		}
+
+		var mod = (n, m) => {
+			return ((n % m) + m) % m;
 		}
 
 		// neighboring cubes:
 		`
+		left:
+		right:
+		down:
+		up:
+		back:
+		front:
 
-		
+
 		`
 
 		for (let h = hStart; h < hEnd; h += singleCubeParams.height){
@@ -387,11 +397,54 @@ class MarchingCubes{
 				for (let w = wStart; w < wEnd; w += singleCubeParams.width){
 					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
 					cube.index3 = [wi, di, hi];
-					cube.indexFlat = flatten(wi, di, hi);
-					cube.neighborIndices = {
+					cube.indexFlat = flatten(wi, di, hi); // same as the index in this.marchingCubes
+					let hiMinus = mod(hi - 1, hnum);
+					let hiPlus = mod(hi + 1, hnum);
 
-					};
-					console.log(cube.index3 + " " + cube.indexFlat);
+					let wiMinus = mod(wi - 1, wnum);
+					let wiPlus = mod(wi + 1, wnum);
+
+					let diMinus = mod(di - 1, dnum);
+					let diPlus = mod(di + 1, dnum);
+
+					cube.neighborIndices = [
+						// face sharing (0 ~ 5)
+						flatten(wi, di, hiMinus), // up
+						flatten(wi, di, hiPlus), // down
+						flatten(wiMinus, di, hi), // left
+						flatten(wiPlus, di, hi), // right
+						flatten(wi, diMinus, hi), // back
+						flatten(wi, diPlus, hi),  // front
+
+						// side sharing (6 ~ 17)
+						flatten(wiMinus, di, hiMinus),
+						flatten(wiPlus, di, hiMinus),
+						flatten(wi, diMinus, hiMinus),
+						flatten(wi, diPlus, hiMinus),
+
+						flatten(wiMinus, di, hiPlus),
+						flatten(wiPlus, di, hiPlus),
+						flatten(wi, diMinus, hiPlus),
+						flatten(wi, diPlus, hiPlus),
+
+						flatten(wiMinus, diMinus, hi),
+						flatten(wiPlus, diMinus, hi),
+						flatten(wiMinus, diPlus, hi),
+						flatten(wiPlus, diPlus, hi),
+
+						// vertex sharing (18 ~ 25)
+						flatten(wiMinus, diMinus, hiMinus),
+						flatten(wiMinus, diMinus, hiPlus),
+						flatten(wiMinus, diPlus, hiMinus),
+						flatten(wiMinus, diPlus, hiPlus),
+						flatten(wiPlus, diMinus, hiMinus),
+						flatten(wiPlus, diMinus, hiPlus),
+						flatten(wiPlus, diPlus, hiMinus),
+						flatten(wiPlus, diPlus, hiPlus),
+
+
+					];
+					//console.log(cube.index3 + " " + cube.indexFlat + "  " + cube.neighborIndices);
 					wi++;
 					this.marchingCubes.push(cube);
 				}
