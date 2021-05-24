@@ -372,12 +372,25 @@ class MarchingCubes{
 		let hnum = this.testSpace.height / this.singleCubeParams.height;
 		let wnum = this.testSpace.width / this.singleCubeParams.width;
 
+		var flatten = (w, d, h) =>{
+			return w + wnum * (d + dnum * hi);
+		}
+
+		// neighboring cubes:
+		`
+
+		
+		`
+
 		for (let h = hStart; h < hEnd; h += singleCubeParams.height){
 			for (let d = dStart; d < dEnd; d += singleCubeParams.depth){
 				for (let w = wStart; w < wEnd; w += singleCubeParams.width){
 					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
 					cube.index3 = [wi, di, hi];
-					cube.indexFlat = wi + wnum * (di + dnum * hi);
+					cube.indexFlat = flatten(wi, di, hi);
+					cube.neighborIndices = {
+
+					};
 					console.log(cube.index3 + " " + cube.indexFlat);
 					wi++;
 					this.marchingCubes.push(cube);
@@ -575,7 +588,7 @@ function main(){
 
 	
     var f = (x, y, z) => {}
-    let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 10, 5, 6, 20, -20, 0, f, 0.65);
+    let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 10, 10, 10, 20, -20, 0, f, 0.65);
 	//marchingCubes2.updateCubes();
 	
 
