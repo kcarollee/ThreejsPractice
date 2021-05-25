@@ -80,26 +80,62 @@ class Cube{
     	
     	this.bprev;
     	this.bnext;
+
+    	this.rdval;
     }
 
     hashFunc(){
 
     }
 
-    getLaplace(cubeArr){
+    getLaplacian(cubeArr){
     	// ni: neighboring cube's index
     	// i: index of ni in this.neighborIndices
     	// 0 <= i < 6: neighbor shares face 
     	// 6 <= i < 18: neighbor shares side
     	// 18 <= i < 26: neighbor shares vertex
-    	let fc;
-    	let sc;
-    	let vc
-    	this.neighborIndices.forEach(function(ni, i){
+    	let fc = 1.0 / 26.0;
+    	let sc = 1.0 / 26.0;
+    	let vc = 1.0 / 26.0;
 
+    	let ca = cubeArr;
+    	let asum = 0.0;
+    	let bsum = 0.0;
+    	this.neighborIndices.forEach(function(ni, i){
+    		if (i < 6){
+    			asum += ca[ni].aprev * fc;
+    			bsum += ca[ni].bprev * fc;
+    		}
+    		else if (i < 18){
+    			asum += ca[ni].aprev * sc;
+    			bsum += ca[ni].bprev * sc;
+    		}
+    		else if (i < 26){
+    			asum += ca[ni].aprev * vc;
+    			bsum += ca[ni].bprev * vc;
+    		}
     	});
+    	asum -= this.aprev;
+    	bsum -= this.bprev;
+    	
+    	let abb = this.aprev * this.bprev * this.bprev;
+    	this.anext = this.aprev + this.da * asum - abb + this.feed * (1.0 - this.aprev);
+    	this.bnext = this.bprev + this.db * bsum + abb - (this.feed + this.kill) * this.bprev;
+
+    	this.anext = clamp(this.anext, 0.0, 1.0);
+    	this.bnext = clamp(this.bnext, 0.0, 1.0);
+    	this.rdval = (this.anext + this.bnext) / 2.0;
+    	return this.rdval;
     }
 
+    swapValues(){
+
+    	this.aprev = this.anext;
+    	this.bprev = this.bnext;
+
+    }
+
+    
     setCubeCorners(){
     	// half width, height, depth
     	let hw = this.width * 0.5;
@@ -437,6 +473,13 @@ class MarchingCubes{
 					let diMinus = mod(di - 1, dnum);
 					let diPlus = mod(di + 1, dnum);
 
+					cube.feed = 0.0028;
+					cube.kill = 0.057;
+					cube.da = 1.0;
+					cube.db = 0.0;
+
+					cube.aprev = noise.simplex3(w, h, d);
+					cube.bprev = noise.simplex3(d, w, h);
 					cube.neighborIndices = [
 						// face sharing (0 ~ 5)
 						flatten(wi, di, hiMinus), // up
@@ -671,8 +714,8 @@ function main(){
 
 	
     var f = (x, y, z) => {}
-    let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 10, 10, 10, 20, -20, 0, f, 0.65);
-	//marchingCubes2.updateCubes();
+    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 10, 10, 10, 20, -20, 0, f, 0.65);
+	//marchingCubes.updateCubes();
 	
 
 // LIGHTS
