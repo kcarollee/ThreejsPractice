@@ -64,10 +64,40 @@ class Cube{
     	this.prevVertInHashMap = false;
 
     	this.id = ++Cube.id;
+
+    	// used for reaction diffusion.
+    	this.index3;
+    	this.indexFlat;
+    	this.neighborIndices;
+
+    	this.da;
+    	this.db;
+    	this.feed;
+    	this.kill;
+
+    	this.aprev;
+    	this.anext;
+    	
+    	this.bprev;
+    	this.bnext;
     }
 
     hashFunc(){
 
+    }
+
+    getLaplace(cubeArr){
+    	// ni: neighboring cube's index
+    	// i: index of ni in this.neighborIndices
+    	// 0 <= i < 6: neighbor shares face 
+    	// 6 <= i < 18: neighbor shares side
+    	// 18 <= i < 26: neighbor shares vertex
+    	let fc;
+    	let sc;
+    	let vc
+    	this.neighborIndices.forEach(function(ni, i){
+
+    	});
     }
 
     setCubeCorners(){
