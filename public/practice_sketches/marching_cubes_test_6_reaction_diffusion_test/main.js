@@ -88,7 +88,7 @@ class Cube{
 
     }
 
-    getLaplacian(cubeArr){
+    diffuseSum(cubeArr){
     	// ni: neighboring cube's index
     	// i: index of ni in this.neighborIndices
     	// 0 <= i < 6: neighbor shares face 
