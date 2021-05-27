@@ -125,6 +125,8 @@ class Cube{
     	this.anext = clamp(this.anext, 0.0, 1.0);
     	this.bnext = clamp(this.bnext, 0.0, 1.0);
     	this.rdval = (this.anext + this.bnext) / 2.0;
+
+    	//console.log(this.rdval);
     	return this.rdval;
     }
 
@@ -183,6 +185,7 @@ class Cube{
     		let y = this.cubeVertArr[i * 3 + 1];
     		let z = this.cubeVertArr[i * 3 + 2];
     		if (f(x, y, z) > threshold) {
+    		//if (this.rdval > threshold) {
     			this.configIndex |= 1 << i;
     		}
     	}
@@ -256,10 +259,14 @@ class Cube{
     			if (interpolate){
     				let v1f = f(v1x, v1y, v1z);
     				let v2f = f(v2x, v2y, v2z);
+    				v1f = this.aprev;
+    				v2f = this.bprev;
     				let r = v1f < v2f ?
     				mapLinear(threshold, v1f, v2f, 0, 1) : 
     				mapLinear(threshold, v2f, v1f, 0, 1);
-    			
+
+
+    				r = Math.abs(this.aprev - this.bprev);
     				if (v1f < v2f){
     					mx = v1x + (v2x - v1x) * r;
     					my = v1y + (v2y - v1y) * r;
@@ -448,7 +455,7 @@ class MarchingCubes{
 
 		// neighboring cubes:
 		`
-		left:
+		left: 
 		right:
 		down:
 		up:
@@ -473,13 +480,13 @@ class MarchingCubes{
 					let diMinus = mod(di - 1, dnum);
 					let diPlus = mod(di + 1, dnum);
 
-					cube.feed = 0.0028;
+					cube.feed = 0.028;
 					cube.kill = 0.057;
 					cube.da = 1.0;
 					cube.db = 0.0;
 
-					cube.aprev = noise.simplex3(w, h, d);
-					cube.bprev = noise.simplex3(d, w, h);
+					cube.aprev = mapLinear(noise.simplex3(w, h, d), -1, 1, 0, 1);
+					cube.bprev = mapLinear(noise.simplex3(d, w, h), -1, 1, 0, 1);
 					cube.neighborIndices = [
 						// face sharing (0 ~ 5)
 						flatten(wi, di, hiMinus), // up
@@ -548,16 +555,21 @@ class MarchingCubes{
 		let uvs = this.uvs;
 		let useDifferentHashFunc = this.useDifferentHashFunc;
 		let hashFuncIndex = this.hashFuncIndex;
-		
+		let marchingCubes = this.marchingCubes;
 
 		// note that the vertices and indices arrays are passed as arguments to the cubes, but not the uv array.
 		// the uv array is filled AFTER vertices and indices are calculated. 
 		this.marchingCubes.forEach(function(c){
 			c.reset();
+
 			c.setConfigIndex(func, threshold);
+
+			c.diffuseSum(marchingCubes);
 			c.setMeshVertices(func, threshold, interpolate, hashMap, 
 				vertices, indices, index, 
 				useDifferentHashFunc, hashFuncIndex);
+			
+			c.swapValues();
 		});
 
 			
@@ -704,7 +716,7 @@ function main(){
 	const far = 5000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 	//const camera = new THREE.OrthographicCamera(window.innerWidth * -0.5, window.innerWidth * 0.5, window.innerHeight * 0.5, window.innerHeight  *-0.5, 1, 1000);
-	camera.position.set(0, 0, 300);
+	camera.position.set(0, 0, 50);
 
 	scene = new THREE.Scene();
 	
@@ -713,9 +725,15 @@ function main(){
 
 
 	
-    var f = (x, y, z) => {}
-    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 10, 10, 10, 20, -20, 0, f, 0.65);
-	//marchingCubes.updateCubes();
+    var f = (x, y, z) => {
+    	let r  = 15;
+    	let ds = x*x+y*y+z*z;
+    	let m = mapLinear(ds, 0, r*r, 0, 1);
+    	return m;
+    }
+
+    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 2.5, 2.5, 2.5, 0, 0, 0, f, 0.5, 0);
+	marchingCubes.updateCubes();
 	
 
 // LIGHTS
@@ -739,16 +757,16 @@ function main(){
 	gui.close();
 
 	
-
+	render();
 
 	function render(time){
 		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 		time *= 0.001;
 		step += 1;
-
+		
 		//stats.update();
 
-		
+		marchingCubes.updateCubes();
 		
 		
 
