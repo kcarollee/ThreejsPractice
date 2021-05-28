@@ -98,6 +98,15 @@ class Cube{
     	this.bnext;
 
     	this.rdval;
+
+
+    	/*
+    	this.debugGeom = new THREE.BoxGeometry(this.width, this.height, this.depth);
+    	this.debugCube = new THREE.Mesh(this.debugGeom, Cube.debugMat);
+    	this.debugCube.position.set(this.centerX, this.centerY, this.centerZ);
+    	scene.add(this.debugCube);
+
+    	*/
     }
 
     hashFunc(){
@@ -356,6 +365,8 @@ Cube.uvs = [
 	1, 0
 ];
 Cube.id = 0;
+
+Cube.debugMat = new THREE.MeshBasicMaterial({color: 0xFFFFFF});
 
 
 class MarchingCubes{
