@@ -569,7 +569,6 @@ class MarchingCubes{
 				vertices, indices, index, 
 				useDifferentHashFunc, hashFuncIndex);
 			
-			c.swapValues();
 		});
 
 			
@@ -625,6 +624,10 @@ class MarchingCubes{
 			ref.geometry.dispose();
 			ref.material.dispose();
 		}
+
+		this.marchingCubes.forEach(function(c){
+			c.swapValues();
+		});
 
 
 		// reseting attributes
