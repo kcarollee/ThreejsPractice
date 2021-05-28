@@ -7,6 +7,9 @@ let texture;
 let vertShader, fragShader;
 let uniforms;
 
+let globalVerticesArray = [];
+let globalVerticesHashMap = new Map();
+
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -19,6 +22,19 @@ function clamp(x, min, max){
 function smoothUnion(x, y, k){
 	let h = clamp(0.5 + 0.5 * (y - x) / (1 - k), 0, 1);
 	return mix(x, y, h) - (1 - k) * h * (1.0 - h);
+}
+
+function hash2D(x, y){
+	
+	return 0.5 * (x + y) * (x + y + 1) + y;
+}
+function hash3D(x, y, z){
+
+	return 0.5 * (hash2D(x, y) + z) * (hash2D(x, y) + z + 1) + z;
+}
+
+function hashNoise(x, y, z){
+	return noise.simplex3(x * 0.01, y * 0.01, z * 0.01);
 }
 
 class Cube{
@@ -153,24 +169,32 @@ class Cube{
     		1, 1, 1,
     		-1, 1, 1
     	];
+    	let x, y, z;
     	for (let i = 0; i < 24; i++){
+    		
     		switch(i % 3){
     			// push xpos of the corner
     			case 0:
-    				let x = this.centerX + mult[i] * hw;
+    				x = this.centerX + mult[i] * hw;
     				this.cubeVertArr.push(x);
     				break;
     			// push ypos of the corner
     			case 1:
-    				let y = this.centerY + mult[i] * hh;
+    				y = this.centerY + mult[i] * hh;
     				this.cubeVertArr.push(y);
     				break;
     			// push zpos of the corner
     			case 2:
-    				let z = this.centerZ + mult[i] * hd;
+    				z = this.centerZ + mult[i] * hd;
     				this.cubeVertArr.push(z);
+
+    				let vhash = hashNoise(x, y, z);
+    				if (!globalVerticesHashMap.has(vhash)){
+    					globalVerticesHashMap.set(vhash, {pos: [x, y, z]});
+    				}
     				break;
     		}
+
     	}
     }
 
@@ -735,9 +759,9 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 2.5, 2.5, 2.5, 0, 0, 0, f, 0.5, 0);
+    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 5, 5, 5, 0, 0, 0, f, 0.5, 0);
 	marchingCubes.updateCubes();
-	
+	console.log(globalVerticesHashMap);
 
 // LIGHTS
 	let dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
