@@ -10,6 +10,13 @@ let uniforms;
 let globalVerticesArray = [];
 let globalVerticesHashMap = new Map();
 
+let feedGlobal = 0.030;
+let killGlobal = 0.062;
+let thresholdGlobal = 0.3;
+
+let daGlobal = 0.3;
+let dbGlobal = 0.3;
+
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -37,6 +44,11 @@ function hash3D(x, y, z){
 function hashString(x, y, z){
 	//return noise.simplex3(x * 0.01, y * 0.01, z * 0.01);
 	return x.toString() + y.toString() + z.toString();
+}
+
+function distSquared(x0, y0, z0, x1, y1, z1){
+	let ds = Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2) + Math.pow(z1 - z0, 2);
+	return ds;
 }
 
 function diffuseSumTest(x, y, z){
@@ -72,10 +84,18 @@ function diffuseSumTest(x, y, z){
 
 
 	let abb = vertex.aprev * vertex.bprev * vertex.bprev;
+	/*
     vertex.anext = vertex.aprev + vertex.da * asum - abb + vertex.feed * (1.0 - vertex.aprev);
     vertex.bnext = vertex.bprev + vertex.db * bsum + abb - (vertex.feed + vertex.kill) * vertex.bprev;
+	*/
 
-
+	vertex.anext = vertex.aprev + vertex.da * asum - abb + feedGlobal * (1.0 - vertex.aprev);
+    vertex.bnext = vertex.bprev + vertex.db * bsum + abb - (feedGlobal+ killGlobal) * vertex.bprev;
+	
+	/*
+	vertex.anext = vertex.aprev + daGlobal * asum - abb + feedGlobal * (1.0 - vertex.aprev);
+    vertex.bnext = vertex.bprev + dbGlobal * bsum + abb - (feedGlobal + killGlobal) * vertex.bprev;
+	*/
     vertex.anext = clamp(vertex.anext, 0.0, 1.0);
     vertex.bnext = clamp(vertex.bnext, 0.0, 1.0);
     vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
@@ -330,18 +350,18 @@ class Cube{
     							hashString(newXPlus, newYPlus, newZMinus),
     							hashString(newXPlus, newYPlus, newZPlus),
     						],
-    						aprev: Math.random(),
+    						aprev: 1.0,
     						anext: 0.0,
 
-    						bprev: Math.random(),
+    						bprev:mapLinear(distSquared(x, y, z, 0, 0, 0), 0, 900, 0, 1),
     						
     						bnext: 0.0,
     						
-    						da: Math.random(),
-    						db: Math.random(),
+    						da: 0.9,
+    						db: 0.1,
     						
-    						feed: 0.030,
-    						kill: 0.062,
+    						feed: 0.0030,
+    						kill: 0.0062,
     						
     						rdval: 0.0
     					});
@@ -373,7 +393,8 @@ class Cube{
     		let x = this.cubeVertArr[i * 3];
     		let y = this.cubeVertArr[i * 3 + 1];
     		let z = this.cubeVertArr[i * 3 + 2];
-    		if (f(x, y, z) > threshold) {
+    		//if (f(x, y, z) > threshold) {
+    		if (f(x, y, z) > thresholdGlobal) {
     			//console.log("HEY");
     			//if (!globalVerticesHashMap.has(hashString(x, y, z))) console.log("HAS");
     		//if (this.rdval > threshold) {
@@ -959,7 +980,7 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(40.0, 40.0, 40.0, 2.5, 2.5, 2.5, 0, 0, 0, diffuseSumTest, 0.3, 0);
+    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 1.5, 1.5, 1.5, 0, 0, 0, diffuseSumTest, 0.3, 0);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -978,7 +999,33 @@ function main(){
 // GUI
 	const gui = new dat.GUI();
 
+	const controls = new function(){	
+		this.feedGlobal = feedGlobal;
+		this.killGlobal = killGlobal;
+		this.thresholdGlobal = thresholdGlobal;
+		this.daGlobal = daGlobal;
+		this.dbGlobal = dbGlobal;
+	}
 	
+	gui.add(controls, 'feedGlobal', 0.01, 0.07).onChange(function(e){
+		feedGlobal = e;
+	});
+
+	gui.add(controls, 'killGlobal', 0.01, 0.07).onChange(function(e){
+		killGlobal = e;
+	});
+
+	gui.add(controls, 'thresholdGlobal', 0.0, 1.0).onChange(function(e){
+		thresholdGlobal = e;
+	});
+
+	gui.add(controls, 'daGlobal', 0.0, 1.0).onChange(function(e){
+		daGlobal = e;
+	});
+
+	gui.add(controls, 'dbGlobal', 0.0, 1.0).onChange(function(e){
+		dbGlobal = e;
+	});
 	
 
 

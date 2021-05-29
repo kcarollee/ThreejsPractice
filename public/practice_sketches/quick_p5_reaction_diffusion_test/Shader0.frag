@@ -192,6 +192,8 @@ void main( void ) {
    
 	float abb = a * b * b;
 
+	
+
 	a += da * lap.r - abb + f * (1.0 - a);
 	b += db * lap.g + abb - (f + k) * b;
 	a = clamp(a, 0.0, 1.0);
