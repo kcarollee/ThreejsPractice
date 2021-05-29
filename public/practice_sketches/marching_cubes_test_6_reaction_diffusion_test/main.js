@@ -14,8 +14,8 @@ let feedGlobal = 0.030;
 let killGlobal = 0.062;
 let thresholdGlobal = 0.3;
 
-let daGlobal = 0.3;
-let dbGlobal = 0.3;
+let daGlobal = 0.9;
+let dbGlobal = 0.1;
 
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
@@ -89,13 +89,15 @@ function diffuseSumTest(x, y, z){
     vertex.bnext = vertex.bprev + vertex.db * bsum + abb - (vertex.feed + vertex.kill) * vertex.bprev;
 	*/
 
+	/*
 	vertex.anext = vertex.aprev + vertex.da * asum - abb + feedGlobal * (1.0 - vertex.aprev);
     vertex.bnext = vertex.bprev + vertex.db * bsum + abb - (feedGlobal+ killGlobal) * vertex.bprev;
+	*/
+
 	
-	/*
 	vertex.anext = vertex.aprev + daGlobal * asum - abb + feedGlobal * (1.0 - vertex.aprev);
     vertex.bnext = vertex.bprev + dbGlobal * bsum + abb - (feedGlobal + killGlobal) * vertex.bprev;
-	*/
+	
     vertex.anext = clamp(vertex.anext, 0.0, 1.0);
     vertex.bnext = clamp(vertex.bnext, 0.0, 1.0);
     vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
@@ -350,7 +352,7 @@ class Cube{
     							hashString(newXPlus, newYPlus, newZMinus),
     							hashString(newXPlus, newYPlus, newZPlus),
     						],
-    						aprev: 1.0,
+    						aprev: 0.9,
     						anext: 0.0,
 
     						bprev:mapLinear(distSquared(x, y, z, 0, 0, 0), 0, 900, 0, 1),
@@ -964,7 +966,7 @@ function main(){
 	const far = 5000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 	//const camera = new THREE.OrthographicCamera(window.innerWidth * -0.5, window.innerWidth * 0.5, window.innerHeight * 0.5, window.innerHeight  *-0.5, 1, 1000);
-	camera.position.set(0, 0, 50);
+	camera.position.set(0, 0, 30);
 
 	scene = new THREE.Scene();
 	
@@ -980,7 +982,7 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 1.5, 1.5, 1.5, 0, 0, 0, diffuseSumTest, 0.3, 0);
+    let marchingCubes = new MarchingCubes(15.0, 15, 15, 1.0, 1.0, 1.0, 0, 0, 0, diffuseSumTest, 0.3, 0);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
