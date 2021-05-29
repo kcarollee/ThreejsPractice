@@ -65,7 +65,7 @@ function diffuseSumTest(x, y, z){
 			bsum += globalVerticesHashMap.get(h).bprev * vc;
 		}
 	});
-	//console.log(asum);
+	
 	asum -= vertex.aprev;
 	bsum -= vertex.bprev;
 
@@ -75,18 +75,21 @@ function diffuseSumTest(x, y, z){
     vertex.anext = vertex.aprev + vertex.da * asum - abb + vertex.feed * (1.0 - vertex.aprev);
     vertex.bnext = vertex.bprev + vertex.db * bsum + abb - (vertex.feed + vertex.kill) * vertex.bprev;
 
-    vertex.anext = clamp(vertex.aprev, 0.0, 1.0);
-    vertex.bnext = clamp(vertex.bprev, 0.0, 1.0);
+
+    vertex.anext = clamp(vertex.anext, 0.0, 1.0);
+    vertex.bnext = clamp(vertex.bnext, 0.0, 1.0);
     vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
-    //console.log(vertex.anext);
+    //console.log(vertex.rdval);
     
     return vertex.rdval;
 }
 
 function swapGlobalVerticesValue(){
 	globalVerticesHashMap.forEach(function(val, key){
+		//console.log("PREV: " + val.aprev);
 		val.aprev = val.anext;
 		val.bprev = val.bnext;
+		//console.log("NEXT: " + val.aprev);
 
 	});
 }
@@ -327,21 +330,31 @@ class Cube{
     							hashString(newXPlus, newYPlus, newZMinus),
     							hashString(newXPlus, newYPlus, newZPlus),
     						],
-    						aprev: mapLinear(x, testWidthStart, testWidthEnd, 0, 1),
+    						aprev: Math.random(),
     						anext: 0.0,
 
-    						bprev: mapLinear(noise.simplex3(x * 0.01, y * 0.01, z * 0.01), -1, 1, 0, 1),
+    						bprev: Math.random(),
     						
     						bnext: 0.0,
     						
-    						da: 0.8,
-    						db: 0.3,
+    						da: Math.random(),
+    						db: Math.random(),
     						
-    						feed: 0.0035,
-    						kill: 0.004,
+    						feed: 0.030,
+    						kill: 0.062,
     						
     						rdval: 0.0
     					});
+    					/*
+    					let vh = globalVerticesHashMap.get(vhash);
+    					let debugGeom = new THREE.BoxGeometry(this.width * 0.5, this.height * 0.5, this.depth * 0.5);
+    					let debugBox = new THREE.Mesh(debugGeom, Cube.debugMat);
+    					debugBox.position.set(x, y, z);
+
+    					//debugBox.scale.set(vh.rdval, vh.rdval, vh.rdval);
+    					scene.add(debugBox);
+    					*/
+    					
     				}
     				//console.log(globalVerticesHashMap.get(vhash).aprev);
     				break;
@@ -361,6 +374,7 @@ class Cube{
     		let y = this.cubeVertArr[i * 3 + 1];
     		let z = this.cubeVertArr[i * 3 + 2];
     		if (f(x, y, z) > threshold) {
+    			//console.log("HEY");
     			//if (!globalVerticesHashMap.has(hashString(x, y, z))) console.log("HAS");
     		//if (this.rdval > threshold) {
     			this.configIndex |= 1 << i;
@@ -431,7 +445,8 @@ class Cube{
 
     		// if the vertex hasn't been used yet, push the vertex to the vertices array
     		// push the index into the indices array and increment it.
-    		if (!hashMap.has(hn)){    			
+    		if (!hashMap.has(hn)){    	
+
     			// 3. get the intepolated point between the two vertices
     			if (interpolate){
     				/*
@@ -452,12 +467,14 @@ class Cube{
     					mx = v1x + (v2x - v1x) * r;
     					my = v1y + (v2y - v1y) * r;
     					mz = v1z + (v2z - v1z) * r;
+
     				}
 
     				else{
     					mx = v2x + (v1x - v2x) * r;
     					my = v2y + (v1y - v2y) * r;
     					mz = v2z + (v1z - v2z) * r;
+
     				}
     			}
     			// 3.5 else get the midpoint of the two vertices
@@ -942,7 +959,7 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 10.0, 10.0, 10.0, 0, 0, 0, diffuseSumTest, 0.75, 0);
+    let marchingCubes = new MarchingCubes(40.0, 40.0, 40.0, 2.5, 2.5, 2.5, 0, 0, 0, diffuseSumTest, 0.3, 0);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -976,8 +993,10 @@ function main(){
 		step += 1;
 		
 		//stats.update();
-		swapGlobalVerticesValue();
+		
 		marchingCubes.updateCubes();
+
+		swapGlobalVerticesValue();
 		
 		//console.log(globalVerticesHashMap);
 
