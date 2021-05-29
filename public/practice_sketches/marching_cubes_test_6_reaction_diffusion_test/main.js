@@ -33,8 +33,62 @@ function hash3D(x, y, z){
 	return 0.5 * (hash2D(x, y) + z) * (hash2D(x, y) + z + 1) + z;
 }
 
-function hashNoise(x, y, z){
-	return noise.simplex3(x * 0.01, y * 0.01, z * 0.01);
+// perfect hashing
+function hashString(x, y, z){
+	//return noise.simplex3(x * 0.01, y * 0.01, z * 0.01);
+	return x.toString() + y.toString() + z.toString();
+}
+
+function diffuseSumTest(x, y, z){
+	let vertex = globalVerticesHashMap.get(hashString(x, y, z));
+
+	let asum = 0.0;
+	let bsum = 0.0;
+	let fc = 1.0 / 26.0;
+	let sc = 1.0 / 26.0;
+	let vc = 1.0 / 26.0;
+
+	vertex.neighborHashValues.forEach(function (h, i){
+
+		if (i < 8){
+			if (globalVerticesHashMap.get(h) == undefined) console.log(h);
+
+			asum += globalVerticesHashMap.get(h).aprev * fc;
+			bsum += globalVerticesHashMap.get(h).bprev * fc;
+		}
+		else if (i < 12){
+			asum += globalVerticesHashMap.get(h).aprev * sc;
+			bsum += globalVerticesHashMap.get(h).bprev * sc;
+		}
+		else if (i < 26){
+			asum += globalVerticesHashMap.get(h).aprev * vc;
+			bsum += globalVerticesHashMap.get(h).bprev * vc;
+		}
+	});
+	//console.log(asum);
+	asum -= vertex.aprev;
+	bsum -= vertex.bprev;
+
+
+
+	let abb = vertex.aprev * vertex.bprev * vertex.bprev;
+    vertex.anext = vertex.aprev + vertex.da * asum - abb + vertex.feed * (1.0 - vertex.aprev);
+    vertex.bnext = vertex.bprev + vertex.db * bsum + abb - (vertex.feed + vertex.kill) * vertex.bprev;
+
+    vertex.anext = clamp(vertex.aprev, 0.0, 1.0);
+    vertex.bnext = clamp(vertex.bprev, 0.0, 1.0);
+    vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
+    //console.log(vertex.anext);
+    
+    return vertex.rdval;
+}
+
+function swapGlobalVerticesValue(){
+	globalVerticesHashMap.forEach(function(val, key){
+		val.aprev = val.anext;
+		val.bprev = val.bnext;
+
+	});
 }
 
 class Cube{
@@ -113,6 +167,7 @@ class Cube{
 
     }
 
+    /*
     diffuseSum(cubeArr){
     	// ni: neighboring cube's index
     	// i: index of ni in this.neighborIndices
@@ -161,9 +216,9 @@ class Cube{
     	this.bprev = this.bnext;
 
     }
-
+	*/
     
-    setCubeCorners(){
+    setCubeCorners(testSpace, cx, cy, cz, tws, twe, ths, the, tds, tde){
     	// half width, height, depth
     	let hw = this.width * 0.5;
     	let hh = this.height * 0.5;
@@ -179,6 +234,27 @@ class Cube{
     		-1, 1, 1
     	];
     	let x, y, z;
+
+    	/*
+    	let testWidthStart = cx - testSpace.width * 0.5;
+    	let testWidthEnd = cx + testSpace.width * 0.5;
+
+    	let testHeightStart = cy - testSpace.height * 0.5;
+    	let testHeightEnd = cy + testSpace.height * 0.5;
+
+    	let testDepthStart = cz - testSpace.depth * 0.5;
+    	let testDepthEnd = cz + testSpace.depth * 0.5;
+		*/
+
+		let testWidthStart = tws;
+    	let testWidthEnd = twe;
+
+    	let testHeightStart = ths;
+    	let testHeightEnd = the;
+
+    	let testDepthStart = tds;
+    	let testDepthEnd = tde;
+
     	for (let i = 0; i < 24; i++){
     		
     		switch(i % 3){
@@ -197,10 +273,77 @@ class Cube{
     				z = this.centerZ + mult[i] * hd;
     				this.cubeVertArr.push(z);
 
-    				let vhash = hashNoise(x, y, z);
+    				let vhash = hashString(x, y, z);
     				if (!globalVerticesHashMap.has(vhash)){
-    					globalVerticesHashMap.set(vhash, {pos: [x, y, z]});
+
+    					let newXMinus = x - this.width;
+    					let newXPlus = x + this.width;
+    					let newYMinus = y - this.height;
+    					let newYPlus = y + this.height;
+    					let newZMinus = z - this.depth;
+    					let newZPlus = z + this.depth;
+    					
+    					if (newXMinus < testWidthStart) newXMinus = testWidthEnd;
+    					if (newXPlus > testWidthEnd) newXPlus = testWidthStart;
+
+    					if (newYMinus < testHeightStart) newYMinus = testHeightEnd;
+    					if (newYPlus > testHeightEnd) newYPlus = testHeightStart;
+
+    					if (newZMinus < testDepthStart) newZMinus = testDepthEnd;
+    					if (newZPlus > testDepthEnd) newZPlus = testDepthStart;
+						
+    					globalVerticesHashMap.set(vhash, {
+    						pos: [x, y, z],
+    						neighborHashValues: [
+    							// face sharing
+    							hashString(newXMinus, y, z),// left
+    							hashString(newXPlus, y, z),// right
+    							hashString(x, newYPlus, z),// down
+    							hashString(x, newYMinus, z),// up
+    							hashString(x, y, newZMinus),// back
+    							hashString(x, y, newZPlus),// front
+
+    							// side sharing
+    							hashString(newXMinus, newYMinus, z),
+    							hashString(newXMinus, newYPlus, z),
+    							hashString(newXMinus, y, newZMinus),
+    							hashString(newXMinus, y, newZPlus),
+    							hashString(newXPlus, newYMinus, z),
+    							hashString(newXPlus, newYPlus, z),
+    							hashString(newXPlus, y, newZMinus),
+    							hashString(newXPlus, y, newZPlus),
+    							hashString(x, newYMinus, newZMinus),
+    							hashString(x, newYMinus, newZPlus),
+    							hashString(x, newYPlus, newZMinus),
+    							hashString(x, newYPlus, newZPlus),
+
+    							// vertex sharing
+    							hashString(newXMinus, newYMinus, newZMinus),
+    							hashString(newXMinus, newYMinus, newZPlus),
+    							hashString(newXMinus, newYPlus, newZMinus),
+    							hashString(newXMinus, newYPlus, newZPlus),
+    							hashString(newXPlus, newYMinus, newZMinus),
+    							hashString(newXPlus, newYMinus, newZPlus),
+    							hashString(newXPlus, newYPlus, newZMinus),
+    							hashString(newXPlus, newYPlus, newZPlus),
+    						],
+    						aprev: mapLinear(x, testWidthStart, testWidthEnd, 0, 1),
+    						anext: 0.0,
+
+    						bprev: mapLinear(noise.simplex3(x * 0.01, y * 0.01, z * 0.01), -1, 1, 0, 1),
+    						
+    						bnext: 0.0,
+    						
+    						da: 0.8,
+    						db: 0.3,
+    						
+    						feed: 0.0035,
+    						kill: 0.004,
+    						
+    						rdval: 0.0
+    					});
     				}
+    				//console.log(globalVerticesHashMap.get(vhash).aprev);
     				break;
     		}
 
@@ -218,6 +361,7 @@ class Cube{
     		let y = this.cubeVertArr[i * 3 + 1];
     		let z = this.cubeVertArr[i * 3 + 2];
     		if (f(x, y, z) > threshold) {
+    			//if (!globalVerticesHashMap.has(hashString(x, y, z))) console.log("HAS");
     		//if (this.rdval > threshold) {
     			this.configIndex |= 1 << i;
     		}
@@ -290,16 +434,20 @@ class Cube{
     		if (!hashMap.has(hn)){    			
     			// 3. get the intepolated point between the two vertices
     			if (interpolate){
+    				/*
     				let v1f = f(v1x, v1y, v1z);
     				let v2f = f(v2x, v2y, v2z);
-    				v1f = this.aprev;
-    				v2f = this.bprev;
+    				*/
+
+    				let v1f = globalVerticesHashMap.get(hashString(v1x, v1y, v1z)).rdval;
+    				let v2f = globalVerticesHashMap.get(hashString(v2x, v2y, v2z)).rdval;
+    				
     				let r = v1f < v2f ?
     				mapLinear(threshold, v1f, v2f, 0, 1) : 
     				mapLinear(threshold, v2f, v1f, 0, 1);
 
 
-    				r = Math.abs(this.aprev - this.bprev);
+    				
     				if (v1f < v2f){
     					mx = v1x + (v2x - v1x) * r;
     					my = v1y + (v2y - v1y) * r;
@@ -463,13 +611,13 @@ class MarchingCubes{
 		let testSpace = this.testSpace;
 		let singleCubeParams = this.singleCubeParams;
 
-		let wStart = testSpace.width * -0.5 + this.centerX;
+		let wStart = testSpace.width * -0.5 + this.centerX + singleCubeParams.width * 0.5;
 		let wEnd = testSpace.width * 0.5 + this.centerX;
 
-		let hStart = testSpace.height * -0.5 + this.centerY;
+		let hStart = testSpace.height * -0.5 + this.centerY + singleCubeParams.height * 0.5;
 		let hEnd = testSpace.height * 0.5 + this.centerY;
 
-		let dStart = testSpace.depth * -0.5 + this.centerZ;
+		let dStart = testSpace.depth * -0.5 + this.centerZ + singleCubeParams.depth * 0.5;
 		let dEnd = testSpace.depth * 0.5 + this.centerZ;
 
 		let wi = 0;
@@ -499,11 +647,16 @@ class MarchingCubes{
 
 
 		`
-
+		let wdiv = testSpace.width / singleCubeParams;
+		let hdiv;
+		let ddiv;
 		for (let h = hStart; h < hEnd; h += singleCubeParams.height){
 			for (let d = dStart; d < dEnd; d += singleCubeParams.depth){
 				for (let w = wStart; w < wEnd; w += singleCubeParams.width){
+					//console.log(w, h, d);
 					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
+					
+					/*
 					cube.index3 = [wi, di, hi];
 					cube.indexFlat = flatten(wi, di, hi); // same as the index in this.marchingCubes
 					let hiMinus = mod(hi - 1, hnum);
@@ -559,6 +712,7 @@ class MarchingCubes{
 
 
 					];
+					*/
 					//console.log(cube.index3 + " " + cube.indexFlat + "  " + cube.neighborIndices);
 					wi++;
 					this.marchingCubes.push(cube);
@@ -572,8 +726,25 @@ class MarchingCubes{
 	}
 
 	setCubes(){
+		let testSpace = this.testSpace;
+		let singleCubeParams = this.singleCubeParams;
+
+		let wStart = testSpace.width * -0.5 + this.centerX;
+		let wEnd = testSpace.width * 0.5 + this.centerX;
+
+		let hStart = testSpace.height * -0.5 + this.centerY;
+		let hEnd = testSpace.height * 0.5 + this.centerY;
+
+		let dStart = testSpace.depth * -0.5 + this.centerZ;
+		let dEnd = testSpace.depth * 0.5 + this.centerZ;
+
+
+		//let testSpace = this.testSpace;
+		let cx = this.centerX;
+		let cy = this.centerY;
+		let cz = this.centerZ;
 		this.marchingCubes.forEach(function(c){
-			c.setCubeCorners();
+			c.setCubeCorners(testSpace, cx, cy, cz, wStart, wEnd, hStart, hEnd, dStart, dEnd);
 		});
 	}
 
@@ -599,7 +770,7 @@ class MarchingCubes{
 
 			c.setConfigIndex(func, threshold);
 
-			c.diffuseSum(marchingCubes);
+			//c.diffuseSum(marchingCubes);
 			c.setMeshVertices(func, threshold, interpolate, hashMap, 
 				vertices, indices, index, 
 				useDifferentHashFunc, hashFuncIndex);
@@ -660,10 +831,11 @@ class MarchingCubes{
 			ref.material.dispose();
 		}
 
+		/*
 		this.marchingCubes.forEach(function(c){
 			c.swapValues();
 		});
-
+		*/
 
 		// reseting attributes
 		this.hashMap.clear();
@@ -770,9 +942,10 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 5, 5, 5, 0, 0, 0, f, 0.5, 0);
-	marchingCubes.updateCubes();
+    let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 10.0, 10.0, 10.0, 0, 0, 0, diffuseSumTest, 0.75, 0);
+	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
+
 
 // LIGHTS
 	let dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -803,10 +976,10 @@ function main(){
 		step += 1;
 		
 		//stats.update();
-
+		swapGlobalVerticesValue();
 		marchingCubes.updateCubes();
 		
-		
+		//console.log(globalVerticesHashMap);
 
 		
 		if (resizeRenderToDisplaySize(renderer)){
