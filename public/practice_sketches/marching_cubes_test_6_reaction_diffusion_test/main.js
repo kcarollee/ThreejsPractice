@@ -17,6 +17,8 @@ let thresholdGlobal = 0.3;
 let daGlobal = 0.9;
 let dbGlobal = 0.1;
 
+let addCenterVal = false;
+
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -60,6 +62,7 @@ function diffuseSumTest(x, y, z){
 	let sc = 1.0 / 26.0;
 	let vc = 1.0 / 26.0;
 
+	/*
 	vertex.neighborHashValues.forEach(function (h, i){
 
 		if (i < 8){
@@ -77,10 +80,38 @@ function diffuseSumTest(x, y, z){
 			bsum += globalVerticesHashMap.get(h).bprev * vc;
 		}
 	});
-	
+	*/
+
+	// Array index-based is a whole lot faster than hashmap-get-based. nice.
+
+	if (addCenterVal) {
+		vertex.bprev +=  mapLinear(distSquared(x, y, z, 10, 10, 10), 0, 900, 0, 0.3);
+		//console.log("ADDED");
+	}
+
+	vertex.neighborIndices.forEach(function (h, i){
+
+		if (i < 8){
+			
+
+			asum += globalVerticesArray[h].aprev * fc;
+			bsum += globalVerticesArray[h].bprev * fc;
+		}
+		else if (i < 12){
+			asum += globalVerticesArray[h].aprev * sc;
+			bsum += globalVerticesArray[h].bprev * sc;
+		}
+		else if (i < 26){
+			asum += globalVerticesArray[h].aprev * vc;
+			bsum += globalVerticesArray[h].bprev * vc;
+		}
+	});
+
+
 	asum -= vertex.aprev;
 	bsum -= vertex.bprev;
 
+	
 
 
 	let abb = vertex.aprev * vertex.bprev * vertex.bprev;
@@ -355,7 +386,9 @@ class Cube{
     						aprev: 1.0,
     						anext: 0.0,
 
-    						bprev:mapLinear(distSquared(x, y, z, 0, 0, 0), 0, 900, 0, 1),
+
+    						// source shape
+    						bprev: mapLinear(distSquared(x, y, z, 0, 0, 0), 0, 900, 0, 1),
     						
     						bnext: 0.0,
     						
@@ -407,6 +440,8 @@ class Cube{
 
     	// set the array of triangulation edge indices based on the configIndex.
     	this.triangulationEdgeIndices = Cube.triangulationTable[this.configIndex];
+
+
     }
 
     setMeshVertices(f, threshold, interpolate, hashMap, vertices,  indices, index, useDifferentHashFunc = false, funcIndex = 0){
@@ -695,65 +730,6 @@ class MarchingCubes{
 				for (let w = wStart; w < wEnd; w += singleCubeParams.width){
 					//console.log(w, h, d);
 					let cube = new Cube(w, h, d, singleCubeParams.width, singleCubeParams.height, singleCubeParams.depth);
-					
-					/*
-					cube.index3 = [wi, di, hi];
-					cube.indexFlat = flatten(wi, di, hi); // same as the index in this.marchingCubes
-					let hiMinus = mod(hi - 1, hnum);
-					let hiPlus = mod(hi + 1, hnum);
-
-					let wiMinus = mod(wi - 1, wnum);
-					let wiPlus = mod(wi + 1, wnum);
-
-					let diMinus = mod(di - 1, dnum);
-					let diPlus = mod(di + 1, dnum);
-
-					cube.feed = 0.028;
-					cube.kill = 0.057;
-					cube.da = 1.0;
-					cube.db = 0.0;
-
-					cube.aprev = mapLinear(noise.simplex3(w, h, d), -1, 1, 0, 1);
-					cube.bprev = mapLinear(noise.simplex3(d, w, h), -1, 1, 0, 1);
-					cube.neighborIndices = [
-						// face sharing (0 ~ 5)
-						flatten(wi, di, hiMinus), // up
-						flatten(wi, di, hiPlus), // down
-						flatten(wiMinus, di, hi), // left
-						flatten(wiPlus, di, hi), // right
-						flatten(wi, diMinus, hi), // back
-						flatten(wi, diPlus, hi),  // front
-
-						// side sharing (6 ~ 17)
-						flatten(wiMinus, di, hiMinus),
-						flatten(wiPlus, di, hiMinus),
-						flatten(wi, diMinus, hiMinus),
-						flatten(wi, diPlus, hiMinus),
-
-						flatten(wiMinus, di, hiPlus),
-						flatten(wiPlus, di, hiPlus),
-						flatten(wi, diMinus, hiPlus),
-						flatten(wi, diPlus, hiPlus),
-
-						flatten(wiMinus, diMinus, hi),
-						flatten(wiPlus, diMinus, hi),
-						flatten(wiMinus, diPlus, hi),
-						flatten(wiPlus, diPlus, hi),
-
-						// vertex sharing (18 ~ 25)
-						flatten(wiMinus, diMinus, hiMinus),
-						flatten(wiMinus, diMinus, hiPlus),
-						flatten(wiMinus, diPlus, hiMinus),
-						flatten(wiMinus, diPlus, hiPlus),
-						flatten(wiPlus, diMinus, hiMinus),
-						flatten(wiPlus, diMinus, hiPlus),
-						flatten(wiPlus, diPlus, hiMinus),
-						flatten(wiPlus, diPlus, hiPlus),
-
-
-					];
-					*/
-					//console.log(cube.index3 + " " + cube.indexFlat + "  " + cube.neighborIndices);
 					wi++;
 					this.marchingCubes.push(cube);
 				}
@@ -786,6 +762,27 @@ class MarchingCubes{
 		this.marchingCubes.forEach(function(c){
 			c.setCubeCorners(testSpace, cx, cy, cz, wStart, wEnd, hStart, hEnd, dStart, dEnd);
 		});
+
+		// globalHashMap is now complete. Push every object in the map to globalVerticesArray
+		let index = 0;
+		globalVerticesHashMap.forEach(function(val, key){
+			val.globalVerticesArrayIndex = index;
+			globalVerticesArray.push(val);
+			index++;
+		});
+
+		// globalVerticesArray is now complete. Add an array of neighborIndices to each object.
+		globalVerticesHashMap.forEach(function (val, key){
+			let tempIndexArr = [];
+			val.neighborHashValues.forEach(function(hv){
+				let neighborIndex = globalVerticesHashMap.get(hv).globalVerticesArrayIndex;
+				tempIndexArr.push(neighborIndex);
+			});
+			val.neighborIndices = tempIndexArr;
+		});
+
+		console.log(globalVerticesHashMap);
+		console.log(globalVerticesArray);
 	}
 
 	updateCubes(){
@@ -883,6 +880,8 @@ class MarchingCubes{
 		this.indices = [];
 		this.uvs = [];
 		this.indexCount.reset();	
+
+		if (addCenterVal) addCenterVal = false;
 	}
 
 	// use this for instances that aren't updated every frame
@@ -1007,6 +1006,7 @@ function main(){
 		this.thresholdGlobal = thresholdGlobal;
 		this.daGlobal = daGlobal;
 		this.dbGlobal = dbGlobal;
+		this.addCenterVal = addCenterVal;
 	}
 	
 	gui.add(controls, 'feedGlobal', 0.01, 0.07).onChange(function(e){
@@ -1027,6 +1027,10 @@ function main(){
 
 	gui.add(controls, 'dbGlobal', 0.0, 1.2).onChange(function(e){
 		dbGlobal = e;
+	});
+
+	gui.add(controls, 'addCenterVal', true).onChange(function(e){
+		addCenterVal = e;
 	});
 	
 
