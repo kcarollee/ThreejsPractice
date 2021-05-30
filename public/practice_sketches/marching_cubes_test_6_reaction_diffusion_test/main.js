@@ -63,7 +63,7 @@ function diffuseSumTest(x, y, z){
 	vertex.neighborHashValues.forEach(function (h, i){
 
 		if (i < 8){
-			if (globalVerticesHashMap.get(h) == undefined) console.log(h);
+			
 
 			asum += globalVerticesHashMap.get(h).aprev * fc;
 			bsum += globalVerticesHashMap.get(h).bprev * fc;
@@ -352,15 +352,15 @@ class Cube{
     							hashString(newXPlus, newYPlus, newZMinus),
     							hashString(newXPlus, newYPlus, newZPlus),
     						],
-    						aprev: 0.9,
+    						aprev: 1.0,
     						anext: 0.0,
 
     						bprev:mapLinear(distSquared(x, y, z, 0, 0, 0), 0, 900, 0, 1),
     						
     						bnext: 0.0,
     						
-    						da: 0.9,
-    						db: 0.1,
+    						da: daGlobal,
+    						db: dbGlobal,
     						
     						feed: 0.0030,
     						kill: 0.0062,
@@ -982,7 +982,7 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(15.0, 15, 15, 1.0, 1.0, 1.0, 0, 0, 0, diffuseSumTest, 0.3, 0);
+    let marchingCubes = new MarchingCubes(30, 30, 30, 1.5, 1.5, 1.5, 0, 0, 0, diffuseSumTest, 0.3, 0);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -1021,11 +1021,11 @@ function main(){
 		thresholdGlobal = e;
 	});
 
-	gui.add(controls, 'daGlobal', 0.0, 1.0).onChange(function(e){
+	gui.add(controls, 'daGlobal', 0.0, 1.2).onChange(function(e){
 		daGlobal = e;
 	});
 
-	gui.add(controls, 'dbGlobal', 0.0, 1.0).onChange(function(e){
+	gui.add(controls, 'dbGlobal', 0.0, 1.2).onChange(function(e){
 		dbGlobal = e;
 	});
 	
