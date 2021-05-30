@@ -84,10 +84,17 @@ function diffuseSumTest(x, y, z){
 
 	// Array index-based is a whole lot faster than hashmap-get-based. nice.
 
-	if (addCenterVal) {
-		vertex.bprev +=  mapLinear(distSquared(x, y, z, 10, 10, 10), 0, 900, 0, 0.3);
+	// whether to have a constant feed or a conditionally given one should be decided later.
+	//if (addCenterVal) {
+		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+		// moving source.
+		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
+		let r = 4.5;
+		dist = dist > r ? 0 : 1.0;
+		
+		vertex.bprev +=  dist;
 		//console.log("ADDED");
-	}
+	//}
 
 	vertex.neighborIndices.forEach(function (h, i){
 
@@ -647,7 +654,7 @@ class MarchingCubes{
 				//flatShading: true
 			}),
 
-			new THREE.MeshLambertMaterial({
+			new THREE.MeshPhongMaterial({
 			 	color: 0xFFFFFF ,
 			 	side: THREE.DoubleSide
 			}),
@@ -943,7 +950,7 @@ let p5Canvas;
 function main(){
    
 
-
+	initStats();
 // NOISE
 	noise.seed(Math.random());
 
@@ -981,13 +988,13 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(30, 30, 30, 1.5, 1.5, 1.5, 0, 0, 0, diffuseSumTest, 0.3, 0);
+    let marchingCubes = new MarchingCubes(19, 19, 19, 1.0, 1.0, 1.0, 0, 0, 0, diffuseSumTest, 0.3, 2);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
 
 // LIGHTS
-	let dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+	let dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
 	dirLight.position.set(0, 0, 20);
 	scene.add(dirLight);
 	
@@ -1007,13 +1014,14 @@ function main(){
 		this.daGlobal = daGlobal;
 		this.dbGlobal = dbGlobal;
 		this.addCenterVal = addCenterVal;
+		this.reset = false;
 	}
 	
-	gui.add(controls, 'feedGlobal', 0.01, 0.07).onChange(function(e){
+	gui.add(controls, 'feedGlobal', 0.01, 0.1).onChange(function(e){
 		feedGlobal = e;
 	});
 
-	gui.add(controls, 'killGlobal', 0.01, 0.07).onChange(function(e){
+	gui.add(controls, 'killGlobal', 0.01, 0.1).onChange(function(e){
 		killGlobal = e;
 	});
 
@@ -1032,6 +1040,15 @@ function main(){
 	gui.add(controls, 'addCenterVal', true).onChange(function(e){
 		addCenterVal = e;
 	});
+
+	gui.add(controls, 'reset', false).onChange(function(e){
+		globalVerticesArray.forEach(function(v){
+			v.aprev = 1.0;
+			v.bprev = 0.0;
+			v.anext = 0.0;
+			v.bnext = 0.0;
+		});
+	});
 	
 
 
@@ -1042,12 +1059,14 @@ function main(){
 
 	function render(time){
 		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
-		time *= 0.001;
+		time *= 0.0001;
 		step += 1;
 		
-		//stats.update();
+		stats.update();
 		
 		marchingCubes.updateCubes();
+
+		marchingCubes.getMesh().rotation.set(time, time, time);
 
 		swapGlobalVerticesValue();
 		
