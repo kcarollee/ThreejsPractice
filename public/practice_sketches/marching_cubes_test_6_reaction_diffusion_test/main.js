@@ -17,6 +17,10 @@ let thresholdGlobal = 0.3;
 let daGlobal = 0.9;
 let dbGlobal = 0.1;
 
+let fcGlobal = 1.0 / 26.0;
+let scGlobal = 1.0 / 26.0;;
+let vcGlobal = 1.0 / 26.0;;
+
 let addCenterVal = false;
 
 function mapLinear(x, a1, a2, b1, b2){
@@ -58,9 +62,9 @@ function diffuseSumTest(x, y, z){
 
 	let asum = 0.0;
 	let bsum = 0.0;
-	let fc = 1.0 / 26.0;
-	let sc = 1.0 / 26.0;
-	let vc = 1.0 / 26.0;
+	let fc = fcGlobal;
+	let sc = scGlobal;
+	let vc = vcGlobal;
 
 	/*
 	vertex.neighborHashValues.forEach(function (h, i){
@@ -85,16 +89,16 @@ function diffuseSumTest(x, y, z){
 	// Array index-based is a whole lot faster than hashmap-get-based. nice.
 
 	// whether to have a constant feed or a conditionally given one should be decided later.
-	//if (addCenterVal) {
+	if (addCenterVal) {
 		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
 		// moving source.
 		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
 		let r = 4.5;
 		dist = dist > r ? 0 : 1.0;
 		
-		vertex.bprev +=  dist;
+		vertex.bprev -=  dist;
 		//console.log("ADDED");
-	//}
+	}
 
 	vertex.neighborIndices.forEach(function (h, i){
 
@@ -138,7 +142,7 @@ function diffuseSumTest(x, y, z){
 	
     vertex.anext = clamp(vertex.anext, 0.0, 1.0);
     vertex.bnext = clamp(vertex.bnext, 0.0, 1.0);
-    vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
+    vertex.rdval = (vertex.anext + vertex.bnext) / 3.0;
     //console.log(vertex.rdval);
     
     return vertex.rdval;
@@ -390,7 +394,7 @@ class Cube{
     							hashString(newXPlus, newYPlus, newZMinus),
     							hashString(newXPlus, newYPlus, newZPlus),
     						],
-    						aprev: 1.0,
+    						aprev: 0.0,
     						anext: 0.0,
 
 
@@ -988,7 +992,7 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(19, 19, 19, 1.0, 1.0, 1.0, 0, 0, 0, diffuseSumTest, 0.3, 2);
+    let marchingCubes = new MarchingCubes(17, 17, 17, 1, 1, 1, 0, 0, 0, diffuseSumTest, 0.3, 2);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -1015,6 +1019,9 @@ function main(){
 		this.dbGlobal = dbGlobal;
 		this.addCenterVal = addCenterVal;
 		this.reset = false;
+		this.fcGlobal = fcGlobal;
+		this.scGlobal = scGlobal;
+		this.vcGlobal = vcGlobal;
 	}
 	
 	gui.add(controls, 'feedGlobal', 0.01, 0.1).onChange(function(e){
@@ -1048,6 +1055,18 @@ function main(){
 			v.anext = 0.0;
 			v.bnext = 0.0;
 		});
+	});
+
+	gui.add(controls, 'fcGlobal', 0.0, 1.0 / 6.0).onChange(function(e){
+		fcGlobal = e;
+	});
+
+	gui.add(controls, 'scGlobal', 0.0, 1.0 / 6.0).onChange(function(e){
+		scGlobal = e;
+	});
+
+	gui.add(controls, 'vcGlobal', 0.0, 1.0 / 6.0).onChange(function(e){
+		vcGlobal = e;
 	});
 	
 
