@@ -12,7 +12,7 @@ let globalVerticesHashMap = new Map();
 
 let feedGlobal = 0.030;
 let killGlobal = 0.062;
-let thresholdGlobal = 0.5;
+let thresholdGlobal = 0.45;
 
 let daGlobal = 0.9;
 let dbGlobal = 0.1;
@@ -803,7 +803,7 @@ class MarchingCubes{
 		
 		let func = this.shapeFunc;
 		let interpolate = this.interpolate;
-		let threshold = this.threshold;
+		let threshold = thresholdGlobal;
 		let hashMap = this.hashMap;
 		let vertices = this.vertices;
 		let indices = this.indices;
@@ -1034,7 +1034,7 @@ function main(){
 		killGlobal = e;
 	});
 
-	gui.add(controls, 'thresholdGlobal', 0.0, 1.0).onChange(function(e){
+	gui.add(controls, 'thresholdGlobal', 0.0, 1.0).step(0.001).onChange(function(e){
 		thresholdGlobal = e;
 	});
 
