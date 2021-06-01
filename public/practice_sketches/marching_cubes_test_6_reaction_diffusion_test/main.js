@@ -12,7 +12,7 @@ let globalVerticesHashMap = new Map();
 
 let feedGlobal = 0.030;
 let killGlobal = 0.062;
-let thresholdGlobal = 0.3;
+let thresholdGlobal = 0.5;
 
 let daGlobal = 0.9;
 let dbGlobal = 0.1;
@@ -93,7 +93,7 @@ function diffuseSumTest(x, y, z){
 		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
 		// moving source.
 		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
-		let r = 4.5;
+		let r = 2.5;
 		dist = dist > r ? 0 : 1.0;
 		
 		vertex.bprev -=  dist;
@@ -142,7 +142,7 @@ function diffuseSumTest(x, y, z){
 	
     vertex.anext = clamp(vertex.anext, 0.0, 1.0);
     vertex.bnext = clamp(vertex.bnext, 0.0, 1.0);
-    vertex.rdval = (vertex.anext + vertex.bnext) / 3.0;
+    vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
     //console.log(vertex.rdval);
     
     return vertex.rdval;
@@ -429,6 +429,8 @@ class Cube{
     	}
     }
 
+
+    // REMEMBER THAT thresholdGlobal IS USED FOR THE THRESHOLD!!!!!!
 
     // f is a shape function that takes x, y, z as arguments
     // threshold is a threshold value over which we define as being 'inside' (1)
@@ -992,7 +994,7 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(17, 17, 17, 1, 1, 1, 0, 0, 0, diffuseSumTest, 0.3, 2);
+    let marchingCubes = new MarchingCubes(15, 15, 15, 1, 1, 1, 0, 0, 0, diffuseSumTest, thresholdGlobal, 2);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
