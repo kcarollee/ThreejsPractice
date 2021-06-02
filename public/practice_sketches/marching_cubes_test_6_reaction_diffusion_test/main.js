@@ -89,16 +89,22 @@ function diffuseSumTest(x, y, z){
 	// Array index-based is a whole lot faster than hashmap-get-based. nice.
 
 	// whether to have a constant feed or a conditionally given one should be decided later.
-	if (addCenterVal) {
-		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+	//if (addCenterVal) {
+		
+		let dist = Math.sqrt(distSquared(x, y, z, 2 * Math.sin(step * 0.1), 2 * Math.cos(step * 0.1), 0));
 		// moving source.
 		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
-		let r = 2.5;
-		dist = dist > r ? 0 : 1.0;
+		let r = 1.5;
+		dist = dist > r ? 0.0 : 1.0;
 		
-		vertex.bprev -=  dist;
+		vertex.bprev +=  dist;
 		//console.log("ADDED");
-	}
+		
+		//vertex.bprev += noise.simplex3(x * 0.1, y * 0.1, z * 0.1);
+		
+
+		//vertex.bprev += mapLinear(x + y, -30, 30, 0, 1) > 0.5 ? 0.0 : 1.0;
+	//}
 
 	vertex.neighborIndices.forEach(function (h, i){
 
@@ -399,7 +405,7 @@ class Cube{
 
 
     						// source shape
-    						bprev: mapLinear(distSquared(x, y, z, 0, 0, 0), 0, 900, 0, 1),
+    						bprev:0,
     						
     						bnext: 0.0,
     						
@@ -1086,10 +1092,11 @@ function main(){
 		stats.update();
 		
 		marchingCubes.updateCubes();
+		swapGlobalVerticesValue();
 
 		marchingCubes.getMesh().rotation.set(time, time, time);
 
-		swapGlobalVerticesValue();
+		
 		
 		//console.log(globalVerticesHashMap);
 
