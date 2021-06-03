@@ -19,7 +19,9 @@ let dbGlobal = 0.1;
 
 let fcGlobal = 1.0 / 26.0;
 let scGlobal = 1.0 / 26.0;;
-let vcGlobal = 1.0 / 26.0;;
+let vcGlobal = 1.0 / 26.0;
+
+let dtGlobal = 1.0;
 
 let addCenterVal = false;
 
@@ -88,39 +90,29 @@ function diffuseSumTest(x, y, z){
 
 	// Array index-based is a whole lot faster than hashmap-get-based. nice.
 
-	// whether to have a constant feed or a conditionally given one should be decided later.
-	//if (addCenterVal) {
-		
-		let dist = Math.sqrt(distSquared(x, y, z, 2 * Math.sin(step * 0.1), 2 * Math.cos(step * 0.1), 0));
-		// moving source.
-		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
-		let r = 1.5;
-		dist = dist > r ? 0.0 : 1.0;
-		
-		vertex.bprev +=  dist;
-		//console.log("ADDED");
-		
-		//vertex.bprev += noise.simplex3(x * 0.1, y * 0.1, z * 0.1);
-		
-
-		//vertex.bprev += mapLinear(x + y, -30, 30, 0, 1) > 0.5 ? 0.0 : 1.0;
-	//}
+	
 
 	vertex.neighborIndices.forEach(function (h, i){
-
-		if (i < 8){
+		let neighborVertex = globalVerticesArray[h];
+		if (neighborVertex.boundary) {
+			asum += 0.0;
+			bsum += 0.0;
+		}
+		else {
+			if (i < 8){
 			
 
-			asum += globalVerticesArray[h].aprev * fc;
-			bsum += globalVerticesArray[h].bprev * fc;
-		}
-		else if (i < 12){
-			asum += globalVerticesArray[h].aprev * sc;
-			bsum += globalVerticesArray[h].bprev * sc;
-		}
-		else if (i < 26){
-			asum += globalVerticesArray[h].aprev * vc;
-			bsum += globalVerticesArray[h].bprev * vc;
+				asum += neighborVertex.aprev * fc;
+				bsum += neighborVertex.bprev * fc;
+			}
+			else if (i < 12){
+				asum += neighborVertex.aprev * sc;
+				bsum += neighborVertex.bprev * sc;
+			}
+			else if (i < 26){
+				asum += neighborVertex.aprev * vc;
+				bsum += neighborVertex.bprev * vc;
+			}
 		}
 	});
 
@@ -128,10 +120,35 @@ function diffuseSumTest(x, y, z){
 	asum -= vertex.aprev;
 	bsum -= vertex.bprev;
 
+	let a = vertex.aprev;
+	let b = vertex.bprev;
+
+	let abb = a * b * b;
+
+	// whether to have a constant feed or a conditionally given one should be decided later.
+	if (addCenterVal) {	
+		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+		// moving source.
+		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
+		//let r = 3 + 1.5 * Math.sin(step * 0.1);
+		let r = 2;
+		dist = dist > r ? 0.0 : 1.0;
+		
+		b +=  dist;
+	}
+
+	a += (daGlobal * asum - abb + feedGlobal * (1.0 - a)) * dtGlobal;
+	b += (dbGlobal * bsum + abb - (feedGlobal + killGlobal) * b) * dtGlobal;
+	a = clamp(a, 0.0, 1.0);
+	b = clamp(b, 0.0, 1.0);
 	
 
+	vertex.anext = a;
+	vertex.bnext = b;
 
-	let abb = vertex.aprev * vertex.bprev * vertex.bprev;
+	vertex.rdval = (a + b) * 0.5;
+
+	
 	/*
     vertex.anext = vertex.aprev + vertex.da * asum - abb + vertex.feed * (1.0 - vertex.aprev);
     vertex.bnext = vertex.bprev + vertex.db * bsum + abb - (vertex.feed + vertex.kill) * vertex.bprev;
@@ -142,15 +159,16 @@ function diffuseSumTest(x, y, z){
     vertex.bnext = vertex.bprev + vertex.db * bsum + abb - (feedGlobal+ killGlobal) * vertex.bprev;
 	*/
 
-	
+	/*
 	vertex.anext = vertex.aprev + daGlobal * asum - abb + feedGlobal * (1.0 - vertex.aprev);
     vertex.bnext = vertex.bprev + dbGlobal * bsum + abb - (feedGlobal + killGlobal) * vertex.bprev;
 	
     vertex.anext = clamp(vertex.anext, 0.0, 1.0);
     vertex.bnext = clamp(vertex.bnext, 0.0, 1.0);
+
     vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
+    */
     //console.log(vertex.rdval);
-    
     return vertex.rdval;
 }
 
@@ -355,15 +373,38 @@ class Cube{
     					let newYPlus = y + this.height;
     					let newZMinus = z - this.depth;
     					let newZPlus = z + this.depth;
+    					let boundary = false;
     					
-    					if (newXMinus < testWidthStart) newXMinus = testWidthEnd;
-    					if (newXPlus > testWidthEnd) newXPlus = testWidthStart;
+    					if (newXMinus < testWidthStart){
 
-    					if (newYMinus < testHeightStart) newYMinus = testHeightEnd;
-    					if (newYPlus > testHeightEnd) newYPlus = testHeightStart;
+    					 	newXMinus = testWidthEnd;
 
-    					if (newZMinus < testDepthStart) newZMinus = testDepthEnd;
-    					if (newZPlus > testDepthEnd) newZPlus = testDepthStart;
+    					 	boundary = true;
+    					}
+    					if (newXPlus > testWidthEnd){
+    						newXPlus = testWidthStart;
+    						boundary = true;
+    					} 
+
+    					if (newYMinus < testHeightStart) {
+    						newYMinus = testHeightEnd;
+    						boundary = true;
+    					}
+    					if (newYPlus > testHeightEnd){
+
+    					 	newYPlus = testHeightStart;
+    					 	boundary = true;
+    					}
+
+    					if (newZMinus < testDepthStart) {
+    						newZMinus = testDepthEnd;
+							boundary = true;
+    					}
+    					if (newZPlus > testDepthEnd){
+
+    						 newZPlus = testDepthStart;
+    						 boundary = true;
+    					}
 						
     					globalVerticesHashMap.set(vhash, {
     						pos: [x, y, z],
@@ -415,7 +456,8 @@ class Cube{
     						feed: 0.0030,
     						kill: 0.0062,
     						
-    						rdval: 0.0
+    						rdval: 0.0,
+    						boundary: boundary
     					});
     					/*
     					let vh = globalVerticesHashMap.get(vhash);
@@ -1000,7 +1042,9 @@ function main(){
     	return m;
     }
 
-    let marchingCubes = new MarchingCubes(15, 15, 15, 1, 1, 1, 0, 0, 0, diffuseSumTest, thresholdGlobal, 2);
+    let dimTotal = 19;
+    let dimCube = 1;
+    let marchingCubes = new MarchingCubes(dimTotal, dimTotal, dimTotal, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 2);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -1030,6 +1074,7 @@ function main(){
 		this.fcGlobal = fcGlobal;
 		this.scGlobal = scGlobal;
 		this.vcGlobal = vcGlobal;
+		this.dtGlobal = dtGlobal;
 	}
 	
 	gui.add(controls, 'feedGlobal', 0.01, 0.1).onChange(function(e){
@@ -1075,6 +1120,10 @@ function main(){
 
 	gui.add(controls, 'vcGlobal', 0.0, 1.0 / 6.0).onChange(function(e){
 		vcGlobal = e;
+	});
+
+	gui.add(controls, 'dtGlobal', 0.0, 2.0).onChange(function(e){
+		dtGlobal = e;
 	});
 	
 

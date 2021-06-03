@@ -56,5 +56,5 @@ void main( void ) {
     vec3 sinCol = vec3(sin(g * 5.0), sin(g * 3.0), sin(g * 13.0));
     gl_FragColor = vec4(sinCol, 1.0);
   }
-  //gl_FragColor = vec4(outCol, 1.0);
+  gl_FragColor = vec4(outCol, 1.0);
 }

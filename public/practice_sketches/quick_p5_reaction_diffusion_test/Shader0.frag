@@ -85,7 +85,7 @@ vec3 laplacian(vec2 uv, float de){
 }
 
 float circle(vec2 uv){
-	return 1.0 - step(0.04, length(mouse - uv));
+	return 1.0 - step(0.1, length(mouse - uv));
 }
 
 float newAVal(vec2 uv, float a, float b, float da, float f, float k, float de){
@@ -154,12 +154,13 @@ void main( void ) {
 	float da = 1.0 ;
 	//float db = map(c, 0.0, 1.0, 0.2, 0.8);
     float db = 0.5;
-	float dt = 1.0;
-	float de = 1.0;
+	//float dt = 1.0;
+	float de = 0.25;
 	
 
-  float f;
-  float k;
+  float f = 0.059;
+  float k = 0.062;
+  /*
   if (length(uv - vec2(0.5)) < 0.35 + 0.1 * sin(time)){
     f = 0.029;
     k = 0.057;
@@ -181,6 +182,7 @@ void main( void ) {
     f = 0.03;
     k = 0.062;
   }
+  */
 	vec3 lap = laplacian(uv, de);
 	vec3 v = get(.0, .0);
 	
@@ -194,13 +196,16 @@ void main( void ) {
 
 	
 
-	a += da * lap.r - abb + f * (1.0 - a);
-	b += db * lap.g + abb - (f + k) * b;
-	a = clamp(a, 0.0, 1.0);
-    b = clamp(b, 0.0, 1.0);
+		float dt = 3.0;
+		float newa;
+		float newb;
+	newa =  a + (da * lap.r - abb + f * (1.0 - a)) * dt;
+	newb = b + (db * lap.g + abb - (f + k) * b) * dt;
+	newa = clamp(newa, 0.0, 1.0);
+    newb = clamp(newb, 0.0, 1.0);
     
 
-	outColor += vec3(a, b, .0);
+	outColor += vec3(newa, newb, .0);
 
 	//outColor +=  vec3(newa, newb , .0);
   
