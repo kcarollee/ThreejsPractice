@@ -12,7 +12,7 @@ let globalVerticesHashMap = new Map();
 
 let feedGlobal = 0.030;
 let killGlobal = 0.062;
-let thresholdGlobal = 0.45;
+let thresholdGlobal = 0.3;
 
 let daGlobal = 0.9;
 let dbGlobal = 0.1;
@@ -24,6 +24,8 @@ let vcGlobal = 1.0 / 26.0;
 let dtGlobal = 1.0;
 
 let addCenterVal = false;
+
+let enableBoundary = false;
 
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
@@ -94,10 +96,12 @@ function diffuseSumTest(x, y, z){
 
 	vertex.neighborIndices.forEach(function (h, i){
 		let neighborVertex = globalVerticesArray[h];
-		if (neighborVertex.boundary) {
+		
+		if (enableBoundary && neighborVertex.boundary) {
 			asum += 0.0;
 			bsum += 0.0;
 		}
+		
 		else {
 			if (i < 8){
 			
@@ -131,9 +135,9 @@ function diffuseSumTest(x, y, z){
 		// moving source.
 		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
 		//let r = 3 + 1.5 * Math.sin(step * 0.1);
-		let r = 2;
+		let r = 1;
 		dist = dist > r ? 0.0 : 1.0;
-		
+		//dist = mapLinear(dist, 0, 15, 0, 1);
 		b +=  dist;
 	}
 
@@ -169,6 +173,7 @@ function diffuseSumTest(x, y, z){
     vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
     */
     //console.log(vertex.rdval);
+    //if (vertex.boundary) return 0;
     return vertex.rdval;
 }
 
@@ -441,11 +446,11 @@ class Cube{
     							hashString(newXPlus, newYPlus, newZMinus),
     							hashString(newXPlus, newYPlus, newZPlus),
     						],
-    						aprev: 0.0,
-    						anext: 0.0,
+    						aprev: 1.0,
+    						anext: 1.0,
 
 
-    						// source shape
+
     						bprev:0,
     						
     						bnext: 0.0,
@@ -1042,9 +1047,9 @@ function main(){
     	return m;
     }
 
-    let dimTotal = 19;
+    let dimTotal = 15;
     let dimCube = 1;
-    let marchingCubes = new MarchingCubes(dimTotal, dimTotal, dimTotal, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 2);
+    let marchingCubes = new MarchingCubes(dimTotal, dimTotal, dimTotal, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 0);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -1075,6 +1080,7 @@ function main(){
 		this.scGlobal = scGlobal;
 		this.vcGlobal = vcGlobal;
 		this.dtGlobal = dtGlobal;
+		this.enableBoundary = enableBoundary;
 	}
 	
 	gui.add(controls, 'feedGlobal', 0.01, 0.1).onChange(function(e){
@@ -1097,16 +1103,22 @@ function main(){
 		dbGlobal = e;
 	});
 
-	gui.add(controls, 'addCenterVal', true).onChange(function(e){
+	gui.add(controls, 'addCenterVal', false).onChange(function(e){
 		addCenterVal = e;
+	});
+
+	gui.add(controls, 'enableBoundary', false).onChange(function(e){
+		enableBoundary = e;
 	});
 
 	gui.add(controls, 'reset', false).onChange(function(e){
 		globalVerticesArray.forEach(function(v){
 			v.aprev = 1.0;
 			v.bprev = 0.0;
-			v.anext = 0.0;
+			v.anext = 1.0;
 			v.bnext = 0.0;
+			v.rdval = 0.0;
+
 		});
 	});
 
