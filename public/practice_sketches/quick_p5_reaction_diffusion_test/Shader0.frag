@@ -85,7 +85,8 @@ vec3 laplacian(vec2 uv, float de){
 }
 
 float circle(vec2 uv){
-	return 1.0 - step(0.1, length(mouse - uv));
+	//return 1.0 - step(0.1, length(mouse - uv));
+	return 1.0 - step(0.1, length(vec2(0.5) - uv));
 }
 
 float newAVal(vec2 uv, float a, float b, float da, float f, float k, float de){
@@ -155,11 +156,11 @@ void main( void ) {
 	//float db = map(c, 0.0, 1.0, 0.2, 0.8);
     float db = 0.5;
 	//float dt = 1.0;
-	float de = 0.25;
+	float de = 	1.0;
 	
 
-  float f = 0.059;
-  float k = 0.062;
+  float f = 0.021;
+  float k = 0.046;
   /*
   if (length(uv - vec2(0.5)) < 0.35 + 0.1 * sin(time)){
     f = 0.029;
@@ -191,12 +192,17 @@ void main( void ) {
 	float b = v.g;
  
     if (brush == 1.0) b += circle(uv);
+
+    //if (brush == 1.0){
+    	//b += step(0.7, noise(uv * 30.0));
+    //}
+  // b += circle(uv);
    
 	float abb = a * b * b;
 
 	
 
-		float dt = 3.0;
+		float dt = 1.02;
 		float newa;
 		float newb;
 	newa =  a + (da * lap.r - abb + f * (1.0 - a)) * dt;

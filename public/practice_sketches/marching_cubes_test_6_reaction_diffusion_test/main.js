@@ -130,16 +130,16 @@ function diffuseSumTest(x, y, z){
 	let abb = a * b * b;
 
 	// whether to have a constant feed or a conditionally given one should be decided later.
-	if (addCenterVal) {	
+	//if (addCenterVal) {	
 		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
 		// moving source.
 		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
 		//let r = 3 + 1.5 * Math.sin(step * 0.1);
-		let r = 1;
+		let r = 3.0 + Math.sin(step * 0.1);
 		dist = dist > r ? 0.0 : 1.0;
 		//dist = mapLinear(dist, 0, 15, 0, 1);
 		b +=  dist;
-	}
+	//}
 
 	a += (daGlobal * asum - abb + feedGlobal * (1.0 - a)) * dtGlobal;
 	b += (dbGlobal * bsum + abb - (feedGlobal + killGlobal) * b) * dtGlobal;
@@ -150,7 +150,7 @@ function diffuseSumTest(x, y, z){
 	vertex.anext = a;
 	vertex.bnext = b;
 
-	vertex.rdval = (a + b) * 0.5;
+	vertex.rdval = (a - b);
 
 	
 	/*
@@ -1081,25 +1081,32 @@ function main(){
 		this.vcGlobal = vcGlobal;
 		this.dtGlobal = dtGlobal;
 		this.enableBoundary = enableBoundary;
+
+		this.debug = () => {
+			let v0 = "-7.5-7.5-7.5";
+			let v1 = "-6.5-4.57.5";
+			console.log(globalVerticesHashMap.get(v0));
+			console.log(globalVerticesHashMap.get(v1));
+		};
 	}
 	
-	gui.add(controls, 'feedGlobal', 0.01, 0.1).onChange(function(e){
+	gui.add(controls, 'feedGlobal', 0.01, 0.1).step(0.0001).onChange(function(e){
 		feedGlobal = e;
 	});
 
-	gui.add(controls, 'killGlobal', 0.01, 0.1).onChange(function(e){
+	gui.add(controls, 'killGlobal', 0.01, 0.1).step(0.0001).onChange(function(e){
 		killGlobal = e;
 	});
 
-	gui.add(controls, 'thresholdGlobal', 0.0, 1.0).step(0.001).onChange(function(e){
+	gui.add(controls, 'thresholdGlobal', 0.0, 1.0).step(0.0001).onChange(function(e){
 		thresholdGlobal = e;
 	});
 
-	gui.add(controls, 'daGlobal', 0.0, 1.2).onChange(function(e){
+	gui.add(controls, 'daGlobal', 0.0, 1.2).step(0.0001).onChange(function(e){
 		daGlobal = e;
 	});
 
-	gui.add(controls, 'dbGlobal', 0.0, 1.2).onChange(function(e){
+	gui.add(controls, 'dbGlobal', 0.0, 1.2).step(0.0001).onChange(function(e){
 		dbGlobal = e;
 	});
 
@@ -1136,6 +1143,10 @@ function main(){
 
 	gui.add(controls, 'dtGlobal', 0.0, 2.0).onChange(function(e){
 		dtGlobal = e;
+	});
+
+	gui.add(controls, 'debug').onChange(function(e){
+		controls.debug;
 	});
 	
 
