@@ -133,18 +133,18 @@ function diffuseSumTest(x, y, z){
 	let abb = a * b * b;
 
 	// whether to have a constant feed or a conditionally given one should be decided later.
-	if (addCenterVal) {	
-		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+	//if (addCenterVal) {	
+		let dist = Math.sqrt(distSquared(x, y, z, 5 * Math.sin(step * 0.1), 5 * Math.cos(step * 0.1), 0));
 		// moving source.
 		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
 		//let r = 3;
 		let nc = 100.0;
-		let nh = 4.0;
-		let r = 5.0 + nh * Math.sin(step * 0.1) * mapLinear(noise.simplex3(x * nc, y * nc, z * nc), -1, 1, 0, 1);
-		dist = dist > r ? 0.0 : thresholdGlobal + 0.0001;
+		let nh = 1.0;
+		let r = nh ;// * mapLinear(noise.simplex3(x * nc, y * nc, z * nc), -1, 1, 0, 1);
+		dist = dist > r ? 0.0 : thresholdGlobal + 0.01;
 		//dist = mapLinear(dist, 0, 15, 0, 1);
 		b +=  dist;
-	}
+	//}
 
 	a += (daGlobal * asum - abb + feedGlobal * (1.0 - a)) * dtGlobal;
 	b += (dbGlobal * bsum + abb - (feedGlobal + killGlobal) * b) * dtGlobal;
@@ -155,7 +155,7 @@ function diffuseSumTest(x, y, z){
 	vertex.anext = a;
 	vertex.bnext = b;
 
-	vertex.rdval = (a - b);
+	vertex.rdval = (a - b) * 2.0;
 
 	
 	/*
@@ -661,12 +661,14 @@ class MarchingCubes{
 			// when using envMap, TURN OFF THREE.DOUBLESIDE
 
 			new THREE.MeshBasicMaterial({ 
-				transparent: false, 
-				opacity: 0.7, 
-				refractionRatio: 0.9,
-				//side: THREE.DoubleSide,
+				//transparent: false, 
+				//opacity: 0.7, 
+				//refractionRatio: 0.9,
+				reflectivity: 0.7,
+				side: THREE.DoubleSide,
 				wireframe: false,
-				
+				//envMap: p5texture,
+				map: p5texture
 				//flatShading: true
 			}),
 
@@ -679,7 +681,7 @@ class MarchingCubes{
 			 	uniforms: uniforms,
 			 	vertexShader: vertShader,
 			 	fragmentShader: fragShader,
-			 	//side: THREE.DoubleSide
+			 	side: THREE.DoubleSide
 			}),
 		];
 
@@ -963,12 +965,158 @@ class IndexObject{
 let p5texture;
 let p5Font;
 let p5Canvas;
+
 function main(){
+	// P5 SKETCH
+	const p5Sketch = (sketch) => {
+
+		let textSize = 130;
+		let testString, testString2;
+		let mainFont;
+		let stringArr = [];
+		let stringNum = 8;
+		class StringManager{
+			constructor(str, textSize, posx, posy, mode){
+				this.mainString = str;
+				this.textSize = textSize;
+
+				this.posx = posx;
+				this.posy = posy;
+
+				this.initPosx = posx;
+				this.initPosy = posy;
+				this.textBoundary;
+				this.textBoundarySet = false;
+				this.mode = mode; // 0: left, 1: right
+				
+			}
+			
+			checkForBounds(){
+				if (mainFont.font !== undefined){
+					this.textBoundary = mainFont.textBounds(this.mainString, this.posx, this.posy, this.textSize);
+				}
+			}
+			moveStringY(){
+				this.posy += 2;
+			}
+
+			resetPosition(){
+				if (this.posy > sketch.height + textSize){
+					this.posx = this.initPosx;
+					this.posy = 0;
+				}
+			}
+			
+			moveStringX(){
+				this.checkForBounds();
+				try{	
+					
+						if (this.mode == 0){
+
+							sketch.textAlign(sketch.LEFT);
+							if(this.textBoundary.x < 0){
+								this.posx += Math.abs(this.posx) / 5.0;
+							}
+							sketch.textAlign(sketch.LEFT);
+							sketch.text(this.mainString, this.posx, this.posy);
+							}
+						else if (this.mode == 1){
+							
+							//sketch.textAlign(sketch.RIGHT);
+							if(this.textBoundary.x + this.textBoundary.w  > sketch.width){
+								this.posx -=  Math.abs(sketch.width - this.textBoundary.w - this.posx) / 10.0;
+							}
+							//sketch.textAlign(sketch.RIGHT);
+							sketch.text(this.mainString, this.posx, this.posy);
+							
+						}
+					
+				}catch{}
+			}
+
+			drawString(){
+
+			}
+		}
+
+        sketch.setup = () => {
+        	
+			sketch.createCanvas(window.innerWidth, window.innerHeight);
+			sketch.textSize(textSize);
+			mainFont = sketch.loadFont('helvetica_bold.ttf', sketch.drawText);
+
+		
+			for (let i = 0; i < stringNum; i++){
+				let r = i % 2;
+
+				let str;
+				switch(r){
+					case 0:
+						str = new StringManager("CREATIVE", textSize, -2000, textSize * i, 0);
+						stringArr.push(str);
+					break;
+
+					case 1:
+						str = new StringManager("BANKRUPTCY", textSize, sketch.width + 2000, textSize * i, 1);
+						stringArr.push(str);
+					break;
+				}
+			}
+		}
+		sketch.draw = () => {
+			
+	
+            sketch.smooth();
+			sketch.background(200, 255, 25);
+            
+           
+            sketch.noStroke();
+            sketch.fill(0);
+           
+           	stringArr.forEach(function (s, i){
+           		s.moveStringX();
+           		s.moveStringY();
+           		s.resetPosition();
+           	});
+			if (p5texture) p5texture.needsUpdate = true;
+		}
+
+		sketch.windowResized = () => {
+			sketch.resizeCanvas(window.width, window.height);
+			sketch.createCanvas(window.innerWidth, window.innerHeight);
+			 p5texture.needsUpdate = true;
+		}
+
+		// use callbacks instead of async functions to load assets.
+
+		sketch.drawText = (f) => {
+			sketch.textFont(f, textSize);
+
+		}
+    };
+    p5Canvas = new p5(p5Sketch);
+	p5texture = new THREE.CanvasTexture(p5Canvas.canvas);
+	p5texture.mapping = THREE.EquirectangularReflectionMapping;
+	p5texture.wrapS = THREE.RepeatWrapping;
+	p5texture.wrapT = THREE.RepeatWrapping;
+	p5texture.needsUpdate = true;
+	//p5Canvas.canvas.style.display = "none";
    
 
 	initStats();
 // NOISE
 	noise.seed(Math.random());
+// SHADERS
+
+	vertShader = document.getElementById('vert').innerHTML;
+	fragShader = document.getElementById('frag').innerHTML;
+	uniforms = {
+		time: {type: 'f', value: 0.0},
+		resolution: {type: 'v2', value: new THREE.Vector2()},
+		tex: {type: 't', value: p5texture}
+	}
+	uniforms.resolution.value.x = window.innerWidth;
+	uniforms.resolution.value.y = window.innerHeight;
 
 	
 // TEST SHAPE FUNCTIONS
@@ -992,7 +1140,7 @@ function main(){
 
 	scene = new THREE.Scene();
 	
-
+	//scene.background = p5texture;
 	renderer.render(scene, camera);
 
 
@@ -1006,7 +1154,7 @@ function main(){
 
     let dimTotal = 17;
     let dimCube = 1;
-    let marchingCubes = new MarchingCubes(51, 51, 1, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 0);
+    let marchingCubes = new MarchingCubes(31, 31, 3, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 1);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -1032,7 +1180,7 @@ function main(){
 		this.daGlobal = daGlobal;
 		this.dbGlobal = dbGlobal;
 		this.addCenterVal = addCenterVal;
-		this.reset = false;
+		
 		this.fcGlobal = fcGlobal;
 		this.scGlobal = scGlobal;
 		this.vcGlobal = vcGlobal;
@@ -1045,6 +1193,17 @@ function main(){
 			console.log(globalVerticesHashMap.get(v0));
 			console.log(globalVerticesHashMap.get(v1));
 		};
+
+		this.reset = () => {
+				globalVerticesArray.forEach(function(v){
+				v.aprev = 1.0;
+				v.bprev = 0.0;
+				v.anext = 1.0;
+				v.bnext = 0.0;
+				v.rdval = 0.0;
+
+			});
+		}
 	}
 	
 	gui.add(controls, 'feedGlobal', 0.01, 0.1).step(0.0001).onChange(function(e){
@@ -1075,16 +1234,7 @@ function main(){
 		enableBoundary = e;
 	});
 
-	gui.add(controls, 'reset', false).onChange(function(e){
-		globalVerticesArray.forEach(function(v){
-			v.aprev = 1.0;
-			v.bprev = 0.0;
-			v.anext = 1.0;
-			v.bnext = 0.0;
-			v.rdval = 0.0;
-
-		});
-	});
+	
 
 	gui.add(controls, 'fcGlobal', 0.0, 1.0 / 6.0).onChange(function(e){
 		fcGlobal = e;
@@ -1105,6 +1255,10 @@ function main(){
 	gui.add(controls, 'debug').onChange(function(e){
 		controls.debug;
 	});
+
+	gui.add(controls, 'reset').onChange(function(e){
+		controls.reset;
+	});
 	
 
 
@@ -1122,6 +1276,7 @@ function main(){
 		
 		marchingCubes.updateCubes();
 		swapGlobalVerticesValue();
+		marchingCubes.updateShaderMaterial();
 
 		marchingCubes.getMesh().rotation.set(time, time, time);
 
