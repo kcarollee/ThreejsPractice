@@ -1,11 +1,14 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 let step = 0;
 let scene;
+
 let seedAlt = 0;
 let stats;
 let texture;
 let vertShader, fragShader;
 let uniforms;
+
+
 
 let globalVerticesArray = [];
 let globalVerticesHashMap = new Map();
@@ -130,16 +133,18 @@ function diffuseSumTest(x, y, z){
 	let abb = a * b * b;
 
 	// whether to have a constant feed or a conditionally given one should be decided later.
-	//if (addCenterVal) {	
+	if (addCenterVal) {	
 		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
 		// moving source.
 		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
-		//let r = 3 + 1.5 * Math.sin(step * 0.1);
-		let r = 3.0 + Math.sin(step * 0.1);
-		dist = dist > r ? 0.0 : 1.0;
+		//let r = 3;
+		let nc = 100.0;
+		let nh = 4.0;
+		let r = 5.0 + nh * Math.sin(step * 0.1) * mapLinear(noise.simplex3(x * nc, y * nc, z * nc), -1, 1, 0, 1);
+		dist = dist > r ? 0.0 : thresholdGlobal + 0.0001;
 		//dist = mapLinear(dist, 0, 15, 0, 1);
 		b +=  dist;
-	//}
+	}
 
 	a += (daGlobal * asum - abb + feedGlobal * (1.0 - a)) * dtGlobal;
 	b += (dbGlobal * bsum + abb - (feedGlobal + killGlobal) * b) * dtGlobal;
@@ -173,7 +178,8 @@ function diffuseSumTest(x, y, z){
     vertex.rdval = (vertex.anext + vertex.bnext) / 2.0;
     */
     //console.log(vertex.rdval);
-    //if (vertex.boundary) return 0;
+    if (vertex.boundary && enableBoundary) vertex.rdval = null;
+
     return vertex.rdval;
 }
 
@@ -263,56 +269,7 @@ class Cube{
 
     }
 
-    /*
-    diffuseSum(cubeArr){
-    	// ni: neighboring cube's index
-    	// i: index of ni in this.neighborIndices
-    	// 0 <= i < 6: neighbor shares face 
-    	// 6 <= i < 18: neighbor shares side
-    	// 18 <= i < 26: neighbor shares vertex
-    	let fc = 1.0 / 26.0;
-    	let sc = 1.0 / 26.0;
-    	let vc = 1.0 / 26.0;
-
-    	let ca = cubeArr;
-    	let asum = 0.0;
-    	let bsum = 0.0;
-    	this.neighborIndices.forEach(function(ni, i){
-    		if (i < 6){
-    			asum += ca[ni].aprev * fc;
-    			bsum += ca[ni].bprev * fc;
-    		}
-    		else if (i < 18){
-    			asum += ca[ni].aprev * sc;
-    			bsum += ca[ni].bprev * sc;
-    		}
-    		else if (i < 26){
-    			asum += ca[ni].aprev * vc;
-    			bsum += ca[ni].bprev * vc;
-    		}
-    	});
-    	asum -= this.aprev;
-    	bsum -= this.bprev;
-    	
-    	let abb = this.aprev * this.bprev * this.bprev;
-    	this.anext = this.aprev + this.da * asum - abb + this.feed * (1.0 - this.aprev);
-    	this.bnext = this.bprev + this.db * bsum + abb - (this.feed + this.kill) * this.bprev;
-
-    	this.anext = clamp(this.anext, 0.0, 1.0);
-    	this.bnext = clamp(this.bnext, 0.0, 1.0);
-    	this.rdval = (this.anext + this.bnext) / 2.0;
-
-    	//console.log(this.rdval);
-    	return this.rdval;
-    }
-
-    swapValues(){
-
-    	this.aprev = this.anext;
-    	this.bprev = this.bnext;
-
-    }
-	*/
+   
     
     setCubeCorners(testSpace, cx, cy, cz, tws, twe, ths, the, tds, tde){
     	// half width, height, depth
@@ -458,10 +415,10 @@ class Cube{
     						da: daGlobal,
     						db: dbGlobal,
     						
-    						feed: 0.0030,
-    						kill: 0.0062,
+    						feed: feedGlobal,
+    						kill: killGlobal,
     						
-    						rdval: 0.0,
+    						rdval: 0.5,
     						boundary: boundary
     					});
     					/*
@@ -1047,9 +1004,9 @@ function main(){
     	return m;
     }
 
-    let dimTotal = 15;
+    let dimTotal = 17;
     let dimCube = 1;
-    let marchingCubes = new MarchingCubes(dimTotal, dimTotal, dimTotal, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 0);
+    let marchingCubes = new MarchingCubes(51, 51, 1, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 0);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
