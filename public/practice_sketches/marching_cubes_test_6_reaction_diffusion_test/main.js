@@ -133,18 +133,19 @@ function diffuseSumTest(x, y, z){
 	let abb = a * b * b;
 
 	// whether to have a constant feed or a conditionally given one should be decided later.
-	//if (addCenterVal) {	
-		let dist = Math.sqrt(distSquared(x, y, z, 5 * Math.sin(step * 0.1), 5 * Math.cos(step * 0.1), 0));
+	if (addCenterVal) {	
+		//let dist = Math.sqrt(distSquared(x, y, z, 5 * Math.sin(step * 0.1), 5 * Math.cos(step * 0.1), 0));
+        let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
 		// moving source.
 		//let dist = Math.sqrt(distSquared(x, y, z, 1.5 * Math.sin(step * 0.1), 1.5 * Math.cos(step * 0.1), 0));
 		//let r = 3;
 		let nc = 100.0;
 		let nh = 1.0;
 		let r = nh ;// * mapLinear(noise.simplex3(x * nc, y * nc, z * nc), -1, 1, 0, 1);
-		dist = dist > r ? 0.0 : thresholdGlobal + 0.01;
+		dist = dist > r ? 0.0 : 1.0;
 		//dist = mapLinear(dist, 0, 15, 0, 1);
 		b +=  dist;
-	//}
+	}
 
 	a += (daGlobal * asum - abb + feedGlobal * (1.0 - a)) * dtGlobal;
 	b += (dbGlobal * bsum + abb - (feedGlobal + killGlobal) * b) * dtGlobal;
@@ -1113,9 +1114,9 @@ function main(){
     	return m;
     }
 
-    let dimTotal = 17;
-    let dimCube = 1;
-    let marchingCubes = new MarchingCubes(29.5, 29.5, 1, 0.5, 0.5, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 3);
+    let dimTotal = 3.25;
+    let dimCube = 0.25;
+    let marchingCubes = new MarchingCubes(dimTotal, dimTotal, dimTotal, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 3);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
