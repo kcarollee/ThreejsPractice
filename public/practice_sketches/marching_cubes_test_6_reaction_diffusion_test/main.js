@@ -978,7 +978,37 @@ function main(){
 		let mainString = "CREATIVEBANKRUPTCY";
 		let textBoundary; 
 		
+		let testStr;
 
+		class MovingString{
+			constructor(str, posx, posy){
+				this.str = str;
+				this.strLength;
+				console.log(this.strLength);
+				this.posx = posx;
+				this.posy = posy;
+				this.posxCopy = posx;
+				this.posx2 = - 1550;
+			}
+
+			display(){
+				sketch.text(this.str, this.posx2, this.posy);
+				sketch.text(this.str, this.posx, this.posy);
+			}
+
+			updatePos(){
+				this.strLength = mainFont.textBounds(this.str, 0, 0, textSize).w;
+				//this.posx2 = this.posxCopy - this.strLength;
+				//console.log(this.posx2);
+				if (this.posx > window.innerWidth) {
+					this.posx = this.posx2 - this.strLength;
+				}
+				if (this.posx2 > window.innerWidth) this.posx2 = this.posx - this.strLength;
+
+				this.posx += 10;
+				this.posx2 += 10;
+			}
+		}
         sketch.setup = () => {
         	
 			sketch.createCanvas(window.innerWidth, window.innerHeight);
@@ -986,14 +1016,28 @@ function main(){
 			mainFont = sketch.loadFont('helvetica_bold.ttf', sketch.drawText);
 
 			
+
+			for (let i = 0; i < stringNum; i++){
+				let t = new MovingString(mainString, 0, textSize * (i + 1));
+				stringArr.push(t);
+			}
 		}
 		sketch.draw = () => {
 			
 			//textBoundary = mainFont.textBounds(mainString, 0, 0, textSize);
-            sketch.smooth();
-			sketch.background(210, 255, 55);
+			try{
+            	sketch.smooth();
+				sketch.background(210, 255, 55);
             
-           
+           		//testStr.display();
+           		//testStr.updatePos();
+
+           		stringArr.forEach(function(s){
+           			s.display();
+           			s.updatePos();
+           		});
+           		
+           	}catch{}
            
 			if (p5texture) p5texture.needsUpdate = true;
 		}
@@ -1013,11 +1057,11 @@ function main(){
     };
     p5Canvas = new p5(p5Sketch);
 	p5texture = new THREE.CanvasTexture(p5Canvas.canvas);
-	p5texture.mapping = THREE.EquirectangularReflectionMapping;
+	//p5texture.mapping = THREE.EquirectangularReflectionMapping;
 	p5texture.wrapS = THREE.RepeatWrapping;
 	p5texture.wrapT = THREE.RepeatWrapping;
 	p5texture.needsUpdate = true;
-	//p5Canvas.canvas.style.display = "none";
+	p5Canvas.canvas.style.display = "none";
    
 
 	//initStats();
@@ -1071,7 +1115,7 @@ function main(){
 
     let dimTotal = 17;
     let dimCube = 1;
-    let marchingCubes = new MarchingCubes(30.5, 30.5, 1, 0.5, 0.5, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 3);
+    let marchingCubes = new MarchingCubes(29.5, 29.5, 1, 0.5, 0.5, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 3);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -1219,7 +1263,7 @@ function main(){
 		swapGlobalVerticesValue();
 		marchingCubes.updateShaderMaterial();
 
-		marchingCubes.getMesh().rotation.set(0, 0, time);
+		//marchingCubes.getMesh().rotation.set(0, 0, time);
 
 		
 		
