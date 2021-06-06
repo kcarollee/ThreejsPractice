@@ -54,8 +54,8 @@
       varying vec3 eyeVector;
       varying vec3 worldNormal;
 
-      float fresnel(vec3 eyeVector, vec3 worldNormal){
-        return  pow(1.0 + dot(eyeVector, worldNormal), 2.0); 
+      float fresnel(vec3 eyeVector, vec3 worldNormal, float exp){
+        return  pow(1.0 + dot(eyeVector, worldNormal), exp); 
       }
 
       vec2 pc(vec2 d){
@@ -71,23 +71,43 @@
         // make an r, g, b version of the line below for ca.
         vec3 refracted = refract(eyeVector, n, 1.0 / 0.89);
         vec4 texcopy = texture2D(tex, sc); // texture before refraction
-
+        vec4 texcopy2 = texture2D(tex, uv * 3.0); // texture using uv coords
         // https://gamedev.stackexchange.com/questions/58408/how-would-you-implement-cromatic-aberration#:~:text=Chromatic%20aberration%20is%20caused%20when,channel20in%20a%20fragment%20shader.&text=This%20is%20similar%20to%20how,that%20are%2reflective%20or%20refractive.
+        /*
         vec3 rRefVec = refract(eyeVector, n, 1.0 / 0.85);
         vec3 gRefVec = refract(eyeVector, n , 1.0 / 0.87);
         vec3 bRefVec = refract(eyeVector, n, 1.0 / 0.89);
+        */
+
+        vec3 rRefVec = reflect(eyeVector, n * 0.99);
+        vec3 gRefVec = reflect(eyeVector, n * 1.01);
+        vec3 bRefVec = reflect(eyeVector, n);
         
         vec3 caCol;
         caCol.r = texture2D(tex, sc + rRefVec.xy * 0.1).r;
         caCol.g = texture2D(tex, sc + gRefVec.xy * 0.1).g;
         caCol.b = texture2D(tex, sc + bRefVec.xy * 0.1).b;
 
-        float f = fresnel(eyeVector, n);
+        
 
         vec3 outCol =caCol;
 
-        outCol = mix(outCol, vec3(1.0), f);
+        
+        float texDistortedr = texture2D(tex, (uv + vec2(30.0, .0)) * 3.0).r;
+        float texDistortedg = texture2D(tex, (uv + vec2(30.0, 30.0)) * 3.0).g;
+        float texDistortedb = texture2D(tex, (uv + vec2(.0, 30.0)) * 3.0).b;
+        outCol = vec3(texDistortedr, texDistortedg, texDistortedb);
 
+        float exp = 2.0;
+        float fr = fresnel(eyeVector, n, exp);
+        float fg = fresnel(eyeVector, n, exp);
+        float fb = fresnel(eyeVector, n, exp);
+
+        outCol.r = mix(outCol.r, uv.x, fr);
+        outCol.g = mix(outCol.g, uv.y, fg);
+        outCol.b = mix(outCol.b, 1.0, fb);
+
+        outCol = mix(outCol, vec3(1.0), fresnel(eyeVector, n, 2.0));
         gl_FragColor = vec4(outCol, 1.0);
       }
       

@@ -975,69 +975,9 @@ function main(){
 		let mainFont;
 		let stringArr = [];
 		let stringNum = 8;
-		class StringManager{
-			constructor(str, textSize, posx, posy, mode){
-				this.mainString = str;
-				this.textSize = textSize;
-
-				this.posx = posx;
-				this.posy = posy;
-
-				this.initPosx = posx;
-				this.initPosy = posy;
-				this.textBoundary;
-				this.textBoundarySet = false;
-				this.mode = mode; // 0: left, 1: right
-				
-			}
-			
-			checkForBounds(){
-				if (mainFont.font !== undefined){
-					this.textBoundary = mainFont.textBounds(this.mainString, this.posx, this.posy, this.textSize);
-				}
-			}
-			moveStringY(){
-				this.posy += 2;
-			}
-
-			resetPosition(){
-				if (this.posy > sketch.height + textSize){
-					this.posx = this.initPosx;
-					this.posy = 0;
-				}
-			}
-			
-			moveStringX(){
-				this.checkForBounds();
-				try{	
-					
-						if (this.mode == 0){
-
-							sketch.textAlign(sketch.LEFT);
-							if(this.textBoundary.x < 0){
-								this.posx += Math.abs(this.posx) / 5.0;
-							}
-							sketch.textAlign(sketch.LEFT);
-							sketch.text(this.mainString, this.posx, this.posy);
-							}
-						else if (this.mode == 1){
-							
-							//sketch.textAlign(sketch.RIGHT);
-							if(this.textBoundary.x + this.textBoundary.w  > sketch.width){
-								this.posx -=  Math.abs(sketch.width - this.textBoundary.w - this.posx) / 10.0;
-							}
-							//sketch.textAlign(sketch.RIGHT);
-							sketch.text(this.mainString, this.posx, this.posy);
-							
-						}
-					
-				}catch{}
-			}
-
-			drawString(){
-
-			}
-		}
+		let mainString = "CREATIVEBANKRUPTCY";
+		let textBoundary; 
+		
 
         sketch.setup = () => {
         	
@@ -1045,46 +985,23 @@ function main(){
 			sketch.textSize(textSize);
 			mainFont = sketch.loadFont('helvetica_bold.ttf', sketch.drawText);
 
-		
-			for (let i = 0; i < stringNum; i++){
-				let r = i % 2;
-
-				let str;
-				switch(r){
-					case 0:
-						str = new StringManager("CREATIVE", textSize, -2000, textSize * i, 0);
-						stringArr.push(str);
-					break;
-
-					case 1:
-						str = new StringManager("BANKRUPTCY", textSize, sketch.width + 2000, textSize * i, 1);
-						stringArr.push(str);
-					break;
-				}
-			}
+			
 		}
 		sketch.draw = () => {
 			
-	
+			//textBoundary = mainFont.textBounds(mainString, 0, 0, textSize);
             sketch.smooth();
-			sketch.background(200, 255, 25);
+			sketch.background(210, 255, 55);
             
            
-            sketch.noStroke();
-            sketch.fill(0);
            
-           	stringArr.forEach(function (s, i){
-           		s.moveStringX();
-           		s.moveStringY();
-           		s.resetPosition();
-           	});
 			if (p5texture) p5texture.needsUpdate = true;
 		}
 
 		sketch.windowResized = () => {
 			sketch.resizeCanvas(window.width, window.height);
 			sketch.createCanvas(window.innerWidth, window.innerHeight);
-			 p5texture.needsUpdate = true;
+			p5texture.needsUpdate = true;
 		}
 
 		// use callbacks instead of async functions to load assets.
@@ -1103,7 +1020,7 @@ function main(){
 	//p5Canvas.canvas.style.display = "none";
    
 
-	initStats();
+	//initStats();
 // NOISE
 	noise.seed(Math.random());
 // SHADERS
@@ -1140,7 +1057,7 @@ function main(){
 
 	scene = new THREE.Scene();
 	
-	//scene.background = p5texture;
+	scene.background = new THREE.Color(0x111111);
 	renderer.render(scene, camera);
 
 
@@ -1154,7 +1071,7 @@ function main(){
 
     let dimTotal = 17;
     let dimCube = 1;
-    let marchingCubes = new MarchingCubes(31, 31, 3, dimCube, dimCube, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 1);
+    let marchingCubes = new MarchingCubes(30.5, 30.5, 1, 0.5, 0.5, dimCube, 0, 0, 0, diffuseSumTest, thresholdGlobal, 3);
 	//marchingCubes.updateCubes();
 	console.log(globalVerticesHashMap);
 
@@ -1203,28 +1120,30 @@ function main(){
 				v.rdval = 0.0;
 
 			});
-		}
+		};
+
+		this.presets = null;
 	}
 	
 	gui.add(controls, 'feedGlobal', 0.01, 0.1).step(0.0001).onChange(function(e){
 		feedGlobal = e;
-	});
+	}).listen();
 
 	gui.add(controls, 'killGlobal', 0.01, 0.1).step(0.0001).onChange(function(e){
 		killGlobal = e;
-	});
+	}).listen();
 
 	gui.add(controls, 'thresholdGlobal', 0.0, 1.0).step(0.0001).onChange(function(e){
 		thresholdGlobal = e;
-	});
+	}).listen();
 
 	gui.add(controls, 'daGlobal', 0.0, 1.2).step(0.0001).onChange(function(e){
 		daGlobal = e;
-	});
+	}).listen();
 
 	gui.add(controls, 'dbGlobal', 0.0, 1.2).step(0.0001).onChange(function(e){
 		dbGlobal = e;
-	});
+	}).listen();
 
 	gui.add(controls, 'addCenterVal', false).onChange(function(e){
 		addCenterVal = e;
@@ -1259,6 +1178,20 @@ function main(){
 	gui.add(controls, 'reset').onChange(function(e){
 		controls.reset;
 	});
+
+	gui.add(controls, 'presets', ['Circles', 'Mitosis', 'Pastry']).onChange(function(e){
+		switch (e){
+			case 'Circles':
+				setParameters(0.0303, 0.0557, 0.1714, 0.96, 0.1276);
+				break;
+			case 'Mitosis':
+				setParameters(0.03, 0.062, 0.0738, 0.3747, 0.1536);
+				break;
+			case 'Pastry':
+				setParameters(0.041, 0.0703, 0.2798, 0.5568, 0.0756);
+				break;
+		}
+	});
 	
 
 
@@ -1267,18 +1200,26 @@ function main(){
 	
 	render();
 
+	function setParameters(f, k, t, da, db){
+		feedGlobal = controls.feedGlobal = f;
+		killGlobal = controls.killGlobal = k;
+		thresholdGlobal = controls.thresholdGlobal = t;
+		daGlobal = controls.daGlobal = da;
+		dbGlobal = controls.dbGlobal = db;
+	}
+
 	function render(time){
 		dirLight.position.set(camera.position.x, camera.position.y, camera.position.z);
 		time *= 0.0001;
 		step += 1;
 		
-		stats.update();
+		//stats.update();
 		
 		marchingCubes.updateCubes();
 		swapGlobalVerticesValue();
 		marchingCubes.updateShaderMaterial();
 
-		marchingCubes.getMesh().rotation.set(time, time, time);
+		marchingCubes.getMesh().rotation.set(0, 0, time);
 
 		
 		
