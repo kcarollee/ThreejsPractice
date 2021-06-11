@@ -840,7 +840,7 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 1.0, 1.0, 1.0, 0, 0, 0, testFunc, 0.65, 0);
+	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 0.5, 0.5, 0.5, 0, 0, 0, testFunc, 0.65, 3);
     marchingCubes.updateCubes();
 
    
@@ -898,11 +898,11 @@ function main(){
 
 		//stats.update();
 
-		/*
+		
 		scene.rotation.x = step * 0.01;
 		scene.rotation.y = step * 0.01;
 		scene.rotation.z = step * 0.01;
-		*/
+		
 		marchingCubes.updateCubes();
 		marchingCubes.updateShaderMaterial();
 

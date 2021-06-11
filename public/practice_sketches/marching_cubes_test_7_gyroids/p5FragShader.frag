@@ -59,7 +59,7 @@ float Box(vec3 p, vec3 pos, vec3 s){
 float Gyroid(vec3 p, vec3 pos, float r){
   float gd = 3.0; // density
   float gt = 0.2; // thickness
-  float dt = time;
+  float dt = time * 5.0;
   float val = sin(p.x * gd + dt) * cos(p.y * gd + dt) + 
   sin(p.y * gd + dt) * cos(p.z * gd + dt) + 
   sin(p.z * gd + dt) * cos(p.x * gd + dt);
@@ -83,18 +83,44 @@ mat2 rotate(float deg){
   return mat2(c, -s, s, c);
 }
 
+float GyroSphere(vec3 p, vec3 pos, float r){
+  float g = Gyroid(p, pos, r);
+  float s = Sphere(p, pos, r);
+  float f = 10000.0;
+  f = min(s, f);
+  f = max(g, f);
+  return f;
+}
 
 // define scenes
 float GetDistanceFromScene(vec3 p){
 float final = 10000.0;
+vec3 pcopy = p;
 p.xy *= rotate(time * 0.2);
 p.xz *= rotate(time * 0.2);
-float g = Gyroid(p, vec3(.0), 2.0);
-float s = Sphere(p, vec3(.0), 2.0);
 
+float gs1 = GyroSphere(p, vec3(.0), 2.0);
+
+p = pcopy;
+
+p -= vec3(3.5, -3.5, .0);
+p.xy *= rotate(time * 0.2);
+p.xz *= rotate(time * 0.2);
+
+float gs2 = GyroSphere(p, vec3(.0), 2.0);
+
+p = pcopy;
+
+p -= vec3(-3.5, 3.5, .0);
+p.xy *= rotate(time * 0.2);
+p.xz *= rotate(time * 0.2);
+
+float gs3 = GyroSphere(p, vec3(.0), 2.0);
+final = min(gs1, final);
+final = min(gs2, final);
+final = min(gs3, final);
 float b = Box(p, vec3(.0), vec3(2.0));
-  final = min(b, final);
-  final = max(g, final);
+ 
 return final;
 }
 
@@ -135,25 +161,28 @@ vec3 DiffuseLight(vec3 p, vec3 rayDir, float d){
   //float ns = n1 + n2 - n3;
   float ns = n1;
   vec3 normal = Normal(p);
-  vec3 lightCol = vec3(1.0, .0, .0);
+  vec3 lightCol = vec3(1.0);
   vec3 lightPos = p + vec3(.0, .0, -1.0);
   vec3 lightDir = normalize(lightPos - p);
+ 
   float difLight = clamp(dot(normal, lightDir), .0, 1.0) / clamp(pow(d, 0.001), 0.75, MAX_DIST * 0.5); // clamp the value between 0 and 1
   /*
   float shadowVal = RayMarch(p + normal * SURFACE_DIST, lightDir);
   if (shadowVal < length(lightPos - p)) difLight = 0.0;
     */
   //if (difLight < .001) return vec3(2.0 * sin(ns * 10.0))/ clamp(pow(d, 2.0), 1.5, MAX_DIST);
-  if (difLight < .001) return vec3(2.0 * sin(10.0))/ clamp(pow(d, 2.0), 1.5, MAX_DIST);
+ //if (difLight < .001) return vec3(2.0 * sin(10.0))/ clamp(pow(d, 2.0), 1.5, MAX_DIST);
   
   vec3 specLight = vec3(0.1);
   return (lightCol * difLight + specLight);
 }
 
 
+
+
 void main( void ) {
 vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
-vec2 st = gl_FragCoord.xy / resolution.xy * 10.0;
+
 vec3 outCol = vec3(0.0);
 
 vec3 color = vec3(1.0, .0, .0);
@@ -169,7 +198,16 @@ vec3 light = DiffuseLight(p, rayDir, d);
 
 outCol = vec3(light);
 
+if (uv.x - uv.y > 0.333){
+  if (outCol.x == .0) outCol = vec3(0.8, .2, .3);
+}
 
+else if (uv.x - uv.y < -0.333){
+  if (outCol.x == .0) outCol = 1.0 - vec3(0.9, .1, .4);
+}
+else{
+  if (outCol.x == .0) outCol = vec3(0.75, .2, .2);
+}
 gl_FragColor = vec4(outCol, 1.0);
 
 }

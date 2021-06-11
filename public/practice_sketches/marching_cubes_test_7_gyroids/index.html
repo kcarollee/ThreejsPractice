@@ -73,16 +73,16 @@
         vec3 bRefVec = refract(eyeVector, n, 1.0 / 0.80);
         
         vec3 caCol;
-        caCol.r = texture2D(tex, sc + rRefVec.xy * 0.1).r;
-        caCol.g = texture2D(tex, sc + gRefVec.xy * 0.1).g;
-        caCol.b = texture2D(tex, sc + bRefVec.xy * 0.1).b;
+        caCol.r = 1.0 - texture2D(tex, sc + rRefVec.xy * 0.1).r;
+        caCol.g = 1.0 - texture2D(tex, sc + gRefVec.xy * 0.1).g;
+        caCol.b = 1.0 - texture2D(tex, sc + bRefVec.xy * 0.1).b;
 
         float f = fresnel(eyeVector, n);
 
         vec3 outCol =caCol;
 
         outCol = mix(outCol, vec3(1.0), f);
-
+        
         gl_FragColor = vec4(outCol, 1.0);
       }
 
