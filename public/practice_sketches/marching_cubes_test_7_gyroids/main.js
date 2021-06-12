@@ -853,7 +853,7 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubesStatic = new MarchingCubes(30.0, 30.0, 30.0,0.5,0.5,0.5, 0, 0, 0, testFunc, 0.65, 3);
+	let marchingCubesStatic = new MarchingCubes(30.0, 30.0, 30.0,0.3,0.3,0.3, 0, 0, 0, testFunc, 0.65, 3);
     marchingCubesStatic.updateCubes();
 
 
