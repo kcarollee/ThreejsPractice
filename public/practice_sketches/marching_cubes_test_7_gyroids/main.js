@@ -540,20 +540,23 @@ function main(){
 		let mainFont;
 		let stringNum = 8;
 		let p5Shader;
+		let texImage;
         sketch.setup = () => {
         	
 			sketch.createCanvas(window.innerWidth, window.innerHeight, sketch.WEBGL);
 			sketch.textSize(textSize);
 			mainFont = sketch.loadFont('helvetica_bold.ttf', sketch.drawText);
 			p5Shader = sketch.loadShader('p5VertShader.vert', 'p5FragShader.frag', sketch.getShader);
-		
+			texImage = sketch.loadImage('testTex.png', sketch.getImage);
+			texImage.resize(512, 512);
+			sketch.textureWrap(sketch.REPEAT);
 			
 		}
 		sketch.draw = () => {
 			try{
 				p5Shader.setUniform('resolution', [sketch.width, sketch.height]);
                 p5Shader.setUniform('time', sketch.frameCount * 0.03);
-				
+				p5Shader.setUniform('tex', texImage);
                 sketch.shader(p5Shader);
 				sketch.quad(-1, -1, 1, -1, 1, 1, -1, 1);
 
@@ -577,6 +580,10 @@ function main(){
 
 		sketch.getShader = (s) => {
 			sketch.shader(s);
+		}
+
+		sketch.getImage = (i) =>{
+			sketch.image(i, 0, 0);
 		}
     };
 // NOISE

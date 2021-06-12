@@ -13,6 +13,8 @@ uniform float time;
 
 uniform vec2 resolution;
 
+uniform sampler2D tex;
+
 float map(float value, float min1, float max1, float min2, float max2) {
   return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
 }
@@ -59,7 +61,7 @@ float Box(vec3 p, vec3 pos, vec3 s){
 float Gyroid(vec3 p, vec3 pos, float r){
   float gd = 3.0; // density
   float gt = 0.2; // thickness
-  float dt = time * 5.0;
+  float dt = time * 2.0;
   float val = sin(p.x * gd + dt) * cos(p.y * gd + dt) + 
   sin(p.y * gd + dt) * cos(p.z * gd + dt) + 
   sin(p.z * gd + dt) * cos(p.x * gd + dt);
@@ -96,6 +98,8 @@ float GyroSphere(vec3 p, vec3 pos, float r){
 float GetDistanceFromScene(vec3 p){
 float final = 10000.0;
 vec3 pcopy = p;
+
+p -= vec3(3.5, 3.5, .0);
 p.xy *= rotate(time * 0.2);
 p.xz *= rotate(time * 0.2);
 
@@ -116,9 +120,20 @@ p.xy *= rotate(time * 0.2);
 p.xz *= rotate(time * 0.2);
 
 float gs3 = GyroSphere(p, vec3(.0), 2.0);
+
+p = pcopy;
+
+p -= vec3(-3.5, -3.5, .0);
+p.xy *= rotate(time * 0.2);
+p.xz *= rotate(time * 0.2);
+
+float gs4 = GyroSphere(p, vec3(.0), 2.0);
+
+
 final = min(gs1, final);
 final = min(gs2, final);
 final = min(gs3, final);
+final = min(gs4, final);
 float b = Box(p, vec3(.0), vec3(2.0));
  
 return final;
@@ -161,7 +176,7 @@ vec3 DiffuseLight(vec3 p, vec3 rayDir, float d){
   //float ns = n1 + n2 - n3;
   float ns = n1;
   vec3 normal = Normal(p);
-  vec3 lightCol = vec3(1.0);
+  vec3 lightCol = vec3(1.0, normal.xy);
   vec3 lightPos = p + vec3(.0, .0, -1.0);
   vec3 lightDir = normalize(lightPos - p);
  
@@ -181,6 +196,7 @@ vec3 DiffuseLight(vec3 p, vec3 rayDir, float d){
 
 
 void main( void ) {
+vec2 uvo = (vec2(gl_FragCoord.x, gl_FragCoord.y)) / resolution;
 vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
 
 vec3 outCol = vec3(0.0);
@@ -199,16 +215,36 @@ vec3 light = DiffuseLight(p, rayDir, d);
 outCol = vec3(light);
 
 if (uv.x - uv.y > 0.333){
-  if (outCol.x == .0) outCol = vec3(.0);
-  else outCol = 1.0 - outCol;
+  if (outCol.x == .0) outCol = vec3(.12);
+  else outCol = outCol;
 }
 
 else if (uv.x - uv.y < -0.333){
- if (outCol.x == .0) outCol = vec3(.0);
-  else outCol = 1.0 - outCol;
+ if (outCol.x == .0) outCol = vec3(.1);
+  else outCol = outCol;
 }
 else{
-  if (outCol.x == .0) outCol = vec3(1.0, .0, .0);
+  if (outCol.x == .0) {
+    float n1 = noise(uv.xy * 50.0 + time * 0.1);
+    float n2 = noise(uv.yx * 50.0 + time * 0.1);
+    float n3 = noise(uv.xx * 5.0 + time * 0.1);
+    
+    outCol = vec3(uvo.x, 1.0 - uvo.y, 1.0);
+    outCol -= texture2D(tex, uvo).rgb;
+    /*
+    if (outCol.x <= .5){
+      float n1 = noise(uv.xy * 5.0 + time * 0.1);
+      float n2 = noise(uv.yx * 5.0 + time * 0.1);
+      float n3 = noise(uv.xx * 5.0 + time * 0.1);
+
+      float n4 = n1 + n2 - n3;
+      outCol = vec3(sin(n4 * 20.0), sin(n4 * 20.0), cos(n4 * 13.0));
+    }
+    */
+    //outCol += vec3(noise(time + uv.x * 10.0 + uv.y * 10.0));
+  }
+  outCol -= texture2D(tex, uvo).rgb;
+
 }
 
 
