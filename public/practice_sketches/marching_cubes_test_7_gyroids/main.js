@@ -336,6 +336,7 @@ class MarchingCubes{
 
 		this.id = ++MarchingCubes.id;
 
+
 		this.totalGeom;
 		this.useDifferentHashFunc = false;
 		this.hashFuncIndex = 0;
@@ -461,7 +462,7 @@ class MarchingCubes{
 		}
 
 
-		// reseting attributes
+		// resetting attributes
 		this.hashMap.clear();
 		this.vertices = [];
 		this.indices = [];
@@ -473,6 +474,10 @@ class MarchingCubes{
 	manageResources(){	
 		this.marchingCubesMesh.geometry.dispose();
 		this.marchingCubesMesh.material.dispose();
+	}
+
+	setVisiblility(c){
+		this.marchingCubesMesh.visible = c;
 	}
 
 	useDifferentHashFunc(){
@@ -527,7 +532,7 @@ let p5Font;
 let p5Canvas;
 function main(){
    
-
+	initStats();
 // P5 SKETCH
 	const p5Sketch = (sketch) => {
 
@@ -841,12 +846,17 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 0.25, 0.25, 0.25, 0, 0, 0, testFunc, 0.65, 3);
-    marchingCubes.updateCubes();
+	let marchingCubesStatic = new MarchingCubes(30.0, 30.0, 30.0,0.5,0.5,0.5, 0, 0, 0, testFunc, 0.65, 3);
+    marchingCubesStatic.updateCubes();
 
-   
-    //let marchingCubes2 = new MarchingCubes(30.0, 30.0, 30.0, 1.25, 1.25, 1.25, 20, -20, 0, randomSphereFunc, 0.65);
-	//marchingCubes2.updateCubes();
+
+    let showMoving = false;
+    let marchingCubesMoving = new MarchingCubes(30.0, 30.0, 30.0, 1.0, 1.0, 1.0, 0, 0, 0, testFunc, 0.65, 3);
+    marchingCubesMoving.updateCubes();
+
+    marchingCubesMoving.getMesh().visible = false;
+
+
 	
 
 // LIGHTS
@@ -869,6 +879,7 @@ function main(){
         this.gThickness = gThickness;
         this.gRadius = gRadius;
         this.gStepCoef = gStepCoef;
+        this.showMoving = false;
 	}
 	
 	
@@ -894,6 +905,18 @@ function main(){
 		gStepCoef = e;
 	});
 
+	gui.add(controls, 'showMoving').onChange(function(e) {
+		showMoving = !showMoving;
+		if (showMoving){
+			marchingCubesStatic.setVisiblility(false);
+			marchingCubesMoving.setVisiblility(true);
+		}
+		else{
+			marchingCubesStatic.setVisiblility(true);
+			marchingCubesMoving.setVisiblility(false);
+		}
+	});
+
 	gui.close();
 
 
@@ -902,7 +925,7 @@ function main(){
 		time *= 0.001;
 		step += 1;
 
-		//stats.update();
+		stats.update();
 
 		
 		scene.rotation.x = step * 0.01;
@@ -911,6 +934,20 @@ function main(){
 		
 		//marchingCubes.updateCubes();
 		//marchingCubes.updateShaderMaterial();
+
+		if (showMoving){
+			
+			marchingCubesMoving.updateCubes();
+			marchingCubesMoving.updateShaderMaterial();
+			 marchingCubesStatic.manageResources();
+			 marchingCubesStatic.updateShaderMaterial();
+		}
+		else{
+			
+
+			 marchingCubesStatic.manageResources();
+			
+		} 
 
 		
 		if (resizeRenderToDisplaySize(renderer)){
