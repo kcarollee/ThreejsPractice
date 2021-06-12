@@ -82,6 +82,9 @@
         vec3 outCol =caCol;
 
         outCol = mix(outCol, vec3(1.0), f);
+
+
+        outCol = n * outCol;;
         
         gl_FragColor = vec4(outCol, 1.0);
       }

@@ -199,15 +199,19 @@ vec3 light = DiffuseLight(p, rayDir, d);
 outCol = vec3(light);
 
 if (uv.x - uv.y > 0.333){
-  if (outCol.x == .0) outCol = vec3(0.8, .2, .3);
+  if (outCol.x == .0) outCol = vec3(.0);
+  else outCol = 1.0 - outCol;
 }
 
 else if (uv.x - uv.y < -0.333){
-  if (outCol.x == .0) outCol = 1.0 - vec3(0.9, .1, .4);
+ if (outCol.x == .0) outCol = vec3(.0);
+  else outCol = 1.0 - outCol;
 }
 else{
-  if (outCol.x == .0) outCol = vec3(0.75, .2, .2);
+  if (outCol.x == .0) outCol = vec3(1.0, .0, .0);
 }
+
+
 gl_FragColor = vec4(outCol, 1.0);
 
 }

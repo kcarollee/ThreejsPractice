@@ -792,14 +792,15 @@ function main(){
 		return m;
 	}
 
-	let gDensity = 0.25;
+	let gDensity = 0.8;
 	let gThickness = 1.0;
 	let gRadius = 10;
+	let gStepCoef = 0.1;
 	const testFunc = (x, y, z) => {
 
 		// gyroid
 
-		let dt = step * 0.1;
+		let dt = step * gStepCoef;
 		let c = gDensity;
 		let oc = gThickness;
 		let g = Math.sin(x * c + dt) * Math.cos(y * c + dt) + 
@@ -840,7 +841,7 @@ function main(){
 	renderer.render(scene, camera);
 
 
-	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 0.5, 0.5, 0.5, 0, 0, 0, testFunc, 0.65, 3);
+	let marchingCubes = new MarchingCubes(30.0, 30.0, 30.0, 0.25, 0.25, 0.25, 0, 0, 0, testFunc, 0.65, 3);
     marchingCubes.updateCubes();
 
    
@@ -867,6 +868,7 @@ function main(){
         this.gDensity = gDensity;
         this.gThickness = gThickness;
         this.gRadius = gRadius;
+        this.gStepCoef = gStepCoef;
 	}
 	
 	
@@ -888,6 +890,10 @@ function main(){
 		gRadius = e;
 	});
 
+	gui.add(controls, 'gStepCoef', 0.0, 0.2).onChange(function(e) {
+		gStepCoef = e;
+	});
+
 	gui.close();
 
 
@@ -903,8 +909,8 @@ function main(){
 		scene.rotation.y = step * 0.01;
 		scene.rotation.z = step * 0.01;
 		
-		marchingCubes.updateCubes();
-		marchingCubes.updateShaderMaterial();
+		//marchingCubes.updateCubes();
+		//marchingCubes.updateShaderMaterial();
 
 		
 		if (resizeRenderToDisplaySize(renderer)){
