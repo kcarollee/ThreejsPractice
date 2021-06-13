@@ -15,6 +15,8 @@ uniform vec2 resolution;
 
 uniform sampler2D tex;
 
+uniform vec2 mouse;
+
 float map(float value, float min1, float max1, float min2, float max2) {
   return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
 }
@@ -59,8 +61,14 @@ float Box(vec3 p, vec3 pos, vec3 s){
 }
 
 float Gyroid(vec3 p, vec3 pos, float r){
+/*
   float gd = 3.0; // density
   float gt = 0.2; // thickness
+  */
+
+  float gd = map(mouse.x, .0, 1.0, 1.0, 5.0); // density
+  float gt = map(mouse.y, .0, 1.0, 0.0, 0.3); // thickness
+
   float dt = time * 2.0;
   float val = sin(p.x * gd + dt) * cos(p.y * gd + dt) + 
   sin(p.y * gd + dt) * cos(p.z * gd + dt) + 
@@ -215,12 +223,12 @@ vec3 light = DiffuseLight(p, rayDir, d);
 outCol = vec3(light);
 
 if (uv.x - uv.y > 0.333){
-  if (outCol.x == .0) outCol = vec3(.12);
+  if (outCol.x == .0) outCol = vec3(0.15);
   else outCol = outCol;
 }
 
 else if (uv.x - uv.y < -0.333){
- if (outCol.x == .0) outCol = vec3(.1);
+ if (outCol.x == .0) outCol = vec3(0.15);
   else outCol = outCol;
 }
 else{

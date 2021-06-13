@@ -541,6 +541,7 @@ function main(){
 		let stringNum = 8;
 		let p5Shader;
 		let texImage;
+
         sketch.setup = () => {
         	
 			sketch.createCanvas(window.innerWidth, window.innerHeight, sketch.WEBGL);
@@ -557,6 +558,7 @@ function main(){
 				p5Shader.setUniform('resolution', [sketch.width, sketch.height]);
                 p5Shader.setUniform('time', sketch.frameCount * 0.03);
 				p5Shader.setUniform('tex', texImage);
+				p5Shader.setUniform('mouse', [sketch.mouseX/sketch.width, sketch.mouseY/sketch.height]);
                 sketch.shader(p5Shader);
 				sketch.quad(-1, -1, 1, -1, 1, 1, -1, 1);
 
