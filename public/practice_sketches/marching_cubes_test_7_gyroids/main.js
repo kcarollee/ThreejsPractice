@@ -532,7 +532,7 @@ let p5Font;
 let p5Canvas;
 function main(){
    
-	initStats();
+	//initStats();
 // P5 SKETCH
 	const p5Sketch = (sketch) => {
 
@@ -932,12 +932,12 @@ function main(){
 		time *= 0.001;
 		step += 1;
 
-		stats.update();
+		//stats.update();
 
 		
-		scene.rotation.x = step * 0.01;
-		scene.rotation.y = step * 0.01;
-		scene.rotation.z = step * 0.01;
+		scene.rotation.x = step *0.005;
+		scene.rotation.y = step *0.005;
+		scene.rotation.z = step *0.005;
 		
 		//marchingCubes.updateCubes();
 		//marchingCubes.updateShaderMaterial();
