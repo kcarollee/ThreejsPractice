@@ -3,6 +3,11 @@ import * as THREE from "https://cdn.skypack.dev/three@0.128.0/build/three.module
 import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
 import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
 import {WEBGL} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/WebGL.js"
+
+function mapLinear(x, a1, a2, b1, b2){
+    return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
+}
+
 // basically a copy and paste of https://github.com/mrdoob/three.js/blob/master/examples/webgl2_volume_perlin.html
 function main(){
 	const canvas = document.querySelector('#c');
@@ -10,7 +15,7 @@ function main(){
     //renderer.setPixelRatio(window.innerWidth, window.innerHeight);
 
     let stats;
-    initStats();
+    //initStats();
 //CAMERA
 	const fov = 60;
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
@@ -96,10 +101,11 @@ function main(){
         uniform float steps;
         
         vec2 hitBox( vec3 orig, vec3 dir ) {
-			const vec3 box_min = vec3( - 0.5 );
-			const vec3 box_max = vec3( 0.5 );
+        	const float range = 0.5;
+			const vec3 box_min = vec3( -range ); // lower bound
+			const vec3 box_max = vec3(range); // upper bound
 			
-			vec3 inv_dir = 1.0 / dir;
+			vec3 inv_dir = 1.0 / dir; // inverse of ray direction
 			
 			vec3 tmin_tmp = ( box_min - orig ) * inv_dir;
 			vec3 tmax_tmp = ( box_max - orig ) * inv_dir;
@@ -113,6 +119,7 @@ function main(){
 			return vec2( t0, t1 );
 		}
 
+		// return the r value of the texture at position p
 		float sample1( vec3 p ) {
 			return texture( map, p ).r;
 		}
@@ -158,16 +165,19 @@ function main(){
 				float d = sample1( p + 0.5 );
 				if ( d > threshold ) {
 					//color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
-					color.rgb = normal(p + 0.5);
+					color.rgb = normal(p + 0.5) + p;
+
 					color.a = 1.;
 					break;
 				}
 				p += rayDir * delta;
 
 			}
-			
-			float gs = (color.r + color.g + color.b) / 3.0;
-			//color.rgb = vec3(gs);
+
+			float gs = (color.r + color.g + color.b) / 2.0;
+
+			color.rgb = 1.0 - normal(p + 0.5);
+			color.rgb *= 0.75;
 			if ( color.a == 0.0 ) discard;
 		}
     `;
@@ -197,15 +207,39 @@ function main(){
 
 	
 //GUI
+	let testParams = {
+		sliceRadius: 5,
+		zFreq: 0.01,
+		sliceSpeedCoef: 0.01,
+	}
 	const gui = new dat.GUI();
 	const controls = new function(){
 		this.update = function(){
 			updateTexture();
 		};
 
+		this.threshold = 0.6;
+		this.sliceRadius = testParams.sliceRadius;
+		this.zFreq = testParams.zFreq;
+		this.sliceSpeedCoef = testParams.sliceSpeedCoef;
 		
 	}
 	gui.add(controls, 'update');
+	gui.add(controls, 'threshold', 0, 1).onChange(function (e){
+		controls.threshold = e;
+		material.uniforms.threshold.value = controls.threshold;
+		console.log(material.uniforms.threshold.value);
+	});
+	gui.add(controls, 'sliceRadius', 0, 16).onChange(function(e){
+		testParams.sliceRadius = controls.sliceRadius;
+	})
+	gui.add(controls, 'zFreq', 0, 100).onChange(function(e){
+		testParams.zFreq = controls.zFreq;
+	})
+	gui.add(controls, 'sliceSpeedCoef', 0, 1.0).onChange(function(e){
+		testParams.sliceSpeedCoef = controls.sliceSpeedCoef;
+	})
+	
 	
 	
 	function updateTexture(){
@@ -224,8 +258,9 @@ function main(){
     	        for (let x = 0; x < size; x++){
     	            vector.set(x, y, z).divideScalar(size);
     	            let d = perlin.noise(vector.x *  6.5 + step * 0.01, vector.y *  6.5 + step * 0.01, vector.z *  6.5 + step * 0.01);
-    	            let dx = 16;
-    	            let dy = 16;
+    	            
+    	            let dx = 16 + testParams.sliceRadius * Math.sin(z * testParams.zFreq + step * testParams.sliceSpeedCoef);
+    	            let dy = 16 + testParams.sliceRadius * Math.cos(z * testParams.zFreq + step * testParams.sliceSpeedCoef);
     	            let dz = 16;
     	            
     	            let mx = (x - dx);
@@ -234,12 +269,13 @@ function main(){
 
 
     	            d = Math.sqrt(mx * mx + my * my + mz * mz);
-    	            if (d < 16) d = 0.0;
+    	            
+    	            //if (d < 16) d = 0.0;
 
-    	           // d = Math.sin(d * 1 + step * 0.1);
+    	            d = Math.sin(d * 0.1 + step * 0.05);
     	            
 
-    	            data[i++] = d * 128 + 128;
+    	            data[i++] = mapLinear(d, -1, 1, 0, 256); // map to a value between 0 and 256
     	        }
     	    }
     	}
@@ -255,7 +291,7 @@ function main(){
     	    uniforms:{
     	        map: {value: texture},
     	        cameraPos: {value: new THREE.Vector3()},
-    	        threshold: {value: 0.6},
+    	        threshold: {value: controls.threshold},
     	        steps: {value: 300}
     	    },
     	    vertexShader,
@@ -279,8 +315,10 @@ function main(){
 	let step = 0;
 
 	function render(time){
-		stats.update();
+		//stats.update();
 		step++;
+
+		//scene.rotation.set(step * 0.01, step * 0.01, step * 0.01);
 		time *= 0.001;
 		updateTexture();
 		scene.children[0].material.uniforms.cameraPos.value.copy( camera.position );
