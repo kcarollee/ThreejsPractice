@@ -1,6 +1,7 @@
 
-import {OrbitControls} from "../../../../node_modules/three/build/three.module.js";
-import {ImprovedNoise} from "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
+import * as THREE from "https://cdn.skypack.dev/three@0.128.0/build/three.module.js";
+import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
+import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
 // basically a copy and paste of https://github.com/mrdoob/three.js/blob/master/examples/webgl2_volume_perlin.html
 function main(){
 	const canvas = document.querySelector('#c');
