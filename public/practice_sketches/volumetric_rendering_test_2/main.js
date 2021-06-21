@@ -155,10 +155,12 @@ function main(){
 			bounds.x = max( bounds.x, 0.0 );
 			
 			vec3 p = vOrigin + bounds.x * rayDir;
+			vec3 pcopy = p;
 			
 			vec3 inc = 1.0 / abs( rayDir );
 			
 			float delta = min( inc.x, min( inc.y, inc.z ) );
+			
 			
 			delta /= steps;
 			
@@ -175,12 +177,21 @@ function main(){
 				p += rayDir * delta;
 
 			}
+			
 
-			float gs = (color.r + color.g + color.b) / 2.0;
+			/*
 
-			color.rgb = 1.0 - normal(p + 0.5);
-			color.rgb *= 0.75;
-			if ( color.a == 0.0 ) discard;
+			//color.rgb = 1.0 - normal(p + 0.5);
+			float gs = color.r + color.g + color.b;
+			//color.rgb = vec3(gs);
+
+			float v = texture(map, pcopy + 0.5).r;
+			v = pow(2.0 * v, 2.0);
+			//v = step (0.9, v);
+			color.rgb = vec3(v);
+			//color.a = 0.1;
+			*/
+			if ( color.r == .0 ) discard;
 		}
     `;
 
@@ -281,24 +292,68 @@ function main(){
 		let fp = pointsArr[0];
 
 		let dist = distance(x, y, z, fp.x, fp.y, fp.z);
+
 		for (let i = 1; i < pointsArr.length; i++){
+
 			let np = pointsArr[i];
-			let current = distance(x, y, z, np.x, np.y, np.z);
+			let current = distance(x, y, z,
+			 	np.x + 0.2 * Math.sin(step * 0.01),
+			  	np.y + 0.2 * Math.cos(step * 0.01),
+			   	np.z + 0.2 * Math.sin(step * 0.01));
 			if (current < dist){
+				/*
 				if (Math.abs(current - dist) < 0.000001) return 0;
 				else{
 					dist = current;
 				}
+				*/
+				dist = current;
 			}
 		}
 		return dist;
 	}
+
 	
+	const testFunc4 = (x, y, z) => {
+		let nc = 2.0;
+		let d = perlin.noise(x * nc + step * 0.01, y * nc + step * 0.01, z * nc + step * 0.01);
+
+		let c = 10.0;
+    	let g =  Math.sin(x * c + step * 0.01) * Math.cos(y * c + step * 0.01) + Math.sin(y * c + step * 0.01) * Math.cos(z * c + step * 0.01) + Math.sin(z * c + step * 0.01) * Math.cos(x * c + step * 0.01);
+		return g;
+	}
+	
+	let octaves = 10;
+	let noiseHeight = 100;
+	const terrainTest = (x, y, z) => {
+
+		let c1 = 20.0;
+		let nc = 0.0035;
+		let nc2 = 0.006;
+		let v = 0.01;
+
+		
+		let noiseSum = 0;
+		for (let i = 0; i < octaves; i++){
+			noiseSum += noise.simplex2(x * i * 0.01 + step * v , z * i * 0.01 + step * v );
+		}
+		noiseSum /= octaves;
+
+
+		
+		let val = y - c1 * noiseSum;
+
+		val += noiseHeight * noise.simplex3(x * nc2 + step * v , y * nc2 + step * v , z * nc2 + step * v );
+		//val += 10 * noise.simplex3(val * nc2 * x, val * nc2 * y, val * nc2 * z);
+		//val = Math.floor(2.0 * val);
+		let m = mapLinear(val, -240 - c1, 240 + c1, -1, 1);
+		return m;
+	}
 	
 	function updateTexture(){
 
 		scene.clear();
-    	let size = 32;
+    	let size = 64;
     	let data = new Uint8Array(size * size * size); // 3 dimensional array flattened
     
     	let i = 0;
@@ -310,10 +365,10 @@ function main(){
     	    for (let y = 0; y < size; y++){
     	        for (let x = 0; x < size; x++){
     	            vector.set(x, y, z).divideScalar(size);
-    	            let d = testFunc3(vector.x, vector.y, vector.z);
+    	            let d = testFunc4(vector.x, vector.y, vector.z);
     	            
 
-    	            data[i++] = mapLinear(d, 0, 1, 0, 256); // map to a value between 0 and 256
+    	            data[i++] = mapLinear(d, -1, 1, 0, 256); // map to a value between 0 and 256
     	        }
     	    }
     	}
@@ -342,8 +397,9 @@ function main(){
     	let geometry = new THREE.BoxGeometry(1, 1, 1);
     
 
-    	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+    	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
     	let mesh = new THREE.Mesh(geometry,material);
+    	
     	mesh.position.set(0, 0, 0);
     	scene.add(mesh);
 
