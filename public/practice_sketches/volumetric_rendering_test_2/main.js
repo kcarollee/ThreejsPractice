@@ -104,7 +104,8 @@ function main(){
         	const float range = 0.5;
 			const vec3 box_min = vec3( -range ); // lower bound
 			const vec3 box_max = vec3(range); // upper bound
-			
+
+
 			vec3 inv_dir = 1.0 / dir; // inverse of ray direction
 			
 			vec3 tmin_tmp = ( box_min - orig ) * inv_dir;
@@ -112,7 +113,8 @@ function main(){
 			
 			vec3 tmin = min( tmin_tmp, tmax_tmp );
 			vec3 tmax = max( tmin_tmp, tmax_tmp );
-			
+
+
 			float t0 = max( tmin.x, max( tmin.y, tmin.z ) );
 			float t1 = min( tmax.x, min( tmax.y, tmax.z ) );
 			
@@ -140,21 +142,25 @@ function main(){
 			float x = sample1( coord + vec3( - step, 0.0, 0.0 ) ) - sample1( coord + vec3( step, 0.0, 0.0 ) );
 			float y = sample1( coord + vec3( 0.0, - step, 0.0 ) ) - sample1( coord + vec3( 0.0, step, 0.0 ) );
 			float z = sample1( coord + vec3( 0.0, 0.0, - step ) ) - sample1( coord + vec3( 0.0, 0.0, step ) );
-			
+
 			return normalize( vec3( x, y, z ) );
 		}
 		void main(){
 
+			vec3 vDirectionMod = vec3(vDirection.x, vDirection.y / 5.0, vDirection.z);
+			vec3 vOriginMod = vec3(vOrigin.x, vOrigin.y / 5.0, vOrigin.z);
 
 			vec3 rayDir = normalize( vDirection );
-			
-			vec2 bounds = hitBox( vOrigin, rayDir );
+			vec3 rayDirOrig = rayDir;
+			rayDir.y /= 5.0; // stretch 5x along the y axis. correct.
+			vec2 bounds = hitBox( vOrigin, rayDirOrig ); // use the original ray direction for hit detection. correct.
 			
 			if ( bounds.x > bounds.y ) discard;
 			
 			bounds.x = max( bounds.x, 0.0 );
 			
-			vec3 p = vOrigin + bounds.x * rayDir;
+			vec3 p = vOriginMod + bounds.x * rayDir; // vOrigin -> vOriginMod
+
 			vec3 pcopy = p;
 			
 			vec3 inc = 1.0 / abs( rayDir );
@@ -188,7 +194,7 @@ function main(){
 			float v = texture(map, pcopy + 0.5).r;
 			v = pow(2.0 * v, 2.0);
 			//v = step (0.9, v);
-			color.rgb = vec3(v);
+			//color.rgb = vec3(v);
 			//color.a = 0.1;
 			*/
 			if ( color.r == .0 ) discard;
@@ -210,13 +216,17 @@ function main(){
     });
     
 
-    let geometry = new THREE.BoxGeometry(1, 1, 1);
+    let geometry = new THREE.BoxGeometry(1, 5, 1);
     
 
-    let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+    let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
     let mesh = new THREE.Mesh(geometry,material);
+    let helperMesh = new THREE.Mesh(geometry, testMat);
+    helperMesh.position.set(0, 0, 0);
     mesh.position.set(0, 0, 0);
+    mesh.name = 'volumeMesh';
     scene.add(mesh);
+    scene.add(helperMesh);
 
 	
 //GUI
@@ -314,12 +324,28 @@ function main(){
 	}
 
 	
+	const sphereFunc1 = (x, y, z) => {
+		let r = 0.5;
+		let ds = x*x + y*y + z*z;
+		ds = Math.sqrt(ds);
+		if (ds > r) return 999;
+		return ds;
+	}
+
+	let gDensity = 50;
 	const testFunc4 = (x, y, z) => {
 		let nc = 2.0;
 		let d = perlin.noise(x * nc + step * 0.01, y * nc + step * 0.01, z * nc + step * 0.01);
 
-		let c = 10.0;
-    	let g =  Math.sin(x * c + step * 0.01) * Math.cos(y * c + step * 0.01) + Math.sin(y * c + step * 0.01) * Math.cos(z * c + step * 0.01) + Math.sin(z * c + step * 0.01) * Math.cos(x * c + step * 0.01);
+		let c = gDensity;
+    	let g =  Math.sin(x * c + step * 0.01) * Math.cos(y * c + step * 0.01) + 
+    	Math.sin(y * c + step * 0.01) * Math.cos(z * c + step * 0.01) + 
+    	Math.sin(z * c + step * 0.01) * Math.cos(x * c + step * 0.01);
+		
+
+		let dist = Math.sqrt(x*x + y*y + z*z);
+		let r = 0.5;
+		if (dist > r) g = 999;
 		return g;
 	}
 	
@@ -352,7 +378,7 @@ function main(){
 	
 	function updateTexture(){
 
-		scene.clear();
+		scene.remove(scene.getObjectByName("volumeMesh"));
     	let size = 64;
     	let data = new Uint8Array(size * size * size); // 3 dimensional array flattened
     
@@ -365,10 +391,14 @@ function main(){
     	    for (let y = 0; y < size; y++){
     	        for (let x = 0; x < size; x++){
     	            vector.set(x, y, z).divideScalar(size);
+    	            // set 0, 0, 0 to center
+    	            vector.x -= 0.5;
+    	            vector.y -= 0.5;
+    	            vector.z -= 0.5;
     	            let d = testFunc4(vector.x, vector.y, vector.z);
     	            
 
-    	            data[i++] = mapLinear(d, -1, 1, 0, 256); // map to a value between 0 and 256
+    	            data[i++] = mapLinear(d, -3, 3, 0, 256); // map to a value between 0 and 256
     	        }
     	    }
     	}
@@ -394,13 +424,14 @@ function main(){
     	});
     
 
-    	let geometry = new THREE.BoxGeometry(1, 1, 1);
+    	let geometry = new THREE.BoxGeometry(1, 5, 1);
     
 
     	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
     	let mesh = new THREE.Mesh(geometry,material);
     	
     	mesh.position.set(0, 0, 0);
+    	mesh.name = 'volumeMesh';
     	scene.add(mesh);
 
 
@@ -415,7 +446,7 @@ function main(){
 		//scene.rotation.set(step * 0.01, step * 0.01, step * 0.01);
 		time *= 0.001;
 		updateTexture();
-		scene.children[0].material.uniforms.cameraPos.value.copy( camera.position );
+		scene.getObjectByName("volumeMesh").material.uniforms.cameraPos.value.copy( camera.position );
 		
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
