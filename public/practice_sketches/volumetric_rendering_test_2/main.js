@@ -36,7 +36,7 @@ function main(){
 
     let size = 32;
     let data = new Uint8Array(size * size * size); // 3 dimensional array flattened
-    
+    let dataPrev = new Uint8Array(size * size * size);
     let i = 0;
     let perlin = new ImprovedNoise();
     let vector = new THREE.Vector3();
@@ -48,6 +48,7 @@ function main(){
                 vector.set(x, y, z).divideScalar(size);
                 let d = perlin.noise(vector.x * 6.5, vector.y * 6.5, vector.z * 6.5);
                 data[i++] = d * 128 + 128;
+                dataPrev[i++] = 0;
             }
         }
     }
@@ -56,7 +57,14 @@ function main(){
     texture.format = THREE.RedFormat;
     texture.minFilter = THREE.LinearFilter;
 	texture.magFilter = THREE.LinearFilter;
-    texture.unpackAlignment = 1; // 4 b y default. 
+    texture.unpackAlignment = 1; // 4 b y default.
+
+    let texturePrev = new THREE.DataTexture3D(data, size, size, size);
+    texturePrev.format = THREE.RedFormat;
+    texturePrev.minFilter = THREE.LinearFilter;
+	texturePrev.magFilter = THREE.LinearFilter;
+    texturePrev.unpackAlignment = 1; // 4 b y default.
+
     
 // MATERIAL
 
@@ -95,6 +103,7 @@ function main(){
         
         // 3d texture sent from 'const texture = new THREE.DataTexture3D(data, size, size, size);''
         uniform sampler3D map;
+        uniform sampler3D mapPrev;
         
        
 		uniform float threshold;
@@ -126,7 +135,7 @@ function main(){
 			return texture( map, p ).r;
 		}
 
-		#define epsilon .00001
+		#define epsilon .0001
 		
 		vec3 normal( vec3 coord ) {
 			if ( coord.x < epsilon ) return vec3( 1.0, 0.0, 0.0 );
@@ -147,12 +156,12 @@ function main(){
 		}
 		void main(){
 
-			vec3 vDirectionMod = vec3(vDirection.x, vDirection.y / 5.0, vDirection.z);
-			vec3 vOriginMod = vec3(vOrigin.x, vOrigin.y / 5.0, vOrigin.z);
+			vec3 vDirectionMod = vec3(vDirection.x, vDirection.y , vDirection.z);
+			vec3 vOriginMod = vec3(vOrigin.x, vOrigin.y, vOrigin.z);
 
 			vec3 rayDir = normalize( vDirection );
 			vec3 rayDirOrig = rayDir;
-			rayDir.y /= 5.0; // stretch 5x along the y axis. correct.
+			//rayDir.y /= 5.0; // stretch 5x along the y axis. correct.
 			vec2 bounds = hitBox( vOrigin, rayDirOrig ); // use the original ray direction for hit detection. correct.
 			
 			if ( bounds.x > bounds.y ) discard;
@@ -174,9 +183,13 @@ function main(){
 				
 				float d = sample1( p + 0.5 );
 				if ( d > threshold ) {
-					//color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
-					color.rgb = normal(p + 0.5) + p;
-
+					color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
+					//color.b = 1.0 - color.b;
+					//color.g = 0.75 - color.g;
+					vec3 n = normal(p + 0.5);
+					float t = dot(n, vDirection);
+				
+   					
 					color.a = 1.;
 					break;
 				}
@@ -189,7 +202,10 @@ function main(){
 
 			//color.rgb = 1.0 - normal(p + 0.5);
 			float gs = color.r + color.g + color.b;
-			//color.rgb = vec3(gs);
+			float gc = 10.0;
+			float gyroid = sin(color.r * gc) * cos(color.g * gc) + sin(color.g * gc) * cos(color.b * gc) + sin(color.b * gc) * cos(color.r * gc);
+			color.rgb = vec3(gyroid);
+			color.rgb = vec3(gs);
 
 			float v = texture(map, pcopy + 0.5).r;
 			v = pow(2.0 * v, 2.0);
@@ -205,6 +221,7 @@ function main(){
         glslVersion: THREE.GLSL3,
         uniforms:{
             map: {value: texture},
+            mapPrev: {value: texturePrev},
             cameraPos: {value: new THREE.Vector3()},
             threshold: {value: 0.6},
             steps: {value: 200}
@@ -245,7 +262,7 @@ function main(){
 		this.sliceRadius = testParams.sliceRadius;
 		this.zFreq = testParams.zFreq;
 		this.sliceSpeedCoef = testParams.sliceSpeedCoef;
-		
+
 	}
 	gui.add(controls, 'update');
 	gui.add(controls, 'threshold', 0, 1).onChange(function (e){
@@ -332,22 +349,45 @@ function main(){
 		return ds;
 	}
 
-	let gDensity = 50;
+	let gDensity = 10;
+	let gInnerDensity = 1;
 	const testFunc4 = (x, y, z) => {
 		let nc = 2.0;
-		let d = perlin.noise(x * nc + step * 0.01, y * nc + step * 0.01, z * nc + step * 0.01);
+		let d = perlin.noise(x * nc + step * 0.05, y * nc + step * 0.05, z * nc + step * 0.05);
 
 		let c = gDensity;
-    	let g =  Math.sin(x * c + step * 0.01) * Math.cos(y * c + step * 0.01) + 
-    	Math.sin(y * c + step * 0.01) * Math.cos(z * c + step * 0.01) + 
-    	Math.sin(z * c + step * 0.01) * Math.cos(x * c + step * 0.01);
+    	let g =  Math.sin(x * c + step * 0.05) * Math.cos(y * c + step * 0.05) + 
+    	Math.sin(y * c + step * 0.05) * Math.cos(z * c + step * 0.05) + 
+    	Math.sin(z * c + step * 0.05) * Math.cos(x * c + step * 0.05);
 		
 
 		let dist = Math.sqrt(x*x + y*y + z*z);
 		let r = 0.5;
-		if (dist > r) g = 999;
+		//if (dist > r) g = 999;
+
+/*
+		if (x < 0.25 && x > -0.25 &&
+		 y < 0.25 && y > -0.25 &&
+		 z < 0.25 && z > -0.25) g = 999;
+		 */
+
+		if (mapLinear(g, -3, 3, 0, 1) > material.uniforms.threshold.value){
+			g =  Math.sin(x * c * gInnerDensity + step * 0.05) * Math.cos(y * c * gInnerDensity + step * 0.05) + 
+    			Math.sin(y * c * gInnerDensity + step * 0.05) * Math.cos(z * c * gInnerDensity + step * 0.05) + 
+    			Math.sin(z * c * gInnerDensity + step * 0.05) * Math.cos(x * c * gInnerDensity + step * 0.05);
+		}
 		return g;
 	}
+
+	controls.gInnerDensity = gInnerDensity;
+	controls.gDensity = gDensity;
+
+	gui.add(controls,'gDensity', 1, 20).onChange(e => {
+		gDensity = controls.gDensity;
+	});
+	gui.add(controls,'gInnerDensity', 1, 20).onChange(e => {
+		gInnerDensity = controls.gInnerDensity;
+	});
 	
 	let octaves = 10;
 	let noiseHeight = 100;
@@ -378,14 +418,28 @@ function main(){
 	
 	function updateTexture(){
 
-		scene.remove(scene.getObjectByName("volumeMesh"));
-    	let size = 64;
-    	let data = new Uint8Array(size * size * size); // 3 dimensional array flattened
-    
-    	let i = 0;
-    	let perlin = new ImprovedNoise();
-    	let vector = new THREE.Vector3();
+		/*
+		// filling previous values
+		dataPrev = new Uint8Array(size * size * size);
+		let i = 0;
+    	for (let z = 0; z < size; z++){
+    	    for (let y = 0; y < size; y++){
+    	        for (let x = 0; x < size; x++){
+    	        	dataPrev[i] = data[i];
+    	        	i++;    
+    	        }
+    	    }
+    	}
+    	*/
 
+		scene.remove(scene.getObjectByName("volumeMesh"));
+    	size = 64;
+    	data = new Uint8Array(size * size * size); // 3 dimensional array flattened
+    	
+    	i = 0;
+    	
+    	//console.log(dataPrev[63543]);
+    	i = 0;
     	// filling the data array with values
     	for (let z = 0; z < size; z++){
     	    for (let y = 0; y < size; y++){
@@ -403,16 +457,25 @@ function main(){
     	    }
     	}
 
-    	let texture = new THREE.DataTexture3D(data, size, size, size);
+    	//console.log(dataPrev[63543] + " " + data[63543]);
+
+    	texture = new THREE.DataTexture3D(data, size, size, size);
     	texture.format = THREE.RedFormat;
     	texture.minFilter = THREE.LinearFilter;
 		texture.magFilter = THREE.LinearFilter;
     	texture.unpackAlignment = 1; // 4 b y default. 
 
+    	texturePrev = new THREE.DataTexture3D(data, size, size, size);
+    	texturePrev.format = THREE.RedFormat;
+    	texturePrev.minFilter = THREE.LinearFilter;
+		texturePrev.magFilter = THREE.LinearFilter;
+    	texturePrev.unpackAlignment = 1; // 4 b y default. 
+
     	let material = new THREE.RawShaderMaterial({
     	    glslVersion: THREE.GLSL3,
     	    uniforms:{
     	        map: {value: texture},
+    	        mapPrev: {value: texturePrev},
     	        cameraPos: {value: new THREE.Vector3()},
     	        threshold: {value: controls.threshold},
     	        steps: {value: 600}
