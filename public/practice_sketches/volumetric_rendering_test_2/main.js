@@ -103,7 +103,8 @@ function main(){
         
         // 3d texture sent from 'const texture = new THREE.DataTexture3D(data, size, size, size);''
         uniform sampler3D map;
-        uniform sampler3D mapPrev;
+		uniform sampler3D mapPrev;
+		uniform vec3 lightDir;
         
        
 		uniform float threshold;
@@ -155,7 +156,7 @@ function main(){
 			return normalize( vec3( x, y, z ) );
 		}
 		void main(){
-
+			vec3 lightDir = vec3(.0, .0, -1.0);
 			vec3 vDirectionMod = vec3(vDirection.x, vDirection.y , vDirection.z);
 			vec3 vOriginMod = vec3(vOrigin.x, vOrigin.y, vOrigin.z);
 
@@ -184,13 +185,20 @@ function main(){
 				float d = sample1( p + 0.5 );
 				if ( d > threshold ) {
 					//color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
-					color.rgb = normal(p + 0.5);
-					float fs = acos(dot(normal(p + 0.5), vDirection));
-					float fs2 = dot(normal(p + 0.5), 1.0 - normalize(vDirection));
-					color.rgb = vec3(normal(p + 0.5));
+					//color.rgb = normal(p + 0.5);
+					vec3 n = normal(p + 0.5);
+					float fs = acos(dot(n, vDirection));
+					float fs2 = dot(n, 1.0 - normalize(vDirection));
 					
-					color.rgb = vec3(fs2); 
-					//color.rgb = vDirection;
+
+					vec3 lm = (p + 0.5) - lightDir  - (p + 0.5);
+					vec3 rm = 2.0 * (dot(lm, n)) * n - lm;
+					//color.rgb = vec3(normal(p + 0.5));
+					
+					//color.rgb = vec3(1.0 - fs2); 
+					color.rgb = lm;
+					color.rgb = vec3(dot(lm, n) + pow(dot(rm , normalize(vDirection)), 5.0));
+					
 					
 					
 				
@@ -248,7 +256,7 @@ function main(){
     mesh.position.set(0, 0, 0);
     mesh.name = 'volumeMesh';
     scene.add(mesh);
-    scene.add(helperMesh);
+    //scene.add(helperMesh);
 
 	
 //GUI
@@ -357,8 +365,6 @@ function main(){
 	let gDensity = 10;
 	let gInnerDensity = 1;
 	const testFunc4 = (x, y, z) => {
-		let nc = 2.0;
-		let d = perlin.noise(x * nc + step * 0.05, y * nc + step * 0.05, z * nc + step * 0.05);
 
 		let c = gDensity;
     	let g =  Math.sin(x * c + step * 0.05) * Math.cos(y * c + step * 0.05) + 
@@ -483,7 +489,7 @@ function main(){
     	        mapPrev: {value: texturePrev},
     	        cameraPos: {value: new THREE.Vector3()},
     	        threshold: {value: controls.threshold},
-    	        steps: {value: 600}
+    	        steps: {value: 1000}
     	    },
     	    vertexShader,
     	    fragmentShader,
