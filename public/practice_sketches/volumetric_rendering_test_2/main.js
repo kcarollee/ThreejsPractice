@@ -135,7 +135,7 @@ function main(){
 			return texture( map, p ).r;
 		}
 
-		#define epsilon .0001
+		#define epsilon .00001
 		
 		vec3 normal( vec3 coord ) {
 			if ( coord.x < epsilon ) return vec3( 1.0, 0.0, 0.0 );
@@ -183,11 +183,16 @@ function main(){
 				
 				float d = sample1( p + 0.5 );
 				if ( d > threshold ) {
-					color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
-					//color.b = 1.0 - color.b;
-					//color.g = 0.75 - color.g;
-					vec3 n = normal(p + 0.5);
-					float t = dot(n, vDirection);
+					//color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
+					color.rgb = normal(p + 0.5);
+					float fs = acos(dot(normal(p + 0.5), vDirection));
+					float fs2 = dot(normal(p + 0.5), 1.0 - normalize(vDirection));
+					color.rgb = vec3(normal(p + 0.5));
+					
+					color.rgb = vec3(fs2); 
+					//color.rgb = vDirection;
+					
+					
 				
    					
 					color.a = 1.;
@@ -213,7 +218,7 @@ function main(){
 			//color.rgb = vec3(v);
 			//color.a = 0.1;
 			*/
-			if ( color.r == .0 ) discard;
+			if ( color.a == .0 ) discard;
 		}
     `;
 
