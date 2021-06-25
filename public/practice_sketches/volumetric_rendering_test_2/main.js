@@ -3,6 +3,11 @@ import * as THREE from "https://cdn.skypack.dev/three@0.128.0/build/three.module
 import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
 import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
 import {WEBGL} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/WebGL.js"
+import {EffectComposer} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js';
+import {RenderPass} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/RenderPass.js';
+import {BokehPass} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/BokehPass.js';
+import {SMAAPass} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/SMAAPass.js';
+
 
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
@@ -12,6 +17,7 @@ function mapLinear(x, a1, a2, b1, b2){
 function main(){
 	const canvas = document.querySelector('#c');
     const renderer = new THREE.WebGLRenderer({canvas});
+    //renderer.antialias = true;
     //renderer.setPixelRatio(window.innerWidth, window.innerHeight);
 
     let stats;
@@ -31,6 +37,8 @@ function main(){
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xCCCCCC);
     renderer.render(scene, camera);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     
 // TEXTURE
 
@@ -94,6 +102,8 @@ function main(){
 		precision highp sampler3D;
 		uniform mat4 modelViewMatrix;
         uniform mat4 projectionMatrix;
+        uniform mat4 modelMatrix;
+        uniform mat4 viewMatrix;
         
         // sent from the vert shader with appropriate matrix multiplications
 		in vec3 vOrigin;
@@ -157,6 +167,8 @@ function main(){
 		}
 		void main(){
 			vec3 lightDir = vec3(.0, .0, -1.0);
+			lightDir = vec3( inverse( viewMatrix ) * vec4( lightDir, 1.0 ) ).xyz; // undo the viewMatrix
+			lightDir += 0.5; // translate to match p
 			vec3 vDirectionMod = vec3(vDirection.x, vDirection.y , vDirection.z);
 			vec3 vOriginMod = vec3(vOrigin.x, vOrigin.y, vOrigin.z);
 
@@ -191,15 +203,21 @@ function main(){
 					float fs2 = dot(n, 1.0 - normalize(vDirection));
 					
 
-					vec3 lm = (p + 0.5) - lightDir  - (p + 0.5);
+					vec3 lm = (p + 0.5) - lightDir;
 					vec3 rm = 2.0 * (dot(lm, n)) * n - lm;
 					//color.rgb = vec3(normal(p + 0.5));
 					
 					//color.rgb = vec3(1.0 - fs2); 
-					color.rgb = lm;
-					color.rgb = vec3(dot(lm, n) + pow(dot(rm , normalize(vDirection)), 5.0));
+					//color.rgb = rm;
+					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
+
+					/*
+					vec3 light = vec3(dot(lm, n) + pow(dot(rm , normalize(vDirection)), 1.0)) + vec3(1.0);
+					color.rgb = light * 0.5;
+
+					*/
 					
-					
+					color.rgb += vec3(0.5);
 					
 				
    					
@@ -258,7 +276,7 @@ function main(){
     scene.add(mesh);
     //scene.add(helperMesh);
 
-	
+
 //GUI
 	let testParams = {
 		sliceRadius: 0.2,
@@ -267,31 +285,55 @@ function main(){
 	}
 	const gui = new dat.GUI();
 	const controls = new function(){
-		this.update = function(){
-			updateTexture();
-		};
-
+		
 		this.threshold = 0.6;
-		this.sliceRadius = testParams.sliceRadius;
-		this.zFreq = testParams.zFreq;
-		this.sliceSpeedCoef = testParams.sliceSpeedCoef;
-
+		
 	}
-	gui.add(controls, 'update');
+
 	gui.add(controls, 'threshold', 0, 1).onChange(function (e){
 		controls.threshold = e;
 		material.uniforms.threshold.value = controls.threshold;
-		console.log(material.uniforms.threshold.value);
 	});
-	gui.add(controls, 'sliceRadius', 0, 1.0).onChange(function(e){
-		testParams.sliceRadius = controls.sliceRadius;
+	
+
+// POST PROCESSING
+
+	let renderPass = new RenderPass(scene, camera);
+	let bokehPass = new BokehPass(scene, camera, {
+		focus: 1.0,
+		aperture: 0.025,
+		maxblur: 0.005,
+
+		width: window.innerWidth,
+		height: window.innerHeight
+	});
+
+	controls.focus = bokehPass.uniforms.focus.value;
+	controls.aperture = bokehPass.uniforms.aperture.value;
+	controls.maxblur = bokehPass.uniforms.maxblur.value;
+	console.log(controls);
+	gui.add(controls, 'focus', 0.0, 1.0).step(0.01).onChange(function(e){
+		bokehPass.uniforms.focus.value = e;
 	})
-	gui.add(controls, 'zFreq', 0, 100).onChange(function(e){
-		testParams.zFreq = controls.zFreq;
+	gui.add(controls, 'aperture', 0.0, 1.0).step(0.001).onChange(function(e){
+		bokehPass.uniforms.aperture.value = e;
 	})
-	gui.add(controls, 'sliceSpeedCoef', 0, 0.1).step(0.00001).onChange(function(e){
-		testParams.sliceSpeedCoef = controls.sliceSpeedCoef;
+	gui.add(controls, 'maxblur', 0.0, 0.1).step(0.001).onChange(function(e){
+		bokehPass.uniforms.maxblur.value = e;
 	})
+	let smaaPass = new SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+
+	smaaPass.renderToScreen = true;
+	smaaPass.unbiased = true;
+	let composer = new EffectComposer(renderer);
+	composer.setSize(window.innerWidth, window.innerHeight);
+	composer.addPass(renderPass);
+	
+	composer.addPass(bokehPass);
+	composer.addPass(smaaPass);
+	console.log(composer);
+	
+	
 	
 
 	let testFunc1 = (x, y, z) => {
@@ -367,9 +409,10 @@ function main(){
 	const testFunc4 = (x, y, z) => {
 
 		let c = gDensity;
-    	let g =  Math.sin(x * c + step * 0.05) * Math.cos(y * c + step * 0.05) + 
-    	Math.sin(y * c + step * 0.05) * Math.cos(z * c + step * 0.05) + 
-    	Math.sin(z * c + step * 0.05) * Math.cos(x * c + step * 0.05);
+		let ms = step * 0.025; // morph speed
+    	let g =  Math.sin(x * c + ms) * Math.cos(y * c + ms) + 
+    	Math.sin(y * c + ms) * Math.cos(z * c + ms) + 
+    	Math.sin(z * c + ms) * Math.cos(x * c + ms);
 		
 
 		let dist = Math.sqrt(x*x + y*y + z*z);
@@ -383,9 +426,9 @@ function main(){
 		 */
 
 		if (mapLinear(g, -3, 3, 0, 1) > material.uniforms.threshold.value){
-			g =  Math.sin(x * c * gInnerDensity + step * 0.05) * Math.cos(y * c * gInnerDensity + step * 0.05) + 
-    			Math.sin(y * c * gInnerDensity + step * 0.05) * Math.cos(z * c * gInnerDensity + step * 0.05) + 
-    			Math.sin(z * c * gInnerDensity + step * 0.05) * Math.cos(x * c * gInnerDensity + step * 0.05);
+			g =  Math.sin(x * c * gInnerDensity + ms) * Math.cos(y * c * gInnerDensity + ms) + 
+    			Math.sin(y * c * gInnerDensity + ms) * Math.cos(z * c * gInnerDensity + ms) + 
+    			Math.sin(z * c * gInnerDensity + ms) * Math.cos(x * c * gInnerDensity + ms);
 		}
 		return g;
 	}
@@ -514,9 +557,11 @@ function main(){
 	let step = 0;
 
 	function render(time){
+		bokehPass.renderToScreen = true;
+		//console.log(composer);
 		//stats.update();
 		step++;
-
+		//bokehPass.focus = camera.position.x - near;
 		//scene.rotation.set(step * 0.01, step * 0.01, step * 0.01);
 		time *= 0.001;
 		updateTexture();
@@ -527,7 +572,10 @@ function main(){
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
 		}
-		renderer.render(scene, camera);
+		//renderer.render(scene, camera);
+		composer.render(0.1);
+		bokehPass.renderToScreen = true;
+		smaaPass.renderToScreen = true;
 		requestAnimationFrame(render);
 	}
 
