@@ -15,6 +15,76 @@ function mapLinear(x, a1, a2, b1, b2){
 
 // basically a copy and paste of https://github.com/mrdoob/three.js/blob/master/examples/webgl2_volume_perlin.html
 function main(){
+
+// P5 SKETCH
+	let p5texture;
+	let p5Font;
+	let p5Canvas;
+	const p5Sketch = (sketch) => {
+
+		let textSize = 130;
+		let mainFont;
+		let stringNum = 8;
+		let p5Shader;
+		let texImage;
+
+        sketch.setup = () => {
+        	
+			sketch.createCanvas(window.innerWidth, window.innerHeight, sketch.WEBGL);
+			sketch.textSize(textSize);
+
+			p5Shader = sketch.loadShader('p5VertShader.vert', 'p5FragShader.frag', sketch.getShader);
+
+		
+			sketch.textureWrap(sketch.REPEAT);
+			
+		}
+		sketch.draw = () => {
+			try{
+				p5Shader.setUniform('resolution', [sketch.width, sketch.height]);
+                p5Shader.setUniform('time', sketch.frameCount * 0.03);
+
+				p5Shader.setUniform('mouse', [sketch.mouseX/sketch.width, sketch.mouseY/sketch.height]);
+                sketch.shader(p5Shader);
+				sketch.quad(-1, -1, 1, -1, 1, 1, -1, 1);
+
+				
+           	} catch{}
+			if (p5texture) p5texture.needsUpdate = true;
+		}
+
+		sketch.windowResized = () => {
+			sketch.resizeCanvas(window.width, window.height);
+			sketch.createCanvas(window.innerWidth, window.innerHeight);
+			 p5texture.needsUpdate = true;
+		}
+
+		// use callbacks instead of async functions to load assets.
+
+		sketch.drawText = (f) => {
+			sketch.textFont(f, textSize);
+		}
+
+		sketch.getShader = (s) => {
+			sketch.shader(s);
+		}
+
+		sketch.getImage = (i) =>{
+			sketch.image(i, 0, 0);
+		}
+    };
+
+    p5Canvas = new p5(p5Sketch);
+    p5texture = new THREE.CanvasTexture(p5Canvas.canvas);
+    p5texture.needsUpdate = true;
+	p5texture.wrapS = THREE.RepeatWrapping;
+	p5texture.wrapT = THREE.RepeatWrapping;
+	// this hides the p5 canvas
+	try{
+		p5Canvas.canvas.style.display = "none";
+	} catch{}
+
+
 	const canvas = document.querySelector('#c');
     const renderer = new THREE.WebGLRenderer({canvas});
     //renderer.antialias = true;
@@ -35,7 +105,7 @@ function main(){
 	new OrbitControls(camera, renderer.domElement);
 
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xCCCCCC);
+	scene.background = p5texture;
     renderer.render(scene, camera);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -219,11 +289,11 @@ function main(){
 
 					*/
 					
-					color.rgb += vec3(0.5);
+					//color.rgb += vec3(0.5);
 					//color.rgb *= texture(tex, abs(p.xy )).rgb;
-					
+					color.rgb = 1.0 - color.rgb;
 					vec3 ref = refract(-vDirection, n, 1.0 / 0.91);
-					color.rgb *= texture(tex, p.xy * 0.1 + ref.xy).rgb;
+					color.rgb -= texture(tex, p.xy * 0.1 + ref.xy).rgb;
    					//color.rgb -= p * 0.25;
 					color.a = 1.;
 					break;
@@ -317,13 +387,13 @@ function main(){
 	controls.aperture = bokehPass.uniforms.aperture.value;
 	controls.maxblur = bokehPass.uniforms.maxblur.value;
 	console.log(controls);
-	gui.add(controls, 'focus', 0.0, 1.0).step(0.01).onChange(function(e){
+	gui.add(controls, 'focus', 0.0, 2.0).step(0.01).onChange(function(e){
 		bokehPass.uniforms.focus.value = e;
 	})
 	gui.add(controls, 'aperture', 0.0, 1.0).step(0.001).onChange(function(e){
 		bokehPass.uniforms.aperture.value = e;
 	})
-	gui.add(controls, 'maxblur', 0.0, 0.1).step(0.001).onChange(function(e){
+	gui.add(controls, 'maxblur', 0.0, 0.01).step(0.001).onChange(function(e){
 		bokehPass.uniforms.maxblur.value = e;
 	})
 	let smaaPass = new SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
@@ -335,11 +405,27 @@ function main(){
 	composer.addPass(renderPass);
 	
 	composer.addPass(bokehPass);
-	//composer.addPass(smaaPass);
+	composer.addPass(smaaPass);
+	console.log(smaaPass);
 	
 	
-	
-	
+	controls.toggleBokeh = false;
+	controls.toggleAntiAlias = true;
+
+	gui.add(controls, 'toggleBokeh', false).listen().onChange(function(e){
+		if (e){
+			smaaPass.enabled = false;
+			bokehPass.enabled = true;
+			controls.toggleAntiAlias = false;
+		}
+	});
+	gui.add(controls, 'toggleAntiAlias', true).listen().onChange(function(e){
+		if (e){
+			smaaPass.enabled = true;
+			bokehPass.enabled = false;
+			controls.toggleBokeh = false;
+		}
+	});;
 
 	let testFunc1 = (x, y, z) => {
 		let dx = 0.5 + testParams.sliceRadius * Math.sin(z * testParams.zFreq + step * testParams.sliceSpeedCoef);
@@ -356,65 +442,14 @@ function main(){
     	return d;
 	};
 
-	// 3d perlin noise
-	let testFunc2 = (x, y, z) => {
-		let nc = 10.0;
-		let d = perlin.noise(x * nc + step * 0.01, y * nc + step * 0.01, z * nc + step * 0.01);
-    	return d;
-	};
-
-	// voronoi?
-	let pointsArr = [];
-	let pointsNum = 20;
-	for (let i = 0; i < pointsNum; i++){
-		pointsArr.push(new THREE.Vector3(Math.random(), Math.random(), Math.random()));
-	}
-	let distance = (x1, y1, z1, x2, y2, z2) => {
-		let dx = x1 - x2;
-		let dy = y1 - y2;
-		let dz = z1 - z2;
-		return Math.sqrt(dx * dx + dy * dy + dz * dz);
-	}
-	let testFunc3 = (x, y, z) => {
-		let fp = pointsArr[0];
-
-		let dist = distance(x, y, z, fp.x, fp.y, fp.z);
-
-		for (let i = 1; i < pointsArr.length; i++){
-
-			let np = pointsArr[i];
-			let current = distance(x, y, z,
-			 	np.x + 0.2 * Math.sin(step * 0.01),
-			  	np.y + 0.2 * Math.cos(step * 0.01),
-			   	np.z + 0.2 * Math.sin(step * 0.01));
-			if (current < dist){
-				/*
-				if (Math.abs(current - dist) < 0.000001) return 0;
-				else{
-					dist = current;
-				}
-				*/
-				dist = current;
-			}
-		}
-		return dist;
-	}
-
-	
-	const sphereFunc1 = (x, y, z) => {
-		let r = 0.5;
-		let ds = x*x + y*y + z*z;
-		ds = Math.sqrt(ds);
-		if (ds > r) return 999;
-		return ds;
-	}
 
 	let gDensity = 10;
 	let gInnerDensity = 1;
+
 	const testFunc4 = (x, y, z) => {
 
 		let c = gDensity;
-		let ms = step * 0.025; // morph speed
+		let ms = step * 0.02; // morph speed
     	let g =  Math.sin(x * c + ms) * Math.cos(y * c + ms) + 
     	Math.sin(y * c + ms) * Math.cos(z * c + ms) + 
     	Math.sin(z * c + ms) * Math.cos(x * c + ms);
@@ -431,22 +466,27 @@ function main(){
 		 */
 
 		if (mapLinear(g, -3, 3, 0, 1) > material.uniforms.threshold.value){
-			g =  Math.sin(x * c * gInnerDensity + ms) * Math.cos(y * c * gInnerDensity + ms) + 
-    			Math.sin(y * c * gInnerDensity + ms) * Math.cos(z * c * gInnerDensity + ms) + 
-    			Math.sin(z * c * gInnerDensity + ms) * Math.cos(x * c * gInnerDensity + ms);
+			g =  Math.sin(x * gInnerDensity + ms) * Math.cos(y * gInnerDensity + ms) + 
+    			Math.sin(y * gInnerDensity + ms) * Math.cos(z * gInnerDensity + ms) + 
+    			Math.sin(z * gInnerDensity + ms) * Math.cos(x * gInnerDensity + ms);
 		}
 		return g;
 	}
 
-	controls.gInnerDensity = gInnerDensity;
+	
 	controls.gDensity = gDensity;
-
-	gui.add(controls,'gDensity', 1, 20).onChange(e => {
+	controls.gInnerDensity = gDensity;
+	controls.gEqualize = function(){
+		controls.gInnerDensity = controls.gDensity;
+		gInnerDensity = gDensity;
+	}
+	gui.add(controls,'gDensity', 1, 20).listen().onChange(e => {
 		gDensity = controls.gDensity;
 	});
-	gui.add(controls,'gInnerDensity', 1, 20).onChange(e => {
+	gui.add(controls,'gInnerDensity', 1, 100).listen().onChange(e => {
 		gInnerDensity = controls.gInnerDensity;
 	});
+	gui.add(controls, 'gEqualize');
 	
 	let octaves = 10;
 	let noiseHeight = 100;
@@ -475,6 +515,8 @@ function main(){
 		return m;
 	}
 	
+	controls.dataSize = 48;
+	gui.add(controls, 'dataSize', 8, 256);
 	function updateTexture(){
 
 		/*
@@ -492,7 +534,7 @@ function main(){
     	*/
 
 		scene.remove(scene.getObjectByName("volumeMesh"));
-    	size = 64;
+    	size = controls.dataSize;
     	data = new Uint8Array(size * size * size); // 3 dimensional array flattened
     	
     	i = 0;
@@ -537,7 +579,7 @@ function main(){
     	        mapPrev: {value: texturePrev},
     	        cameraPos: {value: new THREE.Vector3()},
     	        threshold: {value: controls.threshold},
-    	        steps: {value: 1000},
+    	        steps: {value: 300},
     	        tex: {value: textureImage}
     	    },
     	    vertexShader,
@@ -569,7 +611,7 @@ function main(){
 		//stats.update();
 		step++;
 		//bokehPass.focus = camera.position.x - near;
-		scene.rotation.set(0, step * 0.01, 0);
+		scene.rotation.set(0, step * 0.005, 0);
 		time *= 0.001;
 		updateTexture();
 		scene.getObjectByName("volumeMesh").material.uniforms.cameraPos.value.copy( camera.position );
@@ -578,11 +620,11 @@ function main(){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
+
 		}
 		//renderer.render(scene, camera);
-		composer.render(0.1);
-		bokehPass.renderToScreen = true;
-		smaaPass.renderToScreen = true;
+		composer.render();
+
 		requestAnimationFrame(render);
 	}
 
@@ -597,6 +639,7 @@ function main(){
 	}
 
 	function resizeRenderToDisplaySize(renderer){
+		composer.setSize(window.innerWidth, window.innerHeight);
 		const canvas = renderer.domElement;
 		const pixelRatio = window.devicePixelRatio;
 		const width = canvas.clientWidth * pixelRatio | 0; // or 0
@@ -610,4 +653,4 @@ function main(){
 	requestAnimationFrame(render);
 }
 
-main();
+window.onload = main;
