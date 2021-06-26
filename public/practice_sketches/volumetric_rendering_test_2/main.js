@@ -114,6 +114,7 @@ function main(){
         // 3d texture sent from 'const texture = new THREE.DataTexture3D(data, size, size, size);''
         uniform sampler3D map;
 		uniform sampler3D mapPrev;
+		uniform sampler2D tex;
 		uniform vec3 lightDir;
         
        
@@ -166,6 +167,7 @@ function main(){
 			return normalize( vec3( x, y, z ) );
 		}
 		void main(){
+
 			vec3 lightDir = vec3(.0, .0, -1.0);
 			lightDir = vec3( inverse( viewMatrix ) * vec4( lightDir, 1.0 ) ).xyz; // undo the viewMatrix
 			lightDir += 0.5; // translate to match p
@@ -203,7 +205,7 @@ function main(){
 					float fs2 = dot(n, 1.0 - normalize(vDirection));
 					
 
-					vec3 lm = (p + 0.5) - lightDir;
+					vec3 lm = lightDir - (p + 0.5);
 					vec3 rm = 2.0 * (dot(lm, n)) * n - lm;
 					//color.rgb = vec3(normal(p + 0.5));
 					
@@ -218,9 +220,11 @@ function main(){
 					*/
 					
 					color.rgb += vec3(0.5);
+					//color.rgb *= texture(tex, abs(p.xy )).rgb;
 					
-				
-   					
+					vec3 ref = refract(-vDirection, n, 1.0 / 0.91);
+					color.rgb *= texture(tex, p.xy * 0.1 + ref.xy).rgb;
+   					//color.rgb -= p * 0.25;
 					color.a = 1.;
 					break;
 				}
@@ -228,6 +232,7 @@ function main(){
 
 			}
 			
+			color.rgb = 1.0 - color.rgb;
 
 			/*
 
@@ -297,7 +302,7 @@ function main(){
 	
 
 // POST PROCESSING
-
+	let textureImage = new THREE.TextureLoader().load("test.png");
 	let renderPass = new RenderPass(scene, camera);
 	let bokehPass = new BokehPass(scene, camera, {
 		focus: 1.0,
@@ -330,8 +335,8 @@ function main(){
 	composer.addPass(renderPass);
 	
 	composer.addPass(bokehPass);
-	composer.addPass(smaaPass);
-	console.log(composer);
+	//composer.addPass(smaaPass);
+	
 	
 	
 	
@@ -532,13 +537,15 @@ function main(){
     	        mapPrev: {value: texturePrev},
     	        cameraPos: {value: new THREE.Vector3()},
     	        threshold: {value: controls.threshold},
-    	        steps: {value: 1000}
+    	        steps: {value: 1000},
+    	        tex: {value: textureImage}
     	    },
     	    vertexShader,
     	    fragmentShader,
     	    side: THREE.BackSide,
     	    
     	});
+
     
 
     	let geometry = new THREE.BoxGeometry(1, 5, 1);
@@ -562,7 +569,7 @@ function main(){
 		//stats.update();
 		step++;
 		//bokehPass.focus = camera.position.x - near;
-		//scene.rotation.set(step * 0.01, step * 0.01, step * 0.01);
+		scene.rotation.set(0, step * 0.01, 0);
 		time *= 0.001;
 		updateTexture();
 		scene.getObjectByName("volumeMesh").material.uniforms.cameraPos.value.copy( camera.position );
