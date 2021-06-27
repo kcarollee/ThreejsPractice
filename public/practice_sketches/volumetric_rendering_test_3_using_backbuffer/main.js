@@ -320,6 +320,84 @@ function main(){
 	
 	controls.dataSize = 48;
 	gui.add(controls, 'dataSize', 8, 256);
+
+	function getFlatIndex(x, y, z, size){
+		return x + size * (y + size * z);
+	}
+	
+	function mod(n, m) {
+  		return ((n % m) + m) % m;
+	}
+
+	let adjacentIndices = [];
+	let abValuePairs = [];
+	for (let i = 0; i < 26; i++) adjacentIndices.push(0);
+
+	// i: current index
+	function calcNeighborIndices(i, size){
+		let sizeSquared = Math.pow(size, 2);
+		let sizeTripled = Math.pow(size, 3);
+		// face sharing
+		adjacentIndices[0] = mod(i - 1, size); // l
+		adjacentIndices[1] = mod(i + 1, size); // r
+		adjacentIndices[2] = mod(i + sizeSquared, sizeTripled); // d
+		adjacentIndices[3] = mod(i - sizeSquared, sizeTripled); // u
+		adjacentIndices[4] = mod(i - size, sizeSquared); // b
+		adjacentIndices[5] = mod(i + size, sizeSquared); // f
+
+		// side sharing
+		adjacentIndices[6] = mod(adjacentIndices[5] - 1, size); // fl = f - 1
+		adjacentIndices[7] = mod(adjacentIndices[5] + 1, size); // fr = f + 1
+		adjacentIndices[8] = mod(adjacentIndices[2] + size, sizeSquared); // fd = d + size
+		adjacentIndices[9] = mod(adjacentIndices[3] + size, sizeSquared); // fu = u + size
+		
+		adjacentIndices[10] = mod(adjacentIndices[9] - 1, size); // flu = fu - 1
+		adjacentIndices[11] = mod(adjacentIndices[9] + 1, size); // fur = fu + 1
+		adjacentIndices[12] = mod(adjacentIndices[8] - 1, size); // fld = fd - 1
+		adjacentIndices[13] = mod(adjacentIndices[8] + 1, size); // fdr = fd + 1`
+		
+		adjacentIndices[14] = mod(adjacentIndices[4] - 1, size); // bl = b - 1
+		adjacentIndices[15] = mod(adjacentIndices[4] + 1, size); // br = b + 1
+		adjacentIndices[16] = mod(adjacentIndices[2] - size, sizeSquared); //  bd = d - size
+		adjacentIndices[17] = mod(adjacentIndices[3] - size, sizeSquared); // bu = u - size
+
+		adjacentIndices[18] = mod(adjacentIndices[17] - 1, size); // blu = bu - 1
+		adjacentIndices[19] = mod(adjacentIndices[17] + 1, size); // bur = bu + 1
+		adjacentIndices[20] = mod(adjacentIndices[16] - 1, size); // bld = bd - 1
+		adjacentIndices[21] = mod(adjacentIndices[16] + 1, size); // bdr = bd + 1
+
+		// vertex sharing
+		adjacentIndices[22] = mod(adjacentIndices[3] - 1, size); // ul = u - 1
+		adjacentIndices[23] = mod(adjacentIndices[3] + 1, size); // ur = u + 1
+		adjacentIndices[24] = mod(adjacentIndices[2] - 1, size); // dl = d - 1
+		adjacentIndices[25] = mod(adjacentIndices[2] + 1, size); // dr = d + 1
+	}
+
+	let RD_PARAMS = {
+		da: 0.9,
+		db: 0.1,
+		feed: 0.03,
+		kill: 0.062,
+
+	}
+
+	// i : current index
+
+	function getNewValue(i){
+		adjacentIndices.forEach(function(adj, i){
+			if (i < 8){
+
+			}
+
+			else if (i < 12){
+
+			}
+
+			else {
+
+			}
+		})
+	}
 	function updateTexture(){
 
 		
