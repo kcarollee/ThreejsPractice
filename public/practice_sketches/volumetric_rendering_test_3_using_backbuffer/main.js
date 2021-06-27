@@ -57,7 +57,7 @@ function main(){
                 vector.set(x, y, z).divideScalar(size);
                 let d = perlin.noise(vector.x * 6.5, vector.y * 6.5, vector.z * 6.5);
                 data[i++] = d * 128 + 128;
-                dataPrev[i++] = 0;
+                dataPrev[i++] = 0; // initialize previous textue
             }
         }
     }
@@ -322,7 +322,7 @@ function main(){
 	gui.add(controls, 'dataSize', 8, 256);
 	function updateTexture(){
 
-		/*
+		
 		// filling previous values
 		dataPrev = new Uint8Array(size * size * size);
 		let i = 0;
@@ -334,7 +334,7 @@ function main(){
     	        }
     	    }
     	}
-    	*/
+    	
 
 		scene.remove(scene.getObjectByName("volumeMesh"));
     	size = controls.dataSize;
