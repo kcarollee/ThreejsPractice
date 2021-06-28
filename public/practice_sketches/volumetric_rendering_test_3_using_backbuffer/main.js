@@ -288,7 +288,7 @@ function main(){
 	const gui = new dat.GUI();
 	const controls = new function(){
 		
-		this.threshold = 0.6;
+		this.threshold = 0.16;
 		
 	}
 
@@ -386,11 +386,11 @@ function main(){
 
 
 	let RD_PARAMS = {
-		da: 0.9,
-		db: 0.1,
+		da: 0.6,
+		db: 0.2,
 		dt: 1.0,
 		feed: 0.03,
-		kill: 0.062,
+		kill: 0.06,
 		faceNeighborCoef: 1.0 / 26.0,
 		sideNeighborCoef: 1.0 / 26.0,
 		vertNeighborCoef: 1.0 / 26.0,
@@ -408,9 +408,9 @@ function main(){
 	}
 
 	// index : current index
-
+ 	let ss = 0;
 	function getNewValue(index, x, y, z){
-
+		ss++;
 		let asum = 0.0;
 		let bsum = 0.0;
 		let fc = RD_PARAMS.faceNeighborCoef;
@@ -447,12 +447,12 @@ function main(){
 
 		let abb = a * b * b;
 
-
+		if (ss % 10 == 0){
 		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
-		let r = 0.05;
+		let r = 0.1;
 		dist = dist > r ? 0.0 : 1.0;
 		b += dist;
-		
+		}
 
 		a += (da * asum - abb + feed * (1.0 - a)) * dt;
 		b += (db * bsum + abb - (feed + kill) * b) * dt;
@@ -462,10 +462,11 @@ function main(){
 		aNextValues[index] = a;
 		bNextValues[index] = b;
 
-		return (a - b) * 1.0;
+		return 2.0 - (a - b) * 2.0;
 	}
 
 	function swapValues(){
+
 		aNextValues.forEach(function(v, i){
 			aPrevValues[i] = aNextValues[i];
 		})
@@ -475,7 +476,7 @@ function main(){
 	}
 
 	controls.debug = function(){
-		console.log(aNextValues);
+		console.log(bNextValues);
 	}
 	gui.add(controls, 'debug');
 
@@ -518,9 +519,9 @@ function main(){
     	            //console.log(idx);
     	            calcNeighborIndices(idx, size);
 
-    	            let d = getNewValue(idx, x, y, z);
+    	            let d = getNewValue(idx, vector.x, vector.y, vector.z);
 
-    	            data[i++] = mapLinear(d, 0, 1, 0, 256); // map to a value between 0 and 256
+    	            data[i++] = mapLinear(d, 0, 2, 0, 256); // map to a value between 0 and 256
     	        }
     	    }
     	}
