@@ -318,7 +318,7 @@ function main(){
 
 	
 	
-	controls.dataSize = 48;
+	controls.dataSize = 32;
 	gui.add(controls, 'dataSize', 8, 256);
 
 	function getFlatIndex(x, y, z, size){
@@ -330,9 +330,17 @@ function main(){
 	}
 
 	let adjacentIndices = [];
-	let abValuePairs = [];
+	let aPrevValues = [];
+	let bPrevValues = [];
+	let aNextValues = [];
+	let bNextValues = [];
 	for (let i = 0; i < 26; i++) adjacentIndices.push(0);
-
+	for (let i = 0; i < Math.pow(size, 3); i++){
+		aPrevValues.push(1);
+		bPrevValues.push(0);
+		aNextValues.push(1);
+		bNextValues.push(0);
+	}
 	// i: current index
 	function calcNeighborIndices(i, size){
 		let sizeSquared = Math.pow(size, 2);
@@ -373,31 +381,105 @@ function main(){
 		adjacentIndices[25] = mod(adjacentIndices[2] + 1, size); // dr = d + 1
 	}
 
+
+
+
+
 	let RD_PARAMS = {
 		da: 0.9,
 		db: 0.1,
+		dt: 1.0,
 		feed: 0.03,
 		kill: 0.062,
+		faceNeighborCoef: 1.0 / 26.0,
+		sideNeighborCoef: 1.0 / 26.0,
+		vertNeighborCoef: 1.0 / 26.0,
 
 	}
 
-	// i : current index
+	
 
-	function getNewValue(i){
-		adjacentIndices.forEach(function(adj, i){
+	function distSquared(x0, y0, z0, x1, y1, z1){
+		let ds = Math.pow(x0 - x1, 2) + Math.pow(y0 - y1, 2) + Math.pow(z1 - z0, 2);
+		return ds;
+	}
+	function clamp(x, min, max){
+		return Math.min(Math.max(x, min), max);
+	}
+
+	// index : current index
+
+	function getNewValue(index, x, y, z){
+
+		let asum = 0.0;
+		let bsum = 0.0;
+		let fc = RD_PARAMS.faceNeighborCoef;
+		let sc = RD_PARAMS.sideNeighborCoef;
+		let vc = RD_PARAMS.vertNeighborCoef;
+		let da = RD_PARAMS.da;
+		let db = RD_PARAMS.db;
+		let dt = RD_PARAMS.dt;
+		let feed = RD_PARAMS.feed;
+		let kill = RD_PARAMS.kill;
+
+		adjacentIndices.forEach(function(adjIndex, i){
 			if (i < 8){
-
+				asum += aPrevValues[adjIndex] * fc;
+				bsum += bPrevValues[adjIndex] * fc;
 			}
 
 			else if (i < 12){
-
+				asum += aPrevValues[adjIndex] * sc;
+				bsum += bPrevValues[adjIndex] * sc;
 			}
 
-			else {
-
+			else if (i < 26){
+				asum += aPrevValues[adjIndex] * vc;
+				bsum += bPrevValues[adjIndex] * vc;
 			}
 		})
+
+		asum -= aPrevValues[index];
+		bsum -= bPrevValues[index];
+
+		let a = aPrevValues[index];
+		let b = bPrevValues[index];
+
+		let abb = a * b * b;
+
+
+		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+		let r = 0.05;
+		dist = dist > r ? 0.0 : 1.0;
+		b += dist;
+		
+
+		a += (da * asum - abb + feed * (1.0 - a)) * dt;
+		b += (db * bsum + abb - (feed + kill) * b) * dt;
+		a = clamp(a, 0.0, 1.0);
+		b = clamp(b, 0.0, 1.0);
+
+		aNextValues[index] = a;
+		bNextValues[index] = b;
+
+		return (a - b) * 1.0;
 	}
+
+	function swapValues(){
+		aNextValues.forEach(function(v, i){
+			aPrevValues[i] = aNextValues[i];
+		})
+		bNextValues.forEach(function(v, i){
+			bPrevValues[i] = bNextValues[i];
+		})
+	}
+
+	controls.debug = function(){
+		console.log(aNextValues);
+	}
+	gui.add(controls, 'debug');
+
+
 	function updateTexture(){
 
 		
@@ -431,13 +513,19 @@ function main(){
     	            vector.x -= 0.5;
     	            vector.y -= 0.5;
     	            vector.z -= 0.5;
-    	            let d = testFunc1(vector.x, vector.y, vector.z);
-    	            
+    	            //let d = testFunc1(vector.x, vector.y, vector.z);
+    	            let idx = getFlatIndex(x, y, z, size);
+    	            //console.log(idx);
+    	            calcNeighborIndices(idx, size);
 
-    	            data[i++] = mapLinear(d, -3, 3, 0, 256); // map to a value between 0 and 256
+    	            let d = getNewValue(idx, x, y, z);
+
+    	            data[i++] = mapLinear(d, 0, 1, 0, 256); // map to a value between 0 and 256
     	        }
     	    }
     	}
+
+    	swapValues();
 
     	//console.log(dataPrev[63543] + " " + data[63543]);
 
