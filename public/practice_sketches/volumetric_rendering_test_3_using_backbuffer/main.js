@@ -345,9 +345,11 @@ function main(){
 	function calcNeighborIndices(i, size){
 		let sizeSquared = Math.pow(size, 2);
 		let sizeTripled = Math.pow(size, 3);
+
+		// NEEDS MAJOR FIXING UP
 		// face sharing
-		adjacentIndices[0] = mod(i - 1, size); // l
-		adjacentIndices[1] = mod(i + 1, size); // r
+		adjacentIndices[0] = i % size != 0 ? i - 1 : i - 1 + size; // l
+		adjacentIndices[1] = (i + 1) % size != 0 ? i + 1 : i + 1 - size; // r
 		adjacentIndices[2] = mod(i + sizeSquared, sizeTripled); // d
 		adjacentIndices[3] = mod(i - sizeSquared, sizeTripled); // u
 		adjacentIndices[4] = mod(i - size, sizeSquared); // b
@@ -396,6 +398,18 @@ function main(){
 		vertNeighborCoef: 1.0 / 26.0,
 
 	}
+
+	let paramFolder = gui.addFolder('RD_PARAMS');
+
+	paramFolder.add(RD_PARAMS, 'da', 0.0, 1.5);
+	paramFolder.add(RD_PARAMS, 'db', 0.0, 1.5);
+	paramFolder.add(RD_PARAMS, 'dt', 0.0, 2.0);
+	paramFolder.add(RD_PARAMS, 'feed', 0.0, 0.1).step(0.001);
+	paramFolder.add(RD_PARAMS, 'kill', 0.0, 0.1).step(0.001);
+	paramFolder.add(RD_PARAMS, 'faceNeighborCoef', 0.0, 0.25).step(0.001);
+	paramFolder.add(RD_PARAMS, 'sideNeighborCoef', 0.0, 0.25).step(0.001);
+	paramFolder.add(RD_PARAMS, 'vertNeighborCoef', 0.0, 0.25).step(0.001);
+
 
 	
 
@@ -447,12 +461,12 @@ function main(){
 
 		let abb = a * b * b;
 
-		if (ss % 10 == 0){
+		//if (ss % 10 == 0){
 		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
 		let r = 0.1;
 		dist = dist > r ? 0.0 : 1.0;
 		b += dist;
-		}
+		//}
 
 		a += (da * asum - abb + feed * (1.0 - a)) * dt;
 		b += (db * bsum + abb - (feed + kill) * b) * dt;
@@ -462,25 +476,26 @@ function main(){
 		aNextValues[index] = a;
 		bNextValues[index] = b;
 
-		return 2.0 - (a - b) * 2.0;
+		return 1.0 - Math.abs(a - b) ;
 	}
 
 	function swapValues(){
 
 		aNextValues.forEach(function(v, i){
-			aPrevValues[i] = aNextValues[i];
+			aPrevValues[i] = v;
 		})
 		bNextValues.forEach(function(v, i){
-			bPrevValues[i] = bNextValues[i];
+			bPrevValues[i] = v;
 		})
 	}
 
 	controls.debug = function(){
-		console.log(bNextValues);
+		console.log(currentIndex);
+		console.log(adjacentIndices);
 	}
 	gui.add(controls, 'debug');
 
-
+	let currentIndex;
 	function updateTexture(){
 
 		
@@ -516,12 +531,13 @@ function main(){
     	            vector.z -= 0.5;
     	            //let d = testFunc1(vector.x, vector.y, vector.z);
     	            let idx = getFlatIndex(x, y, z, size);
-    	            //console.log(idx);
+    	            currentIndex = idx;
+    	            
     	            calcNeighborIndices(idx, size);
-
+    	            //console.log(idx + " " + adjacentIndices);
     	            let d = getNewValue(idx, vector.x, vector.y, vector.z);
 
-    	            data[i++] = mapLinear(d, 0, 2, 0, 256); // map to a value between 0 and 256
+    	            data[i++] = mapLinear(d, 0, 1, 0, 256); // map to a value between 0 and 256
     	        }
     	    }
     	}
@@ -560,7 +576,7 @@ function main(){
 
     
 
-    	let geometry = new THREE.BoxGeometry(1, 5, 1);
+    	let geometry = new THREE.BoxGeometry(1, 1, 1);
     
 
     	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
