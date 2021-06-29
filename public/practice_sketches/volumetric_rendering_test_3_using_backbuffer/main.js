@@ -344,14 +344,15 @@ function main(){
 	// i: current index
 	function calcNeighborIndices(i, size){
 		let sizeSquared = Math.pow(size, 2);
-		let sizeTripled = Math.pow(size, 3);
+        let sizeTripled = Math.pow(size, 3);
+        let tms = sizeTripled - sizeSquared;
 
 		// NEEDS MAJOR FIXING UP
 		// face sharing
 		adjacentIndices[0] = i % size != 0 ? i - 1 : i - 1 + size; // l
 		adjacentIndices[1] = (i + 1) % size != 0 ? i + 1 : i + 1 - size; // r
-		adjacentIndices[2] = mod(i + sizeSquared, sizeTripled); // d
-		adjacentIndices[3] = mod(i - sizeSquared, sizeTripled); // u
+		adjacentIndices[2] = i < tms ? i + sizeSquared : i - tms; // d
+		adjacentIndices[3] = i >= sizeSquared ? i - sizeSquared : i + tms; // u
 		adjacentIndices[4] = mod(i - size, sizeSquared); // b
 		adjacentIndices[5] = mod(i + size, sizeSquared); // f
 
