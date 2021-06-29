@@ -342,46 +342,86 @@ function main(){
 		bNextValues.push(0);
 	}
 	// i: current index
+
+	function getLeftIndex(i, s){
+		return i % s != 0 ? i - 1 : i - 1 + s;
+	}
+
+	function getRightIndex(i, s){
+		return (i + 1) % s != 0 ? i + 1 : i + 1 - s;
+	}
+
+	function getDownIndex(i, ss, tms){
+		return i < tms ? i + ss : i - tms;
+	}
+
+	function getUpIndex(i, ss, tms){
+		return i >= ss ? i - ss : i + tms;
+	}
+
+	function getBackIndex(i, s, ss){
+		let bf = Math.floor(i / ss) * ss;
+		return (i < bf) || (i >= bf + s) ?
+				i - s : 
+				i - s + ss ;
+	}
+
+	function getFrontIndex(i, s, ss){
+		let ff = Math.floor((i + s) / ss) * ss;
+		return (i < ff - s) || (i >= ff) ? 
+				i + s :
+				i - ss + s;
+	}
 	function calcNeighborIndices(i, size){
 		let sizeSquared = Math.pow(size, 2);
         let sizeTripled = Math.pow(size, 3);
         let tms = sizeTripled - sizeSquared;
-
+        //let ff = Math.floor((i + size) / sizeSquared) * sizeSquared; // front floored
+        //let bf = Math.floor(i / sizeSquared) * sizeSquared; // back floored
 		// NEEDS MAJOR FIXING UP
 		// face sharing
-		adjacentIndices[0] = i % size != 0 ? i - 1 : i - 1 + size; // l
-		adjacentIndices[1] = (i + 1) % size != 0 ? i + 1 : i + 1 - size; // r
-		adjacentIndices[2] = i < tms ? i + sizeSquared : i - tms; // d
-		adjacentIndices[3] = i >= sizeSquared ? i - sizeSquared : i + tms; // u
-		adjacentIndices[4] = mod(i - size, sizeSquared); // b
-		adjacentIndices[5] = mod(i + size, sizeSquared); // f
+		adjacentIndices[0] = getLeftIndex(i, size);//i % size != 0 ? i - 1 : i - 1 + size; // l
+		adjacentIndices[1] = getRightIndex(i, size);//(i + 1) % size != 0 ? i + 1 : i + 1 - size; // r
+		adjacentIndices[2] = getDownIndex(i, sizeSquared, tms);//i < tms ? i + sizeSquared : i - tms; // d
+		adjacentIndices[3] = getUpIndex(i, sizeSquared, tms);//i >= sizeSquared ? i - sizeSquared : i + tms; // u
+		adjacentIndices[4] = getBackIndex(i, size, sizeSquared);
+							//(i < bf) || (i >= bf + size) ?
+							//i - size : 
+							//i - size + sizeSquared ; // b
+		adjacentIndices[5] = getFrontIndex(i, size, sizeSquared);
+							//(i < ff - size) || (i >= ff) ? 
+							//i + size :
+							//i - sizeSquared + size; // f
 
 		// side sharing
-		adjacentIndices[6] = mod(adjacentIndices[5] - 1, size); // fl = f - 1
-		adjacentIndices[7] = mod(adjacentIndices[5] + 1, size); // fr = f + 1
-		adjacentIndices[8] = mod(adjacentIndices[2] + size, sizeSquared); // fd = d + size
-		adjacentIndices[9] = mod(adjacentIndices[3] + size, sizeSquared); // fu = u + size
+		adjacentIndices[6] = getLeftIndex(adjacentIndices[5], size);//mod(adjacentIndices[5] - 1, size); // fl = f - 1 // f's left
+		adjacentIndices[7] = getRightIndex(adjacentIndices[5], size);//mod(adjacentIndices[5] + 1, size); // fr = f + 1 // f's right
+		adjacentIndices[8] = getDownIndex(adjacentIndices[5], sizeSquared, tms);//mod(adjacentIndices[2] + size, sizeSquared); // fd = d + size // f's down
+		adjacentIndices[9] = getUpIndex(adjacentIndices[5], sizeSquared, tms);//mod(adjacentIndices[3] + size, sizeSquared); // fu = u + size // f's up
 		
-		adjacentIndices[10] = mod(adjacentIndices[9] - 1, size); // flu = fu - 1
-		adjacentIndices[11] = mod(adjacentIndices[9] + 1, size); // fur = fu + 1
-		adjacentIndices[12] = mod(adjacentIndices[8] - 1, size); // fld = fd - 1
-		adjacentIndices[13] = mod(adjacentIndices[8] + 1, size); // fdr = fd + 1`
 		
-		adjacentIndices[14] = mod(adjacentIndices[4] - 1, size); // bl = b - 1
-		adjacentIndices[15] = mod(adjacentIndices[4] + 1, size); // br = b + 1
-		adjacentIndices[16] = mod(adjacentIndices[2] - size, sizeSquared); //  bd = d - size
-		adjacentIndices[17] = mod(adjacentIndices[3] - size, sizeSquared); // bu = u - size
+		adjacentIndices[10] = getLeftIndex(adjacentIndices[4], size);//mod(adjacentIndices[4] - 1, size); // bl = b - 1 // b's left
+		adjacentIndices[11] = getRightIndex(adjacentIndices[4], size);//mod(adjacentIndices[4] + 1, size); // br = b + 1 // b's right
+		adjacentIndices[12] = getDownIndex(adjacentIndices[4], sizeSquared, tms);//mod(adjacentIndices[2] - size, sizeSquared); //  bd = d - size // b's down
+		adjacentIndices[13] = getUpIndex(adjacentIndices[4], sizeSquared, tms);//mod(adjacentIndices[3] - size, sizeSquared); // bu = u - size // b's up
 
-		adjacentIndices[18] = mod(adjacentIndices[17] - 1, size); // blu = bu - 1
-		adjacentIndices[19] = mod(adjacentIndices[17] + 1, size); // bur = bu + 1
-		adjacentIndices[20] = mod(adjacentIndices[16] - 1, size); // bld = bd - 1
-		adjacentIndices[21] = mod(adjacentIndices[16] + 1, size); // bdr = bd + 1
+		
+		adjacentIndices[14] = getLeftIndex(adjacentIndices[3], size);//mod(adjacentIndices[3] - 1, size); // ul = u - 1 // u's left
+		adjacentIndices[15] = getRightIndex(adjacentIndices[3], size);//mod(adjacentIndices[3] + 1, size); // ur = u + 1 // u's right
+		adjacentIndices[16] = getLeftIndex(adjacentIndices[2], size);//mod(adjacentIndices[2] - 1, size); // dl = d - 1 // d's left
+		adjacentIndices[17] = getRightIndex(adjacentIndices[2], size);//mod(adjacentIndices[2] + 1, size); // dr = d + 1 // d's right
 
 		// vertex sharing
-		adjacentIndices[22] = mod(adjacentIndices[3] - 1, size); // ul = u - 1
-		adjacentIndices[23] = mod(adjacentIndices[3] + 1, size); // ur = u + 1
-		adjacentIndices[24] = mod(adjacentIndices[2] - 1, size); // dl = d - 1
-		adjacentIndices[25] = mod(adjacentIndices[2] + 1, size); // dr = d + 1
+		adjacentIndices[18] = getLeftIndex(adjacentIndices[9], size);//mod(adjacentIndices[9] - 1, size); // ful = fu - 1 // fu's left
+		adjacentIndices[19] = getRightIndex(adjacentIndices[9], size);//mod(adjacentIndices[9] + 1, size); // fur = fu + 1 // fu's right
+		adjacentIndices[20] = getLeftIndex(adjacentIndices[8], size);//mod(adjacentIndices[8] - 1, size); // fdl = fd - 1 // fd's left
+		adjacentIndices[21] = getRightIndex(adjacentIndices[8], size);//mod(adjacentIndices[8] + 1, size); // fdr = fd + 1`// fd's right
+
+		adjacentIndices[22] = getLeftIndex(adjacentIndices[13], size);//mod(adjacentIndices[17] - 1, size); // bul = bu - 1 // bu's left
+		adjacentIndices[23] = getRightIndex(adjacentIndices[13], size);//mod(adjacentIndices[17] + 1, size); // bur = bu + 1 // bu's right
+		adjacentIndices[24] = getLeftIndex(adjacentIndices[12], size);//mod(adjacentIndices[16] - 1, size); // bdl = bd - 1 // bd's left
+		adjacentIndices[25] = getRightIndex(adjacentIndices[12], size);//mod(adjacentIndices[16] + 1, size); // bdr = bd + 1 // bd's right
+		
 	}
 
 
@@ -424,6 +464,7 @@ function main(){
 
 	// index : current index
  	let ss = 0;
+ 	let addValue = false;
 	function getNewValue(index, x, y, z){
 		ss++;
 		let asum = 0.0;
@@ -462,12 +503,13 @@ function main(){
 
 		let abb = a * b * b;
 
-		//if (ss % 10 == 0){
+		if (addValue){
 		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
 		let r = 0.1;
 		dist = dist > r ? 0.0 : 1.0;
 		b += dist;
-		//}
+
+		}
 
 		a += (da * asum - abb + feed * (1.0 - a)) * dt;
 		b += (db * bsum + abb - (feed + kill) * b) * dt;
@@ -479,6 +521,11 @@ function main(){
 
 		return 1.0 - Math.abs(a - b) ;
 	}
+
+	controls.addValue = function(){
+		addValue = true;
+	}
+	gui.add(controls, 'addValue');
 
 	function swapValues(){
 
@@ -496,6 +543,20 @@ function main(){
 	}
 	gui.add(controls, 'debug');
 
+	controls.reset = function(){
+		aPrevValues = [];
+		aNextValues = [];
+		bNextValues = [];
+		bPrevValues = [];
+
+		for (let i = 0; i < Math.pow(size, 3); i++){
+			aPrevValues.push(1);
+			bPrevValues.push(0);
+			aNextValues.push(1);
+			bNextValues.push(0);
+		}
+	}
+	gui.add(controls, 'reset');
 	let currentIndex;
 	function updateTexture(){
 
@@ -542,6 +603,7 @@ function main(){
     	        }
     	    }
     	}
+    	if (addValue) addValue = false;
 
     	swapValues();
 
