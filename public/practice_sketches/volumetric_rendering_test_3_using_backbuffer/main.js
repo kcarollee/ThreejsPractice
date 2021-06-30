@@ -36,7 +36,7 @@ function main(){
 	new OrbitControls(camera, renderer.domElement);
 
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xFFFFFF);
+	scene.background = new THREE.Color(0x000000);
     renderer.render(scene, camera);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -45,11 +45,12 @@ function main(){
 
     let size = 32;
     let data = new Uint8Array(size * size * size); // 3 dimensional array flattened
-    let dataPrev = new Uint8Array(size * size * size);
+    //let dataPrev = new Uint8Array(size * size * size);
     let i = 0;
     let perlin = new ImprovedNoise();
     let vector = new THREE.Vector3();
 
+    /*
     // filling the data array with values
     for (let z = 0; z < size; z++){
         for (let y = 0; y < size; y++){
@@ -61,6 +62,7 @@ function main(){
             }
         }
     }
+    */
 
     let texture = new THREE.DataTexture3D(data, size, size, size);
     texture.format = THREE.RedFormat;
@@ -68,12 +70,13 @@ function main(){
 	texture.magFilter = THREE.LinearFilter;
     texture.unpackAlignment = 1; // 4 b y default.
 
+    /*
     let texturePrev = new THREE.DataTexture3D(data, size, size, size);
     texturePrev.format = THREE.RedFormat;
     texturePrev.minFilter = THREE.LinearFilter;
 	texturePrev.magFilter = THREE.LinearFilter;
     texturePrev.unpackAlignment = 1; // 4 b y default.
-
+	*/
     
 // MATERIAL
 
@@ -114,7 +117,7 @@ function main(){
         
         // 3d texture sent from 'const texture = new THREE.DataTexture3D(data, size, size, size);''
         uniform sampler3D map;
-		uniform sampler3D mapPrev;
+		//uniform sampler3D mapPrev;
 		
 		uniform vec3 lightDir;
         
@@ -199,30 +202,32 @@ function main(){
 				
 				float d = sample1( p + 0.5 );
 				if ( d > threshold ) {
-					//color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
+					color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
 					//color.rgb = normal(p + 0.5);
 					vec3 n = normal(p + 0.5);
 					float fs = acos(dot(n, vDirection));
 					float fs2 = dot(n, 1.0 - normalize(vDirection));
 					
-
 					vec3 lm = lightDir - (p + 0.5);
 					vec3 rm = 2.0 * (dot(lm, n)) * n - lm;
 					//color.rgb = vec3(normal(p + 0.5));
 					
 					//color.rgb = vec3(1.0 - fs2); 
 					//color.rgb = rm;
-					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
-
+					
 					/*
 					vec3 light = vec3(dot(lm, n) + pow(dot(rm , normalize(vDirection)), 1.0)) + vec3(1.0);
 					color.rgb = light * 0.5;
-
 					*/
 					
 					//color.rgb += vec3(0.5);
 					//color.rgb *= texture(tex, abs(p.xy )).rgb;
+
+					/* 
+					// ORIGINAL COLOR
+					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
 					color.rgb = 1.0 - color.rgb;
+					*/
 					vec3 ref = refract(-vDirection, n, 1.0 / 0.91);
 					//color.rgb -= texture(tex, p.xy * 0.1 + ref.xy).rgb;
    					//color.rgb -= p * 0.25;
@@ -258,7 +263,7 @@ function main(){
         glslVersion: THREE.GLSL3,
         uniforms:{
             map: {value: texture},
-            mapPrev: {value: texturePrev},
+            //mapPrev: {value: texturePrev},
             cameraPos: {value: new THREE.Vector3()},
             threshold: {value: 0.6},
             steps: {value: 200}
@@ -504,6 +509,7 @@ function main(){
 		let abb = a * b * b;
 
 		if (addValue){
+		// return sphere
 		let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
 		let r = 0.1;
 		dist = dist > r ? 0.0 : 1.0;
@@ -557,10 +563,12 @@ function main(){
 		}
 	}
 	gui.add(controls, 'reset');
+	controls.scaleCoef = 1.0;
+	gui.add(controls, 'scaleCoef', 0.0, 1.0);
 	let currentIndex;
 	function updateTexture(){
 
-		
+		/*
 		// filling previous values
 		dataPrev = new Uint8Array(size * size * size);
 		let i = 0;
@@ -572,6 +580,7 @@ function main(){
     	        }
     	    }
     	}
+    	*/
     	
 
 		scene.remove(scene.getObjectByName("volumeMesh"));
@@ -586,11 +595,12 @@ function main(){
     	for (let z = 0; z < size; z++){
     	    for (let y = 0; y < size; y++){
     	        for (let x = 0; x < size; x++){
-    	            vector.set(x, y, z).divideScalar(size);
+    	        	
+    	            vector.set(x, y, z).divideScalar(size * controls.scaleCoef);
     	            // set 0, 0, 0 to center
-    	            vector.x -= 0.5;
-    	            vector.y -= 0.5;
-    	            vector.z -= 0.5;
+    	            vector.x -= 0.5	/ controls.scaleCoef;
+    	            vector.y -= 0.5	/ controls.scaleCoef;
+    	            vector.z -= 0.5	/ controls.scaleCoef;
     	            //let d = testFunc1(vector.x, vector.y, vector.z);
     	            let idx = getFlatIndex(x, y, z, size);
     	            currentIndex = idx;
@@ -615,17 +625,18 @@ function main(){
 		texture.magFilter = THREE.LinearFilter;
     	texture.unpackAlignment = 1; // 4 b y default. 
 
+    	/*
     	texturePrev = new THREE.DataTexture3D(data, size, size, size);
     	texturePrev.format = THREE.RedFormat;
     	texturePrev.minFilter = THREE.LinearFilter;
 		texturePrev.magFilter = THREE.LinearFilter;
     	texturePrev.unpackAlignment = 1; // 4 b y default. 
-
+		*/
     	let material = new THREE.RawShaderMaterial({
     	    glslVersion: THREE.GLSL3,
     	    uniforms:{
     	        map: {value: texture},
-    	        mapPrev: {value: texturePrev},
+    	        //mapPrev: {value: texturePrev},
     	        cameraPos: {value: new THREE.Vector3()},
     	        threshold: {value: controls.threshold},
     	        steps: {value: 300},
