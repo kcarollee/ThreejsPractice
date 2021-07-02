@@ -348,6 +348,11 @@ function main(){
 	}
 	// i: current index
 
+	controls.enableBoundary = false;
+	gui.add(controls, 'enableBoundary', false);
+	let isBoundary = false;
+
+
 	function getLeftIndex(i, s){
 		return i % s != 0 ? i - 1 : i - 1 + s;
 	}
@@ -564,7 +569,7 @@ function main(){
 	}
 	gui.add(controls, 'reset');
 	controls.scaleCoef = 1.0;
-	gui.add(controls, 'scaleCoef', 0.0, 1.0);
+	gui.add(controls, 'scaleCoef', 0.0, 2.0);
 	let currentIndex;
 	function updateTexture(){
 
