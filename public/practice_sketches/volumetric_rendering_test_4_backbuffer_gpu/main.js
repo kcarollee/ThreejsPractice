@@ -45,12 +45,12 @@ function main(){
 
     let size = 32;
     let data = new Uint8Array(size * size * size); // 3 dimensional array flattened
-    //let dataPrev = new Uint8Array(size * size * size);
+    let dataPrev = new Uint8Array(size * size * size);
     let i = 0;
     let perlin = new ImprovedNoise();
     let vector = new THREE.Vector3();
 
-    /*
+    
     // filling the data array with values
     for (let z = 0; z < size; z++){
         for (let y = 0; y < size; y++){
@@ -62,7 +62,7 @@ function main(){
             }
         }
     }
-    */
+    
 
     let texture = new THREE.DataTexture3D(data, size, size, size);
     texture.format = THREE.RedFormat;
@@ -70,13 +70,13 @@ function main(){
 	texture.magFilter = THREE.LinearFilter;
     texture.unpackAlignment = 1; // 4 b y default.
 
-    /*
+    
     let texturePrev = new THREE.DataTexture3D(data, size, size, size);
     texturePrev.format = THREE.RedFormat;
     texturePrev.minFilter = THREE.LinearFilter;
 	texturePrev.magFilter = THREE.LinearFilter;
     texturePrev.unpackAlignment = 1; // 4 b y default.
-	*/
+	
     
 // MATERIAL
 
@@ -117,7 +117,7 @@ function main(){
         
         // 3d texture sent from 'const texture = new THREE.DataTexture3D(data, size, size, size);''
         uniform sampler3D map;
-		//uniform sampler3D mapPrev;
+		uniform sampler3D mapPrev;
 		
 		uniform vec3 lightDir;
         
@@ -145,6 +145,12 @@ function main(){
 			
 			return vec2( t0, t1 );
 		}
+
+		vec3 get(float x, float y, float z, vec3 p){
+			return texture(mapPrev, vec3(p.x + x, p.y + y, p.z + z)).rgb;
+		}
+
+		
 
 		// return the r value of the texture at position p
 		float sample1( vec3 p ) {
@@ -517,14 +523,10 @@ function main(){
 
 		if (addValue || controls.continuousFeed){
 			// return sphere
-			
 			let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
-			//let dist = Math.sqrt(distSquared(x, y, z, 0.2 * Math.cos(step * 0.01), 0.2 * Math.sin(step * 0.01), 0.2 * Math.cos(step * 0.01)));
 			let r = 0.1;
 			dist = dist > r ? 0.0 : 1.0;
 			b += dist;
-			
-			//b += mapLinear(perlin.noise(x * 10 , y * 10 , z * 10 ), -1, 1, 0, 0.1);
 
 		}
 
