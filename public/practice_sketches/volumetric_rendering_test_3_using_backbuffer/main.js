@@ -541,8 +541,10 @@ function main(){
 	// index : current index
  	let ss = 0;
  	let addValue = false;
- 	controls.continuousFeed = false;
+	controls.continuousFeed = false;
+	controls.moveFeedSource = false;
 	gui.add(controls, 'continuousFeed', false);
+	gui.add(controls, 'moveFeedSource', false).listen();
 	function getNewValue(index, x, y, z){
 		ss++;
 		let asum = 0.0;
@@ -586,16 +588,21 @@ function main(){
 
 		let abb = a * b * b;
 
+		
+
 		if (addValue || controls.continuousFeed){
 			
-			// return sphere
-			let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+			
 			
 
 			let ra = 0.5;
-			
-			//let dist = Math.sqrt(distSquared(x, y, z, ra * Math.sin(step * 0.01), ra * Math.cos(step * 0.01), ra * Math.cos(step * 0.01)));
-			
+			let dist;
+			if (controls.moveFeedSource){
+				 dist = Math.sqrt(distSquared(x, y, z, ra * Math.sin(step * 0.01), ra * Math.cos(step * 0.01), ra * Math.cos(step * 0.01)));
+			}
+			else{
+				dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+			}
 			let r = 0.1;
 			dist = dist > r ? 0.0 : 1.0;
 			b += dist;
@@ -785,19 +792,28 @@ function main(){
 		RD_PARAMS.sideNeighborCoef = sn;
 		RD_PARAMS.vertNeighborCoef = vn;
 	}
-	gui.add(controls, 'presets', ['SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'FN_ONLY']).onChange(function(m){
+	gui.add(controls, 'presets', ['SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'BLOWOUT','FN_ONLY']).onChange(function(m){
 		switch(m){
 			case 'SEMI_MITOSIS':
 				controls.threshold = 0.82;
+				controls.moveFeedSource = false;
 				setRDParams(0.6, 0.2, 1.0, 0.058, 0.07, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
 				break;
 			case 'SEMI_MITOSIS_2':
 				controls.threshold = 0.79;
+				controls.moveFeedSource = false;
 				setRDParams(0.68, 0.12, 1.2, 0.009, 0.056, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
 				break;
 			case 'RING_PUFF':
 				controls.threshold = 0.82;
+				controls.moveFeedSource = false;
 				setRDParams(0.73, 0.2, 1.4, 0.009, 0.056, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
+				break;
+			case 'BLOWOUT':
+				controls.threshold = 0.23;
+				controls.moveFeedSource = true;
+				
+				setRDParams(0.84, 0.93, 1.2, 0.057, 0.062, 0.167, 0, 0);
 				break;
 			case 'FN_ONLY':
 				RD_PARAMS.faceNeighborCoef = 1.0 / 6.0;
