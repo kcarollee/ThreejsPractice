@@ -3,7 +3,9 @@ import * as THREE from "https://cdn.skypack.dev/three@0.128.0/build/three.module
 import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
 import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
 import {WEBGL} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/WebGL.js"
-
+import {EffectComposer} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js';
+import {RenderPass} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/RenderPass.js';
+import {SMAAPass} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/SMAAPass.js';
 
 
 function mapLinear(x, a1, a2, b1, b2){
@@ -22,7 +24,7 @@ function main(){
     //renderer.setPixelRatio(window.innerWidth, window.innerHeight);
 
     let stats;
-    initStats();
+    //initStats();
 //CAMERA
 	const fov = 60;
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
@@ -229,7 +231,7 @@ function main(){
 					//color.rgb += vec3(0.5);
 					//color.rgb *= texture(tex, abs(p.xy )).rgb;
 
-					/* 
+					/*
 					// ORIGINAL COLOR
 					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
 					color.rgb = 1.0 - color.rgb;
@@ -303,7 +305,7 @@ function main(){
 		
 	}
 
-	gui.add(controls, 'threshold', 0, 1).onChange(function (e){
+	gui.add(controls, 'threshold', 0, 1).listen().onChange(function (e){
 		controls.threshold = e;
 		material.uniforms.threshold.value = controls.threshold;
 	});
@@ -516,14 +518,14 @@ function main(){
 
 	let paramFolder = gui.addFolder('RD_PARAMS');
 
-	paramFolder.add(RD_PARAMS, 'da', 0.0, 1.5);
-	paramFolder.add(RD_PARAMS, 'db', 0.0, 1.5);
-	paramFolder.add(RD_PARAMS, 'dt', 0.0, 10.0);
-	paramFolder.add(RD_PARAMS, 'feed', 0.0, 0.1).step(0.001);
-	paramFolder.add(RD_PARAMS, 'kill', 0.0, 0.1).step(0.001);
-	paramFolder.add(RD_PARAMS, 'faceNeighborCoef', 0.0, 0.25).step(0.001);
-	paramFolder.add(RD_PARAMS, 'sideNeighborCoef', 0.0, 0.25).step(0.001);
-	paramFolder.add(RD_PARAMS, 'vertNeighborCoef', 0.0, 0.25).step(0.001);
+	paramFolder.add(RD_PARAMS, 'da', 0.0, 1.5).listen();
+	paramFolder.add(RD_PARAMS, 'db', 0.0, 1.5).listen();
+	paramFolder.add(RD_PARAMS, 'dt', 0.0, 10.0).listen();
+	paramFolder.add(RD_PARAMS, 'feed', 0.0, 0.1).listen().step(0.001);
+	paramFolder.add(RD_PARAMS, 'kill', 0.0, 0.1).listen().step(0.001);
+	paramFolder.add(RD_PARAMS, 'faceNeighborCoef', 0.0, 0.25).listen().step(0.001);
+	paramFolder.add(RD_PARAMS, 'sideNeighborCoef', 0.0, 0.25).listen().step(0.001);
+	paramFolder.add(RD_PARAMS, 'vertNeighborCoef', 0.0, 0.25).listen().step(0.001);
 
 
 	
@@ -560,12 +562,12 @@ function main(){
 				bsum -= 10;
 			 return;
 			}
-			if (i < 8){
+			if (i < 6){
 				asum += aPrevValues[adjIndex] * fc;
 				bsum += bPrevValues[adjIndex] * fc;
 			}
 
-			else if (i < 12){
+			else if (i < 18){
 				asum += aPrevValues[adjIndex] * sc;
 				bsum += bPrevValues[adjIndex] * sc;
 			}
@@ -587,11 +589,14 @@ function main(){
 		if (addValue || controls.continuousFeed){
 			
 			// return sphere
-			//let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+			let dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
+			
+
 			let ra = 0.5;
-			let dist = Math.sqrt(distSquared(x, y, z,
-			 ra * Math.sin(step * 0.01), ra * Math.cos(step * 0.01), ra * Math.cos(step * 0.01)));
-			let r = 0.01;
+			
+			//let dist = Math.sqrt(distSquared(x, y, z, ra * Math.sin(step * 0.01), ra * Math.cos(step * 0.01), ra * Math.cos(step * 0.01)));
+			
+			let r = 0.1;
 			dist = dist > r ? 0.0 : 1.0;
 			b += dist;
 			
@@ -600,6 +605,7 @@ function main(){
 			rand = rand > 0 ? 0.0 : 1.0;
 			b += rand;
 			*/
+			
 		}
 
 		a += (da * asum - abb + feed * (1.0 - a)) * dt;
@@ -671,6 +677,7 @@ function main(){
     	
 
 		scene.remove(scene.getObjectByName("volumeMesh"));
+		//scene.remove(scene.getObjectByName("volumeMesh2"));
     	size = controls.dataSize;
     	data = new Uint8Array(size * size * size); // 3 dimensional array flattened
     	
@@ -743,19 +750,69 @@ function main(){
     	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
     	let mesh = new THREE.Mesh(geometry,material);
     	
+    	let mesh2 = new THREE.Mesh(geometry, material);
+    	//mesh2.position.set(0, 10, -1);
     	mesh.position.set(0, 0, 0);
     	mesh.name = 'volumeMesh';
+    	//mesh2.name = 'volumeMesh2';
     	scene.add(mesh);
+    	//scene.add(mesh2);
 
     	material.dispose();
 	}
+
+// POST PROCESSING
+	let renderPass = new RenderPass(scene, camera);
+	let smaaPass = new SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+	let composer = new EffectComposer(renderer);
+
+	composer.setSize(window.innerWidth, window.innerHeight);
+	composer.addPass(renderPass);
+	composer.addPass(smaaPass);
+
+// PRESETS
+	
+
+	controls.presets = '';
+	function setRDParams(a, b, t, f, k, fn, sn, vn){
+		
+		RD_PARAMS.da = a;
+		RD_PARAMS.db = b;
+		RD_PARAMS.dt = t;
+		RD_PARAMS.feed = f;
+		RD_PARAMS.kill = k;
+		RD_PARAMS.faceNeighborCoef = fn;
+		RD_PARAMS.sideNeighborCoef = sn;
+		RD_PARAMS.vertNeighborCoef = vn;
+	}
+	gui.add(controls, 'presets', ['SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'FN_ONLY']).onChange(function(m){
+		switch(m){
+			case 'SEMI_MITOSIS':
+				controls.threshold = 0.82;
+				setRDParams(0.6, 0.2, 1.0, 0.058, 0.07, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
+				break;
+			case 'SEMI_MITOSIS_2':
+				controls.threshold = 0.79;
+				setRDParams(0.68, 0.12, 1.2, 0.009, 0.056, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
+				break;
+			case 'RING_PUFF':
+				controls.threshold = 0.82;
+				setRDParams(0.73, 0.2, 1.4, 0.009, 0.056, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
+				break;
+			case 'FN_ONLY':
+				RD_PARAMS.faceNeighborCoef = 1.0 / 6.0;
+				RD_PARAMS.sideNeighborCoef = 0.0;
+				RD_PARAMS.vertNeighborCoef = 0.0;
+				break;
+		}
+	});
 
 	let step = 0;
 
 	function render(time){
 		
 
-		stats.update();
+		//stats.update();
 		step++;
 		
 		//scene.rotation.set(0, step * 0.005, 0);
@@ -769,8 +826,8 @@ function main(){
 			camera.updateProjectionMatrix();
 
 		}
-		renderer.render(scene, camera);
-		
+		//renderer.render(scene, camera);
+		composer.render();
 
 		requestAnimationFrame(render);
 	}
@@ -804,7 +861,7 @@ function main(){
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        
+        composer.setSize(window.innerWidth, window.innerHeight);
     }
 
     window.addEventListener('resize', onResize, false);
