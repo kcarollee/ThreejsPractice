@@ -152,7 +152,8 @@ void main( void ) {
   /////////////////////////////////////////////////////////////////////////////////////
     
     float c = (smoothstep(0.1, 0.4, length(uv - vec2(0.5))));
-	float da = 0.5 + 0.5 * sin(uv.y) ; // 0.84
+	//float da = 0.5 + 0.5 * sin(uv.y) ; // 0.84
+	float da = (1.0 - length(uv -  vec2(0.5, 0.5)));
 	//float db = map(c, 0.0, 1.0, 0.2, 0.8);
     float db = 0.93;
 	//float dt = 1.0;

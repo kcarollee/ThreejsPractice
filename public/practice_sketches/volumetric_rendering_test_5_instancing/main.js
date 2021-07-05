@@ -24,7 +24,7 @@ function main(){
     //renderer.setPixelRatio(window.innerWidth, window.innerHeight);
 
     let stats;
-    //initStats();
+    initStats();
 //CAMERA
 	const fov = 60;
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
@@ -210,7 +210,7 @@ function main(){
 				
 				float d = sample1( p + 0.5 );
 				if ( d > threshold ) {
-					color.rgb = normal( p + 0.5 ) * 0.5 + ( p * 1.5 + 0.25 );
+					color.rgb = normal( p + 0.5 ) * 0.5 + ( p  );
 					//color.rgb = normal(p + 0.5);
 					vec3 n = normal(p + 0.5);
 					float fs = acos(dot(n, vDirection));
@@ -683,8 +683,9 @@ function main(){
     	*/
     	
 
-		scene.remove(scene.getObjectByName("volumeMesh"));
+		//scene.remove(scene.getObjectByName("volumeMesh"));
 		//scene.remove(scene.getObjectByName("volumeMesh2"));
+		scene.clear();
     	size = controls.dataSize;
     	data = new Uint8Array(size * size * size); // 3 dimensional array flattened
     	
@@ -758,13 +759,22 @@ function main(){
     	let mesh = new THREE.Mesh(geometry,material);
     	
     	let mesh2 = new THREE.Mesh(geometry, material);
-    	//mesh2.position.set(0, 10, -1);
+
+    	let mesh3 = new THREE.Mesh(geometry, material);
+    	let mesh4 = new THREE.Mesh(geometry, material);
+    	let mesh5 = new THREE.Mesh(geometry, material);
+    	mesh2.position.set(0, 1, -1);
     	mesh.position.set(0, 0, 0);
+    	mesh3.position.set(0, -1, 1);
+    	mesh4.position.set(0, 1, 1);
+    	mesh5.position.set(0, -1, -1);
     	mesh.name = 'volumeMesh';
     	//mesh2.name = 'volumeMesh2';
     	scene.add(mesh);
-    	//scene.add(mesh2);
-
+    	scene.add(mesh2);
+    	scene.add(mesh3);
+    	scene.add(mesh4);
+    	scene.add(mesh5);
     	material.dispose();
 	}
 
@@ -828,7 +838,7 @@ function main(){
 	function render(time){
 		
 
-		//stats.update();
+		stats.update();
 		step++;
 		
 		//scene.rotation.set(0, step * 0.005, 0);
