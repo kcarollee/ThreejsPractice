@@ -51,12 +51,13 @@ void main( void ) {
   if (stepmode) outCol = step(stepTh, outCol);
   if (bloommode) outCol += bloom();
   */
+  /*
   if (outCol.r > 0.9) gl_FragColor = vec4(vec3(.0), 1.0);
   else {
     vec3 sinCol = vec3(sin(g * 5.0), sin(g * 3.0), sin(g * 13.0));
     gl_FragColor = vec4(sinCol, 1.0);
   }
+  */
 
-
-  gl_FragColor = vec4(vec3(outCol.r - outCol.g), 1.0);
+  gl_FragColor = vec4(vec3(outCol.r - outCol.g) * 2.0, 1.0);
 }
