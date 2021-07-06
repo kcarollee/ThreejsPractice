@@ -1,21 +1,135 @@
 
-import * as THREE from "https://cdn.skypack.dev/three@0.128.0/build/three.module.js";
-import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
-import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
-import {WEBGL} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/WebGL.js"
-import {EffectComposer} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js';
-import {RenderPass} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/RenderPass.js';
-import {SMAAPass} from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/postprocessing/SMAAPass.js';
+import * as THREE from "https://cdn.skypack.dev/three@0.130.0/build/three.module.js";
+import {OrbitControls} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/controls/OrbitControls.js";
+import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/math/ImprovedNoise.js";
+import {WEBGL} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/WebGL.js"
+import {EffectComposer} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/EffectComposer.js';
+import {RenderPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/RenderPass.js';
+import {SMAAPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/SMAAPass.js';
 
 
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
 
-// basically a copy and paste of https://github.com/mrdoob/three.js/blob/master/examples/webgl2_volume_perlin.html
+
 function main(){
+// P5 SKETCH
+	let p5texture;
+	let p5Canvas;
+	const p5Sketch = (sketch) => {
 
+		
+		let pg0, pg1, pg2, pg3, bb;
+		let shd0, shd1, bbshd;
+		let mouseVel;
+		let mousePosPrev, mousePosCur;
+		let diffuseClar, diffuseCoef;
+		let brush = 0.0;
+		let canvDiagonal;
 
+        sketch.setup = () => {
+        	
+			sketch.createCanvas(window.innerWidth, window.innerHeight, sketch.WEBGL);
+			shd0 = sketch.loadShader('Shader0.vert', 'Shader0.frag', sketch.getShader);
+			shd1 = sketch.loadShader('Shader1.vert', 'Shader1.frag', sketch.getShader);
+			//pg0 = sketch.createGraphics(window.innerWidth, window.innerHeight, sketch.WEBGL);
+			//pg1 = sketch.createGraphics(window.innerWidth, window.innerHeight, sketch.WEBGL);
+			//bb = sketch.createGraphics(window.innerWidth, window.innerHeight, sketch.WEBGL);
+			mousePosCur = [sketch.width * 0.5, sketch.height * 0.5];
+  			mousePosPrev = mousePosCur;
+			
+			diffuseClar = 1.0;
+  			diffuseCoef = 0.16;
+
+  			canvDiagonal = Math.sqrt(Math.pow(sketch.width, 2) + Math.pow(sketch.height, 2));
+
+			
+			
+		}
+		sketch.draw = () => {
+			try{
+				/*
+				pg0.background(0);
+  				pg0.shader(shd0);
+  				shd0.setUniform('resolution', [sketch.width, sketch.height]);
+  				shd0.setUniform('time', sketch.frameCount * 0.01);
+  				shd0.setUniform('backbuffer', bb);
+  				shd0.setUniform('mouse',[sketch.map(sketch.mouseX, 0, sketch.width, 0, 1),  map(sketch.mouseY, 0, sketch.height, 0, 1)]);
+  				shd0.setUniform('mouseVel', mouseVel);
+  				shd0.setUniform('diffuseClar', diffuseClar);
+  				shd0.setUniform('diffuseCoef', diffuseCoef);
+  				shd0.setUniform('brush', brush);
+  				pg0.rect(0, 0, sketch.width, sketch.height);
+  				pg0.resetMatrix();
+  				pg0._renderer._update();
+ 
+  				pg1.background(0);
+  				pg1.shader(shd1);
+  				shd1.setUniform('resolution', [sketch.width, sketch.height]);
+  				shd1.setUniform('time', sketch.frameCount * 0.01);
+  				shd1.setUniform('texture', pg0);
+  				shd1.setUniform('backbuffer', bb);
+  				shd1.setUniform('mouse',[sketch.map(sketch.mouseX, 0, sketch.width, 0, 1),  map(sketch.mouseY, 0, sketch.height, 0, 1)]);
+  				
+  				pg1.rect(0, 0, sketch.width, sketch.height);
+  				pg1.resetMatrix();
+  				pg1._renderer._update();
+ 
+  				sketch.image(pg1, -sketch.width * 0.5, -sketch.height * 0.5);
+  
+  				// backbuffer 
+  				bb.background(0);
+  				bb.rotateX(sketch.PI);
+  				bb.image(pg0,-sketch.width * 0.5, -sketch.height * 0.5);
+  				bb.resetMatrix();
+  				bb._renderer._update();
+  				*/
+  				sketch.background(255, 0, 0);
+  				sketch.rect(100, 100, 100, 100);
+
+           	} catch{}
+			if (p5texture) p5texture.needsUpdate = true;
+		}
+
+		sketch.windowResized = () => {
+			sketch.resizeCanvas(window.width, window.height);
+			sketch.createCanvas(window.innerWidth, window.innerHeight);
+			p5texture.needsUpdate = true;
+		}
+
+		// use callbacks instead of async functions to load assets.
+
+		sketch.drawText = (f) => {
+			sketch.textFont(f, textSize);
+		}
+
+		sketch.getShader = (s) => {
+			sketch.shader(s);
+		}
+
+		sketch.mouseMoved = () => {
+			mousePosPrev = mousePosCur;
+ 			mousePosCur = [sketch.mouseX, sketch.mouseY];
+  			var d = sketch.dist(mousePosPrev[0], mousePosPrev[1], mousePosCur[0], mousePosCur[1]);
+  			mouseVel = sketch.map(d, 0, canvDiagonal, 0, 1.0);
+		}
+
+		sketch.mouseDragged = () => {
+			brush = 1.0;
+		}
+
+		sketch.mouseReleased = () => {
+			brush = 0.0;
+		}
+    };
+
+    p5Canvas = new p5(p5Sketch);
+    p5texture = new THREE.CanvasTexture(p5Canvas.canvas);
+    p5texture.needsUpdate = true;
+	p5texture.wrapS = THREE.RepeatWrapping;
+	p5texture.wrapT = THREE.RepeatWrapping;
+	p5Canvas.canvas.style.display = "none";
 
 
 	const canvas = document.querySelector('#c');
@@ -38,7 +152,8 @@ function main(){
 	new OrbitControls(camera, renderer.domElement);
 
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0x000000);
+	//scene.background = new THREE.Color(0x000000);
+	scene.background = p5texture;
     renderer.render(scene, camera);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -645,6 +760,7 @@ function main(){
 
 	controls.debug = function(){
 		console.log(isOutOfBounds);
+		console.log(p5texture);
 
 	}
 	gui.add(controls, 'debug');
@@ -837,7 +953,7 @@ function main(){
 
 	function render(time){
 		
-
+		scene.background = p5texture;
 		stats.update();
 		step++;
 		
@@ -852,10 +968,12 @@ function main(){
 			camera.updateProjectionMatrix();
 
 		}
-		//renderer.render(scene, camera);
+		renderer.render(scene, camera);
 		composer.render();
 
 		requestAnimationFrame(render);
+
+		//p5texture.dispose();
 	}
 
 	function initStats(){
