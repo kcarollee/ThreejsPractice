@@ -539,7 +539,7 @@ function main(){
 			sketch.createCanvas(window.innerWidth, window.innerHeight, sketch.WEBGL);
 			sketch.textSize(textSize);
 			mainFont = sketch.loadFont('helvetica_bold.ttf', sketch.drawText);
-			p5Shader = sketch.loadShader('p5VertShader.vert', 'p5FragShader.frag', sketch.getShader);
+			p5Shader = sketch.loadShader('p5s.vert', 'p5s.frag', sketch.getShader);
 		
 			
 		}

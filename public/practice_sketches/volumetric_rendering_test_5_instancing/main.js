@@ -14,125 +14,6 @@ function mapLinear(x, a1, a2, b1, b2){
 
 
 function main(){
-// P5 SKETCH
-	let p5texture;
-	let p5Canvas;
-	const p5Sketch = (sketch) => {
-
-		
-		let pg0, pg1, pg2, pg3, bb;
-		let shd0, shd1, bbshd;
-		let mouseVel;
-		let mousePosPrev, mousePosCur;
-
-		let brush = 0.0;
-		let canvDiagonal;
-
-        sketch.setup = () => {
-        	
-			sketch.createCanvas(window.innerWidth, window.innerHeight, sketch.WEBGL);
-			shd0 = sketch.loadShader('Shader0.vert', 'Shader0.frag', sketch.getShader);
-			//shd1 = sketch.loadShader('Shader1.vert', 'Shader1.frag', sketch.getShader);
-			pg0 = sketch.createGraphics(window.innerWidth, window.innerHeight, sketch.WEBGL);
-			pg1 = sketch.createGraphics(window.innerWidth, window.innerHeight, sketch.WEBGL);
-			bb = sketch.createGraphics(window.innerWidth, window.innerHeight, sketch.WEBGL);
-			mousePosCur = [sketch.width * 0.5, sketch.height * 0.5];
-  			mousePosPrev = mousePosCur;
-			
-
-  			canvDiagonal = Math.sqrt(Math.pow(sketch.width, 2) + Math.pow(sketch.height, 2));
-
-			
-			
-		}
-		sketch.draw = () => {
-			try{
-				/*
-				pg0.background(0);
-  				pg0.shader(shd0);
-  				shd0.setUniform('resolution', [sketch.width, sketch.height]);
-  				shd0.setUniform('time', sketch.frameCount * 0.01);
-  				shd0.setUniform('backbuffer', bb);
-  				shd0.setUniform('mouse',[sketch.map(sketch.mouseX, 0, sketch.width, 0, 1),  map(sketch.mouseY, 0, sketch.height, 0, 1)]);
-  	
-  				
-  				shd0.setUniform('brush', brush);
-  				pg0.rect(0, 0, sketch.width, sketch.height);
-  				pg0.resetMatrix();
-  				pg0._renderer._update();
- 
-  				pg1.background(0);
-  				pg1.shader(shd1);
-  				shd1.setUniform('resolution', [sketch.width, sketch.height]);
-  				shd1.setUniform('time', sketch.frameCount * 0.01);
-  				shd1.setUniform('texture', pg0);
-  				shd1.setUniform('backbuffer', bb);
-  				shd1.setUniform('mouse',[sketch.map(sketch.mouseX, 0, sketch.width, 0, 1),  map(sketch.mouseY, 0, sketch.height, 0, 1)]);
-  				
-  				pg1.rect(0, 0, sketch.width, sketch.height);
-  				pg1.resetMatrix();
-  				pg1._renderer._update();
- 
-  				sketch.image(pg1, -sketch.width * 0.5, -sketch.height * 0.5);
-  
-  				// backbuffer 
-  				bb.background(0);
-  				bb.rotateX(sketch.PI);
-  				bb.image(pg0,-sketch.width * 0.5, -sketch.height * 0.5);
-  				bb.resetMatrix();
-  				bb._renderer._update();
-  				*/
-  				
-
-  				sketch.background(100 + 100 * Math.sin(sketch.frameCount), 0, 0);
-  				sketch.rect(100, 100, 100, 100);
-  				
-
-           	} catch{}
-			if (p5texture) p5texture.needsUpdate = true;
-		}
-
-		sketch.windowResized = () => {
-			sketch.resizeCanvas(window.width, window.height);
-			sketch.createCanvas(window.innerWidth, window.innerHeight);
-			p5texture.needsUpdate = true;
-		}
-
-		// use callbacks instead of async functions to load assets.
-
-		sketch.drawText = (f) => {
-			sketch.textFont(f, textSize);
-		}
-
-		sketch.getShader = (s) => {
-			sketch.shader(s);
-		}
-
-		sketch.mouseMoved = () => {
-
-			mousePosPrev = mousePosCur;
- 			mousePosCur = [sketch.mouseX, sketch.mouseY];
-  			var d = sketch.dist(mousePosPrev[0], mousePosPrev[1], mousePosCur[0], mousePosCur[1]);
-
-  			mouseVel = sketch.map(d, 0, canvDiagonal, 0, 1.0);
-		}
-
-		sketch.mouseDragged = () => {
-			brush = 1.0;
-		}
-
-		sketch.mouseReleased = () => {
-			brush = 0.0;
-		}
-    };
-
-    p5Canvas = new p5(p5Sketch);
-    p5texture = new THREE.CanvasTexture(p5Canvas.canvas);
-    //p5texture.needsUpdate = true;
-	p5texture.wrapS = THREE.RepeatWrapping;
-	p5texture.wrapT = THREE.RepeatWrapping;
-	//p5Canvas.canvas.style.display = "none";
-
 
 	const canvas = document.querySelector('#c');
     const renderer = new THREE.WebGLRenderer({canvas});
@@ -154,7 +35,7 @@ function main(){
 	new OrbitControls(camera, renderer.domElement);
 
 	const scene = new THREE.Scene();
-	//scene.background = new THREE.Color(0x000000);
+	scene.background = new THREE.Color(0x000000);
 	//scene.background = p5texture;
     renderer.render(scene, camera);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -763,13 +644,13 @@ function main(){
 	controls.debug = function(){
 		console.log(isOutOfBounds);
 		console.log(p5texture);
-		console.log(debugCube);
+		
 	}
 	gui.add(controls, 'debug');
 
-	let debugMat = new THREE.MeshBasicMaterial({map: p5texture});
+	let debugMat = new THREE.MeshBasicMaterial();
 	let debugCube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), debugMat);
-	scene.add(debugCube);
+	//scene.add(debugCube);
 	controls.reset = function(){
 		aPrevValues = [];
 		aNextValues = [];
@@ -807,7 +688,7 @@ function main(){
 		//scene.remove(scene.getObjectByName("volumeMesh"));
 		//scene.remove(scene.getObjectByName("volumeMesh2"));
 		scene.clear();
-		scene.add(debugCube);
+		//scene.add(debugCube);
     	size = controls.dataSize;
     	data = new Uint8Array(size * size * size); // 3 dimensional array flattened
     	
@@ -959,7 +840,7 @@ function main(){
 
 	function render(time){
 		
-		scene.background = p5texture;
+		
 		stats.update();
 		step++;
 		
