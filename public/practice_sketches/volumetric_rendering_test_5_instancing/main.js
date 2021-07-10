@@ -36,7 +36,7 @@ function main(){
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0x000000);
-	//scene.background = p5texture;
+	
     renderer.render(scene, camera);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -79,8 +79,26 @@ function main(){
 	
     
 // MATERIAL
+	// for 2D reaction diffusion texture.
+	const texVertexShader = `
 
-    // your run of the mill vert shader. 
+	`;
+	const texFragmentShader0 = `
+
+	`;
+	const texFragmentShader1 = `
+
+	`;
+
+	let rd2dTex0 = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+	let rd2dTex1 = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+
+	let rd2dMaterial = new THREE.ShaderMaterial({
+		vertexShader: texVertexShader,
+		fragmentShader: texFragmentShader0
+	});
+
+    // for 3D reaction diffusion. 
     const vertexShader = `
         in vec3 position;
         uniform mat4 modelMatrix;
