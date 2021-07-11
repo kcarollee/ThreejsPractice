@@ -102,54 +102,7 @@ void main( void ) {
 
 	vec2 uv = gl_FragCoord.xy / resolution.xy;
 	vec3 outColor = vec3(.0);
-    ///////////////////////////////////////////////// VORONOI
-  float offset = 2.0;
-    vec2 pointsArr[20];
-            
-            pointsArr[0] = vec2(noise(vec2(offset, offset + 142.0)), noise(vec2(offset + 1.0, offset + 1.0)));
-            pointsArr[1] = vec2(noise(vec2(offset + 1.2, offset + 12.0)), noise(vec2(offset + 11.1, offset + 5.8)));
-            pointsArr[2] = vec2(noise(vec2(offset + 14.2, offset - 3.0)), noise(vec2(offset + 23.1, offset + 13.9)));
-            pointsArr[3] = vec2(noise(vec2(offset + 43.2, offset + 67.4)), noise(vec2(offset + 0.2, offset -54.0)));
-            pointsArr[4] = vec2(noise(vec2(offset + 8.0, offset + 76.2)), noise(vec2(offset - 20.1, offset -10.5)));
-            pointsArr[5] = vec2(noise(vec2(offset - 5.6, offset + 19.1)), noise(vec2(offset -54.2, offset + 61.0)));
-            pointsArr[6] = vec2(noise(vec2(offset + 12.0, offset + 52.0)), noise(vec2(offset + 18.0, offset + 24.6)));
-            pointsArr[7] = vec2(noise(vec2(offset - 14.0, offset + 23.0)), noise(vec2(offset - 15.0, offset + 15.0)));
-            pointsArr[8] = vec2(noise(vec2(offset + 198.0, offset + 126.0)), noise(vec2(offset + 137.0, offset + 171.0)));
-            pointsArr[9] = vec2(noise(vec2(offset + 148.0, offset + 18.0)), noise(vec2(offset - 19.0, offset + 19.0)));
-            pointsArr[10] = vec2(noise(vec2(offset + 10.0, offset)), noise(vec2(offset + 12.0, offset + 21.0)));
-            pointsArr[11] = vec2(noise(vec2(offset + 13.2, offset + 122.0)), noise(vec2(offset + 111.1, offset + 15.8)));
-            pointsArr[12] = vec2(noise(vec2(offset + 214.2, offset - 33.0)), noise(vec2(offset + 243.1, offset + 113.9)));
-            pointsArr[13] = vec2(noise(vec2(offset + 433.2, offset + 167.4)), noise(vec2(offset + 10.2, offset -524.0)));
-            pointsArr[14] = vec2(noise(vec2(offset + 18.0, offset + 716.2)), noise(vec2(offset - 240.1, offset -110.5)));
-            pointsArr[15] = vec2(noise(vec2(offset - 15.6, offset + 119.1)), noise(vec2(offset -154.2, offset + 611.0)));
-            pointsArr[16] = vec2(noise(vec2(offset + 112.0, offset + 512.0)), noise(vec2(offset + 181.0, offset + 214.6)));
-            pointsArr[17] = vec2(noise(vec2(offset - 141.0, offset + 213.0)), noise(vec2(offset - 115.0, offset + 115.0)));
-            pointsArr[18] = vec2(noise(vec2(offset + 18.0, offset + 12.0)), noise(vec2(offset + 117.0, offset + 171.0)));
-            pointsArr[19] = vec2(noise(vec2(offset + 8.0, offset + 1.0)), noise(vec2(offset - 1.0, offset + 9.0)));
-
-       float greyScaleArr[20];
-      float inc = 0.1;
-      float finc = .0;
-      for (int i = 0; i < 20; i++){
-          greyScaleArr[i] = 0.1 * finc;
-          finc += 1.0;
-      }
-
-      float dist = distance(pointsArr[0], uv);
-      for (int i = 0; i < 20; i++){
-        float current = distance(pointsArr[i], uv);
-        if (current < dist){
-            //if (abs(current - dist) < 0.01) outColor = vec3(.0);
-           // else {
-                //outColor = vec3(greyScaleArr[i]);
-            dist = current;
-            //}
-        }
-      }
   
-    dist = clamp(dist, 0.0, 1.0);
-    
-  /////////////////////////////////////////////////////////////////////////////////////
     
     float c = (smoothstep(0.1, 0.4, length(uv - vec2(0.5))));
 	//float da = 0.5 + 0.5 * sin(uv.y) ; // 0.84

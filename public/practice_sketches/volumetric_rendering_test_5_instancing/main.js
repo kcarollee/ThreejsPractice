@@ -21,9 +21,9 @@ function main(){
     //renderer.setPixelRatio(window.innerWidth, window.innerHeight);
 
     let stats;
-    initStats();
+    //initStats();
 //CAMERA
-	const fov = 60;
+	const fov = 45;
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 100;
@@ -35,7 +35,7 @@ function main(){
 	new OrbitControls(camera, renderer.domElement);
 
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0x000000);
+	scene.background = new THREE.Color(0xFFFFFF);
 	
     renderer.render(scene, camera);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -83,20 +83,46 @@ function main(){
 	const texVertexShader = `
 
 	`;
+	// reaction diffusion shader
 	const texFragmentShader0 = `
 
 	`;
+	// output shader
 	const texFragmentShader1 = `
 
 	`;
 
+	// buffers
 	let rd2dTex0 = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
 	let rd2dTex1 = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
 
+	// reaction diffusion shader
+	let rd2dUniforms = {
+		texture: {type: "t", value: rd2dTex1}
+	}
 	let rd2dMaterial = new THREE.ShaderMaterial({
 		vertexShader: texVertexShader,
 		fragmentShader: texFragmentShader0
 	});
+	let rd2dGeo = new THREE.PlaneBufferGeometry(window.innerWidth, window.innerHeight);
+	let rd2dQuad = new THREE.Mesh(rd2dGeo, rd2dMaterial);
+	//scene.add(rd2dQuad);
+
+	// output shader
+
+	let outputUniforms = {
+		rd2dOutput: {type: "t", value: rd2dTex1}
+	}
+	let outputMaterial = new THREE.ShaderMaterial({
+
+		uniforms: outputUniforms,
+		vertexShader: texVertexShader,
+		fragmentShader: texFragmentShader1
+	})
+	let outputGeo = new THREE.PlaneBufferGeometry(window.innerWidth, window.innerHeight);
+	let outputQuad = new THREE.Mesh(outputGeo, outputMaterial);
+	scene.add(outputQuad);
+
 
     // for 3D reaction diffusion. 
     const vertexShader = `
@@ -126,6 +152,8 @@ function main(){
         uniform mat4 projectionMatrix;
         uniform mat4 modelMatrix;
         uniform mat4 viewMatrix;
+
+        uniform int colorMode;
         
         // sent from the vert shader with appropriate matrix multiplications
 		in vec3 vOrigin;
@@ -239,19 +267,21 @@ function main(){
 					//color.rgb = vec3(1.0 - fs2); 
 					//color.rgb = rm;
 					
-					/*
+					color.rgb = vec3(color.r + color.g + color.b);
+					color.rgb *= 0.25;
 					vec3 light = vec3(dot(lm, n) + pow(dot(rm , normalize(vDirection)), 1.0)) + vec3(1.0);
-					color.rgb = light * 0.5;
-					*/
-					
+					//color.rgb = light + 0.25;
+					color.r += n.g;
+					color = 0.75 - color;
+					//color *= 1.5;
 					//color.rgb += vec3(0.5);
 					//color.rgb *= texture(tex, abs(p.xy )).rgb;
 
-					/*
+					
 					// ORIGINAL COLOR
-					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
-					color.rgb = 1.0 - color.rgb;
-					*/
+					//color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
+					//color.rgb = 1.0 - color.rgb;
+					
 					vec3 ref = refract(-vDirection, n, 1.0 / 0.91);
 					//color.rgb -= texture(tex, p.xy * 0.1 + ref.xy).rgb;
    					//color.rgb -= p * 0.25;
@@ -778,24 +808,60 @@ function main(){
 
     	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
     	let mesh = new THREE.Mesh(geometry,material);
-    	
+    	mesh.position.set(0, 0, 0);
     	let mesh2 = new THREE.Mesh(geometry, material);
 
     	let mesh3 = new THREE.Mesh(geometry, material);
     	let mesh4 = new THREE.Mesh(geometry, material);
     	let mesh5 = new THREE.Mesh(geometry, material);
-    	mesh2.position.set(0, 1, -1);
-    	mesh.position.set(0, 0, 0);
-    	mesh3.position.set(0, -1, 1);
-    	mesh4.position.set(0, 1, 1);
-    	mesh5.position.set(0, -1, -1);
+
+    	let mesh6 = new THREE.Mesh(geometry, material);
+    	let mesh7 = new THREE.Mesh(geometry, material);
+    	let mesh8 = new THREE.Mesh(geometry, material);
+    	let mesh9 = new THREE.Mesh(geometry, material);
+    	mesh2.rotation.set(0, Math.PI, 0);
+    	mesh2.position.set(1, 1, -1);
+
+    	
+
+    	mesh3.rotation.set(0, -Math.PI, 0);
+    	mesh3.position.set(-1, -1, 1);
+
+
+    	mesh4.rotation.set(0, 0, -Math.PI);
+    	mesh4.position.set(1, 1, 1);
+
+    	mesh5.rotation.set(0, 0, Math.PI);
+    	mesh5.position.set(-1, -1, -1);
+
+    	mesh6.rotation.set(0, Math.PI, 0);
+    	mesh6.position.set(-1, 1, -1);
+
+    	mesh7.rotation.set(0, -Math.PI, 0);
+    	mesh7.position.set(1, -1, 1);
+
+
+    	mesh8.rotation.set(0, 0, -Math.PI);
+    	mesh8.position.set(-1, 1, 1);
+
+    	mesh9.rotation.set(0, 0, Math.PI);
+    	mesh9.position.set(1, -1, -1);
+
+    	
+
     	mesh.name = 'volumeMesh';
     	//mesh2.name = 'volumeMesh2';
+
+    	scene.rotation.set(0, step * 0.01,  0);
     	scene.add(mesh);
     	scene.add(mesh2);
     	scene.add(mesh3);
     	scene.add(mesh4);
     	scene.add(mesh5);
+    	scene.add(mesh6);
+    	scene.add(mesh7);
+    	scene.add(mesh8);
+    	scene.add(mesh9);
     	material.dispose();
 	}
 
@@ -823,7 +889,7 @@ function main(){
 		RD_PARAMS.sideNeighborCoef = sn;
 		RD_PARAMS.vertNeighborCoef = vn;
 	}
-	gui.add(controls, 'presets', ['SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'BLOWOUT','FN_ONLY']).onChange(function(m){
+	gui.add(controls, 'presets', ['SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'BLOWOUT', 'BLOWOUT_2', 'FN_ONLY']).onChange(function(m){
 		switch(m){
 			case 'SEMI_MITOSIS':
 				controls.threshold = 0.82;
@@ -846,6 +912,12 @@ function main(){
 				
 				setRDParams(0.84, 0.93, 1.2, 0.057, 0.062, 0.167, 0, 0);
 				break;
+			case 'BLOWOUT_2':
+				controls.threshold = 0.19;
+				controls.moveFeedSource = true;
+				
+				setRDParams(0.75, 1.13, 1.148, 0.043, 0.062, 0.167, 0, 0);
+				break;
 			case 'FN_ONLY':
 				RD_PARAMS.faceNeighborCoef = 1.0 / 6.0;
 				RD_PARAMS.sideNeighborCoef = 0.0;
@@ -859,7 +931,7 @@ function main(){
 	function render(time){
 		
 		
-		stats.update();
+		//stats.update();
 		step++;
 		
 		//scene.rotation.set(0, step * 0.005, 0);
