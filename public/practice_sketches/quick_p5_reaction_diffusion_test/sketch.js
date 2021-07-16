@@ -10,6 +10,8 @@ let stepmode, stepTh;
 let diffuseClar, diffuseCoef;
 let bloommode;
 
+let step = 0;
+
 let brush = 0.0;
 
 let fontSize;
@@ -20,7 +22,7 @@ function preload(){
 
 }
 function setup() {
-  createCanvas(800, 800, WEBGL);
+  createCanvas(810, 900, WEBGL);
   pg0 = createGraphics(width, height, WEBGL);
   pg1 = createGraphics(width, height, WEBGL);
   pg2 = createGraphics(width, height, WEBGL);
@@ -43,7 +45,7 @@ function setup() {
 }
 
 function draw() {
-  
+  step++;
   //background(220, 220, 0);
   //orbitControl();
   /*
@@ -54,6 +56,7 @@ function draw() {
   pg0.background(0);
   pg0.shader(shd0);
   shd0.setUniform('resolution', [width, height]);
+  shd0.setUniform('stepmod', step % 100);
   shd0.setUniform('time', frameCount * 0.01);
   shd0.setUniform('backbuffer', bb);
   shd0.setUniform('mouse',[map(mouseX, 0, width, 0, 1),  map(mouseY, 0, height, 0, 1)]);

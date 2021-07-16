@@ -698,7 +698,7 @@ function main(){
 
 	let debugMat = new THREE.MeshBasicMaterial();
 	let debugCube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), debugMat);
-	//scene.add(debugCube);
+
 	controls.reset = function(){
 		aPrevValues = [];
 		aNextValues = [];
@@ -715,6 +715,7 @@ function main(){
 	gui.add(controls, 'reset');
 	controls.scaleCoef = 1.0;
 	gui.add(controls, 'scaleCoef', 0.0, 2.0);
+
 	let currentIndex;
 	function updateTexture(){
 
@@ -852,7 +853,7 @@ function main(){
     	mesh.name = 'volumeMesh';
     	//mesh2.name = 'volumeMesh2';
 
-    	scene.rotation.set(0, step * 0.01,  0);
+    	scene.rotation.set(step * 0.01, step * 0.01,  0);
     	scene.add(mesh);
     	scene.add(mesh2);
     	scene.add(mesh3);

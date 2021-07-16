@@ -9,6 +9,7 @@ uniform vec2 mouse;
 uniform vec2 resolution;
 uniform sampler2D backbuffer;
 uniform float brush;
+uniform int stepmod;
 
   float hash(float n) { return fract(sin(n) * 1e4); }
 float hash(vec2 p) { return fract(1e4 * sin(17.0 * p.x + p.y * 0.1) * (0.1 + abs(sin(p.y * 13.0 + p.x)))); }
@@ -153,11 +154,20 @@ void main( void ) {
     
     float c = (smoothstep(0.1, 0.4, length(uv - vec2(0.5))));
 	//float da = 0.5 + 0.5 * sin(uv.y) ; // 0.84
-	float da = (1.0 - length(uv -  vec2(0.5, 0.5)));
+	//float da = (1.0 - length(uv -  vec2(0.5, 0.5)));
+	float nc = 20.0;
+	float da = noise(vec2(uv.x * nc + time * 2.0, uv.y * nc + time * 2.0));
+	
+	//if (stepmod == 0) discard;
+	//else 
+	da = map(da, 0.0, 1.0, 0.7, 0.8);
+
 	//float db = map(c, 0.0, 1.0, 0.2, 0.8);
     float db = 0.93;
 	//float dt = 1.0;
 	float de = 	1.0;
+
+
 	
 
   float f = 0.057;

@@ -526,7 +526,7 @@ function main(){
 // P5 SKETCH
 	const p5Sketch = (sketch) => {
 
-		let textSize = 130;
+		let textSize = 120;
 		let testString, testString2;
 		let mainFont;
 		let stringArr = [];
@@ -579,8 +579,8 @@ function main(){
 						else if (this.mode == 1){
 							
 							//sketch.textAlign(sketch.RIGHT);
-							if(this.textBoundary.x + this.textBoundary.w  > sketch.width){
-								this.posx -=  Math.abs(sketch.width - this.textBoundary.w - this.posx) / 10.0;
+							if(this.textBoundary.x + this.textBoundary.w  > sketch.width && this.posx > 0){
+								this.posx -=  Math.abs(sketch.width - this.textBoundary.w - this.posx) / 25.0;
 							}
 							//sketch.textAlign(sketch.RIGHT);
 							sketch.text(this.mainString, this.posx, this.posy);
@@ -650,6 +650,7 @@ function main(){
 
 		}
     };
+
 // NOISE
 	noise.seed(Math.random());
 
@@ -658,6 +659,7 @@ function main(){
 	p5texture.wrapS = THREE.RepeatWrapping;
 	p5texture.wrapT = THREE.RepeatWrapping;
 	p5texture.needsUpdate = true;
+	p5Canvas.canvas.style.display = "none";
 
 // SHADERS
 	vertShader = document.getElementById('vert').innerHTML;
@@ -769,7 +771,7 @@ function main(){
 
 		//stats.update();
 
-		
+		//camera.position.set(0, 0, 100 + 50 * Math.sin(step * 0.01));
 
 		marchingCubes.updateCubes();
 		marchingCubes.updateShaderMaterial();
