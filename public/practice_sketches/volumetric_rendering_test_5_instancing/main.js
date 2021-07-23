@@ -6,6 +6,7 @@ import {WEBGL} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/WebGL.js
 import {EffectComposer} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/EffectComposer.js';
 import {RenderPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/RenderPass.js';
 import {SMAAPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/SMAAPass.js';
+import {Reflector} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/objects/Reflector.js";
 
 
 function mapLinear(x, a1, a2, b1, b2){
@@ -341,6 +342,24 @@ function main(){
     scene.add(mesh);
     //scene.add(helperMesh);
 
+// REFLECTIVE STUFF
+	let refGeom = new THREE.PlaneGeometry(100, 100);
+	let mirrorArr = [];
+	let mirror = new Reflector(refGeom);
+	let mirror2 = new Reflector(refGeom);
+	let mirror3 = new Reflector(refGeom);
+	let gap = 3.0;
+	mirror.position.z = -gap;
+
+	mirror2.rotateY(Math.PI * 0.5);
+	mirror2.position.x = -gap;
+
+	mirror3.rotateX(-Math.PI * 0.5);
+	mirror3.position.y = -gap;	
+
+	mirrorArr.push(mirror);
+	mirrorArr.push(mirror2);
+	mirrorArr.push(mirror3);
 
 //GUI
 	
@@ -809,6 +828,7 @@ function main(){
 
     	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
     	let mesh = new THREE.Mesh(geometry,material);
+    	mesh.rotation.set(step * 0.01, step * 0.01, step * 0.01);
     	mesh.position.set(0, 0, 0);
     	let mesh2 = new THREE.Mesh(geometry, material);
 
@@ -820,12 +840,13 @@ function main(){
     	let mesh7 = new THREE.Mesh(geometry, material);
     	let mesh8 = new THREE.Mesh(geometry, material);
     	let mesh9 = new THREE.Mesh(geometry, material);
-    	mesh2.rotation.set(0, Math.PI, 0);
+    	//mesh2.rotation.set(0, Math.PI, 0);
+    	
     	mesh2.position.set(1, 1, -1);
-
+    	mesh2.rotation.set(step * 0.01, step * 0.01, step * 0.01);
     	
 
-    	mesh3.rotation.set(0, -Math.PI, 0);
+    	//mesh3.rotation.set(0, -Math.PI, 0);
     	mesh3.position.set(-1, -1, 1);
 
 
@@ -853,7 +874,7 @@ function main(){
     	mesh.name = 'volumeMesh';
     	//mesh2.name = 'volumeMesh2';
 
-    	scene.rotation.set(step * 0.01, step * 0.01,  0);
+    	//scene.rotation.set(step * 0.01, step * 0.01,  0);
     	scene.add(mesh);
     	scene.add(mesh2);
     	scene.add(mesh3);
@@ -863,6 +884,7 @@ function main(){
     	scene.add(mesh7);
     	scene.add(mesh8);
     	scene.add(mesh9);
+
     	material.dispose();
 	}
 
@@ -938,6 +960,8 @@ function main(){
 		//scene.rotation.set(0, step * 0.005, 0);
 		time *= 0.001;
 		updateTexture();
+
+		mirrorArr.forEach(m => scene.add(m));
 		scene.getObjectByName("volumeMesh").material.uniforms.cameraPos.value.copy( camera.position );
 		
 		if (resizeRenderToDisplaySize(renderer)){
