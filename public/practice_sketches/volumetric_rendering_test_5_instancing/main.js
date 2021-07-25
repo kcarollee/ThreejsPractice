@@ -343,24 +343,58 @@ function main(){
     //scene.add(helperMesh);
 
 // REFLECTIVE STUFF
-	let refGeom = new THREE.PlaneGeometry(100, 100);
+	let refGeom = new THREE.PlaneGeometry(9.5, 9.5);
 	let mirrorArr = [];
 	let mirror = new Reflector(refGeom);
 	let mirror2 = new Reflector(refGeom);
 	let mirror3 = new Reflector(refGeom);
-	let gap = 3.0;
+
+	let mirrorGroup = new THREE.Group();
+
+	let frameGeo = new THREE.PlaneGeometry(10.01, 10.01);
+	let frameMat = new THREE.MeshBasicMaterial({color: 0x000000});
+	let frame1 = new THREE.Mesh(frameGeo, frameMat);
+	let frame2 = new THREE.Mesh(frameGeo, frameMat);
+	let frame3 = new THREE.Mesh(frameGeo, frameMat);
+
+	let frameGroup = new THREE.Group();
+
+
+
+	let gap = 5.0;
 	mirror.position.z = -gap;
+	frame1.position.z = -gap - 0.001;
 
 	mirror2.rotateY(Math.PI * 0.5);
 	mirror2.position.x = -gap;
 
+	frame2.rotateY(Math.PI * 0.5);
+	frame2.position.x = -gap - 0.001;
+
 	mirror3.rotateX(-Math.PI * 0.5);
 	mirror3.position.y = -gap;	
+
+	frame3.rotateX(-Math.PI * 0.5);
+	frame3.position.y = -gap - 0.001;	
 
 	mirrorArr.push(mirror);
 	mirrorArr.push(mirror2);
 	mirrorArr.push(mirror3);
 
+	mirrorArr.forEach(function(m){
+		m.clipBias = 0.03;
+		m.textureWidth = window.innerWidth * window.devicePixelRatio;
+		m.textureHeight = window.innerHeight * window.devicePixelRatio;
+					//color: 0x889999
+		mirrorGroup.add(m);
+	});
+
+	frameGroup.add(frame1);
+	frameGroup.add(frame2);
+	frameGroup.add(frame3);
+
+	scene.add(frameGroup);
+	scene.add(mirrorGroup);
 //GUI
 	
 	const gui = new dat.GUI();
@@ -735,6 +769,8 @@ function main(){
 	controls.scaleCoef = 1.0;
 	gui.add(controls, 'scaleCoef', 0.0, 2.0);
 
+
+
 	let currentIndex;
 	function updateTexture(){
 
@@ -754,7 +790,7 @@ function main(){
     	
 
 		//scene.remove(scene.getObjectByName("volumeMesh"));
-		//scene.remove(scene.getObjectByName("volumeMesh2"));
+		//scene.remove(scene.getObjectByName('rdmesh'));
 		scene.clear();
 		//scene.add(debugCube);
     	size = controls.dataSize;
@@ -828,7 +864,7 @@ function main(){
 
     	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
     	let mesh = new THREE.Mesh(geometry,material);
-    	mesh.rotation.set(step * 0.01, step * 0.01, step * 0.01);
+    	
     	mesh.position.set(0, 0, 0);
     	let mesh2 = new THREE.Mesh(geometry, material);
 
@@ -843,7 +879,7 @@ function main(){
     	//mesh2.rotation.set(0, Math.PI, 0);
     	
     	mesh2.position.set(1, 1, -1);
-    	mesh2.rotation.set(step * 0.01, step * 0.01, step * 0.01);
+    	
     	
 
     	//mesh3.rotation.set(0, -Math.PI, 0);
@@ -870,20 +906,28 @@ function main(){
     	mesh9.position.set(1, -1, -1);
 
     	
+    	let rdmeshGroup = new THREE.Mesh();
 
     	mesh.name = 'volumeMesh';
     	//mesh2.name = 'volumeMesh2';
 
     	//scene.rotation.set(step * 0.01, step * 0.01,  0);
-    	scene.add(mesh);
-    	scene.add(mesh2);
-    	scene.add(mesh3);
-    	scene.add(mesh4);
-    	scene.add(mesh5);
-    	scene.add(mesh6);
-    	scene.add(mesh7);
-    	scene.add(mesh8);
-    	scene.add(mesh9);
+
+
+    	rdmeshGroup.add(mesh);
+    	rdmeshGroup.add(mesh2);
+    	rdmeshGroup.add(mesh3);
+    	rdmeshGroup.add(mesh4);
+    	rdmeshGroup.add(mesh5);
+    	rdmeshGroup.add(mesh6);
+    	rdmeshGroup.add(mesh7);
+    	rdmeshGroup.add(mesh8);
+    	rdmeshGroup.add(mesh9);
+
+    	rdmeshGroup.name = 'rdmesh';
+
+    	rdmeshGroup.rotation.set(step * 0.01, step * 0.01,  0);
+    	scene.add(rdmeshGroup);
 
     	material.dispose();
 	}
@@ -962,6 +1006,7 @@ function main(){
 		updateTexture();
 
 		mirrorArr.forEach(m => scene.add(m));
+		scene.add(frameGroup);
 		scene.getObjectByName("volumeMesh").material.uniforms.cameraPos.value.copy( camera.position );
 		
 		if (resizeRenderToDisplaySize(renderer)){
