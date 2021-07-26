@@ -6,9 +6,239 @@ import {WEBGL} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/WebGL.js
 import {EffectComposer} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/EffectComposer.js';
 import {RenderPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/RenderPass.js';
 import {SMAAPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/SMAAPass.js';
-import {Reflector} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/objects/Reflector.js";
+//import {Reflector} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/objects/Reflector.js";
 
+class ModifiedReflector extends THREE.Mesh {
 
+	constructor( geometry, options = {} ) {
+
+		super( geometry );
+
+		this.type = 'Reflector';
+
+		const scope = this;
+
+		const color = ( options.color !== undefined ) ? new THREE.Color( options.color ) : new THREE.Color( 0x7F7F7F );
+		const textureWidth = options.textureWidth || 512;
+		const textureHeight = options.textureHeight || 512;
+		const clipBias = options.clipBias || 0;
+		const shader = options.shader || ModifiedReflector.ReflectorShader;
+
+		//
+
+		const reflectorPlane = new THREE.Plane();
+		const normal = new THREE.Vector3();
+		const reflectorWorldPosition = new THREE.Vector3();
+		const cameraWorldPosition = new THREE.Vector3();
+		const rotationMatrix = new THREE.Matrix4();
+		const lookAtPosition = new THREE.Vector3( 0, 0, - 1 );
+		const clipPlane = new THREE.Vector4();
+
+		const view = new THREE.Vector3();
+		const target = new THREE.Vector3();
+		const q = new THREE.Vector4();
+
+		const textureMatrix = new THREE.Matrix4();
+		const virtualCamera = new THREE.PerspectiveCamera();
+
+		const parameters = {
+			minFilter: THREE.LinearFilter,
+			magFilter: THREE.LinearFilter,
+			format: THREE.RGBFormat
+		};
+
+		const renderTarget = new THREE.WebGLMultisampleRenderTarget( textureWidth, textureHeight, parameters );
+
+		if ( ! THREE.MathUtils.isPowerOfTwo( textureWidth ) || ! THREE.MathUtils.isPowerOfTwo( textureHeight ) ) {
+
+			renderTarget.texture.generateMipmaps = false;
+
+		}
+
+		const material = new THREE.ShaderMaterial( {
+			uniforms: THREE.UniformsUtils.clone( shader.uniforms ),
+			fragmentShader: shader.fragmentShader,
+			vertexShader: shader.vertexShader
+		} );
+
+		material.uniforms[ 'tDiffuse' ].value = renderTarget.texture;
+		material.uniforms[ 'color' ].value = color;
+		material.uniforms[ 'textureMatrix' ].value = textureMatrix;
+
+		this.material = material;
+
+		this.onBeforeRender = function ( renderer, scene, camera ) {
+
+			reflectorWorldPosition.setFromMatrixPosition( scope.matrixWorld );
+			cameraWorldPosition.setFromMatrixPosition( camera.matrixWorld );
+
+			rotationMatrix.extractRotation( scope.matrixWorld );
+
+			normal.set( 0, 0, 1 );
+			normal.applyMatrix4( rotationMatrix );
+
+			view.subVectors( reflectorWorldPosition, cameraWorldPosition );
+
+			// Avoid rendering when reflector is facing away
+
+			if ( view.dot( normal ) > 0 ) return;
+
+			view.reflect( normal ).negate();
+			view.add( reflectorWorldPosition );
+
+			rotationMatrix.extractRotation( camera.matrixWorld );
+
+			lookAtPosition.set( 0, 0, - 1 );
+			lookAtPosition.applyMatrix4( rotationMatrix );
+			lookAtPosition.add( cameraWorldPosition );
+
+			target.subVectors( reflectorWorldPosition, lookAtPosition );
+			target.reflect( normal ).negate();
+			target.add( reflectorWorldPosition );
+
+			virtualCamera.position.copy( view );
+			virtualCamera.up.set( 0, 1, 0 );
+			virtualCamera.up.applyMatrix4( rotationMatrix );
+			virtualCamera.up.reflect( normal );
+			virtualCamera.lookAt( target );
+
+			virtualCamera.far = camera.far; // Used in WebGLBackground
+
+			virtualCamera.updateMatrixWorld();
+			virtualCamera.projectionMatrix.copy( camera.projectionMatrix );
+
+			// Update the texture matrix
+			textureMatrix.set(
+				0.5, 0.0, 0.0, 0.5,
+				0.0, 0.5, 0.0, 0.5,
+				0.0, 0.0, 0.5, 0.5,
+				0.0, 0.0, 0.0, 1.0
+			);
+			textureMatrix.multiply( virtualCamera.projectionMatrix );
+			textureMatrix.multiply( virtualCamera.matrixWorldInverse );
+			textureMatrix.multiply( scope.matrixWorld );
+
+			// Now update projection matrix with new clip plane, implementing code from: http://www.terathon.com/code/oblique.html
+			// Paper explaining this technique: http://www.terathon.com/lengyel/Lengyel-Oblique.pdf
+			reflectorPlane.setFromNormalAndCoplanarPoint( normal, reflectorWorldPosition );
+			reflectorPlane.applyMatrix4( virtualCamera.matrixWorldInverse );
+
+			clipPlane.set( reflectorPlane.normal.x, reflectorPlane.normal.y, reflectorPlane.normal.z, reflectorPlane.constant );
+
+			const projectionMatrix = virtualCamera.projectionMatrix;
+
+			q.x = ( Math.sign( clipPlane.x ) + projectionMatrix.elements[ 8 ] ) / projectionMatrix.elements[ 0 ];
+			q.y = ( Math.sign( clipPlane.y ) + projectionMatrix.elements[ 9 ] ) / projectionMatrix.elements[ 5 ];
+			q.z = - 1.0;
+			q.w = ( 1.0 + projectionMatrix.elements[ 10 ] ) / projectionMatrix.elements[ 14 ];
+
+			// Calculate the scaled plane vector
+			clipPlane.multiplyScalar( 2.0 / clipPlane.dot( q ) );
+
+			// Replacing the third row of the projection matrix
+			projectionMatrix.elements[ 2 ] = clipPlane.x;
+			projectionMatrix.elements[ 6 ] = clipPlane.y;
+			projectionMatrix.elements[ 10 ] = clipPlane.z + 1.0 - clipBias;
+			projectionMatrix.elements[ 14 ] = clipPlane.w;
+
+			// Render
+
+			renderTarget.texture.encoding = renderer.outputEncoding;
+
+			scope.visible = false;
+
+			const currentRenderTarget = renderer.getRenderTarget();
+
+			const currentXrEnabled = renderer.xr.enabled;
+			const currentShadowAutoUpdate = renderer.shadowMap.autoUpdate;
+
+			renderer.xr.enabled = false; // Avoid camera modification
+			renderer.shadowMap.autoUpdate = false; // Avoid re-computing shadows
+
+			renderer.setRenderTarget( renderTarget );
+
+			renderer.state.buffers.depth.setMask( true ); // make sure the depth buffer is writable so it can be properly cleared, see #18897
+
+			if ( renderer.autoClear === false ) renderer.clear();
+			renderer.render( scene, virtualCamera );
+
+			renderer.xr.enabled = currentXrEnabled;
+			renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
+
+			renderer.setRenderTarget( currentRenderTarget );
+
+			// Restore viewport
+
+			const viewport = camera.viewport;
+
+			if ( viewport !== undefined ) {
+
+				renderer.state.viewport( viewport );
+
+			}
+
+			scope.visible = true;
+
+		};
+
+		this.getRenderTarget = function () {
+
+			return renderTarget;
+
+		};
+
+	}
+
+}
+
+ModifiedReflector.prototype.isReflector = true;
+
+ModifiedReflector.ReflectorShader = {
+
+	uniforms: {
+
+		'color': {
+			value: null
+		},
+
+		'tDiffuse': {
+			value: null
+		},
+
+		'textureMatrix': {
+			value: null
+		}
+
+	},
+
+	vertexShader: /* glsl */`
+		uniform mat4 textureMatrix;
+		varying vec4 vUv;
+		#include <common>
+		#include <logdepthbuf_pars_vertex>
+		void main() {
+			vUv = textureMatrix * vec4( position, 1.0 );
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			#include <logdepthbuf_vertex>
+		}`,
+
+	fragmentShader: /* glsl */`
+		uniform vec3 color;
+		uniform sampler2D tDiffuse;
+		varying vec4 vUv;
+		#include <logdepthbuf_pars_fragment>
+		float blendOverlay( float base, float blend ) {
+			return( base < 0.5 ? ( 2.0 * base * blend ) : ( 1.0 - 2.0 * ( 1.0 - base ) * ( 1.0 - blend ) ) );
+		}
+		vec3 blendOverlay( vec3 base, vec3 blend ) {
+			return vec3( blendOverlay( base.r, blend.r ), blendOverlay( base.g, blend.g ), blendOverlay( base.b, blend.b ) );
+		}
+		void main() {
+			#include <logdepthbuf_fragment>
+			vec4 base = texture2DProj( tDiffuse, vUv );
+			gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );
+		}`
+};
 function mapLinear(x, a1, a2, b1, b2){
     return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
 }
@@ -24,7 +254,7 @@ function main(){
     let stats;
     //initStats();
 //CAMERA
-	const fov = 45;
+	const fov = 60;
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 100;
@@ -36,7 +266,7 @@ function main(){
 	new OrbitControls(camera, renderer.domElement);
 
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xFFFFFF);
+	scene.background = new THREE.Color(0x000000);
 	
     renderer.render(scene, camera);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -343,25 +573,35 @@ function main(){
     //scene.add(helperMesh);
 
 // REFLECTIVE STUFF
-	let refGeom = new THREE.PlaneGeometry(9.5, 9.5);
+
+	
+	let gap = 3.0;
+	let refGeom = new THREE.PlaneGeometry(gap * 2.0 - 0.25, gap * 2.0 - 0.25);
 	let mirrorArr = [];
-	let mirror = new Reflector(refGeom);
-	let mirror2 = new Reflector(refGeom);
-	let mirror3 = new Reflector(refGeom);
+	let mirror = new ModifiedReflector(refGeom);
+	let mirror2 = new ModifiedReflector(refGeom);
+	let mirror3 = new ModifiedReflector(refGeom);
 
 	let mirrorGroup = new THREE.Group();
 
-	let frameGeo = new THREE.PlaneGeometry(10.01, 10.01);
-	let frameMat = new THREE.MeshBasicMaterial({color: 0x000000});
+	let frameGeo = new THREE.PlaneGeometry(gap * 2.0 + 0.01, gap * 2.0 + 0.01);
+	let frameMat = new THREE.MeshLambertMaterial({color: 0xFFFFFF});
+
+
 	let frame1 = new THREE.Mesh(frameGeo, frameMat);
 	let frame2 = new THREE.Mesh(frameGeo, frameMat);
 	let frame3 = new THREE.Mesh(frameGeo, frameMat);
 
+
+
 	let frameGroup = new THREE.Group();
 
+	let light = new THREE.SpotLight(0xffffff, 1);
+	light.position.set(1.08, 1.08, 1.08);
+	light.castShadow = true;
+	scene.add(light);
 
-
-	let gap = 5.0;
+	
 	mirror.position.z = -gap;
 	frame1.position.z = -gap - 0.001;
 
@@ -392,6 +632,8 @@ function main(){
 	frameGroup.add(frame1);
 	frameGroup.add(frame2);
 	frameGroup.add(frame3);
+
+	frameGroup.receiveShadow = true;
 
 	scene.add(frameGroup);
 	scene.add(mirrorGroup);
@@ -907,6 +1149,7 @@ function main(){
 
     	
     	let rdmeshGroup = new THREE.Mesh();
+    	rdmeshGroup.castShadow = true;
 
     	mesh.name = 'volumeMesh';
     	//mesh2.name = 'volumeMesh2';
@@ -1006,6 +1249,7 @@ function main(){
 		updateTexture();
 
 		mirrorArr.forEach(m => scene.add(m));
+		scene.add(light);
 		scene.add(frameGroup);
 		scene.getObjectByName("volumeMesh").material.uniforms.cameraPos.value.copy( camera.position );
 		
