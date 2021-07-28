@@ -47,7 +47,7 @@ class ModifiedReflector extends THREE.Mesh {
 			format: THREE.RGBFormat
 		};
 
-		const renderTarget = new THREE.WebGLMultisampleRenderTarget( textureWidth, textureHeight, parameters );
+		const renderTarget = new THREE.WebGLRenderTarget( textureWidth, textureHeight, parameters );
 
 		if ( ! THREE.MathUtils.isPowerOfTwo( textureWidth ) || ! THREE.MathUtils.isPowerOfTwo( textureHeight ) ) {
 
@@ -254,7 +254,7 @@ function main(){
     let stats;
     //initStats();
 //CAMERA
-	const fov = 60;
+	const fov = 45;
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 100;
@@ -513,6 +513,7 @@ function main(){
 					//color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
 					//color.rgb = 1.0 - color.rgb;
 					
+					
 					vec3 ref = refract(-vDirection, n, 1.0 / 0.91);
 					//color.rgb -= texture(tex, p.xy * 0.1 + ref.xy).rgb;
    					//color.rgb -= p * 0.25;
@@ -578,9 +579,14 @@ function main(){
 	let gap = 3.0;
 	let refGeom = new THREE.PlaneGeometry(gap * 2.0 - 0.25, gap * 2.0 - 0.25);
 	let mirrorArr = [];
-	let mirror = new ModifiedReflector(refGeom);
-	let mirror2 = new ModifiedReflector(refGeom);
-	let mirror3 = new ModifiedReflector(refGeom);
+	let mirrorOptions = {
+		clipBias: 0.003,
+		textureWidth: window.innerWidth * window.devicePixelRatio,
+		textureHeight: window.innerHeight * window.devicePixelRatio,
+	}
+	let mirror = new ModifiedReflector(refGeom, mirrorOptions);
+	let mirror2 = new ModifiedReflector(refGeom, mirrorOptions);
+	let mirror3 = new ModifiedReflector(refGeom, mirrorOptions);
 
 	let mirrorGroup = new THREE.Group();
 
@@ -596,8 +602,8 @@ function main(){
 
 	let frameGroup = new THREE.Group();
 
-	let light = new THREE.SpotLight(0xffffff, 1);
-	light.position.set(1.08, 1.08, 1.08);
+	let light = new THREE.SpotLight(0xffffff, 2);
+	light.position.set(1.5, 1.5, 1.5);
 	light.castShadow = true;
 	scene.add(light);
 
@@ -622,10 +628,7 @@ function main(){
 	mirrorArr.push(mirror3);
 
 	mirrorArr.forEach(function(m){
-		m.clipBias = 0.03;
-		m.textureWidth = window.innerWidth * window.devicePixelRatio;
-		m.textureHeight = window.innerHeight * window.devicePixelRatio;
-					//color: 0x889999
+		
 		mirrorGroup.add(m);
 	});
 
@@ -1248,6 +1251,7 @@ function main(){
 		time *= 0.001;
 		updateTexture();
 
+		scene.rotation.y = step * 0.005;
 		mirrorArr.forEach(m => scene.add(m));
 		scene.add(light);
 		scene.add(frameGroup);
