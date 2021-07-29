@@ -260,7 +260,7 @@ function main(){
 	const far = 100;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
-	camera.position.set(0, 0, 2);
+	camera.position.set(10, 2, 10);
 	camera.lookAt(0, 0, 0);
 
 	new OrbitControls(camera, renderer.domElement);
@@ -1243,7 +1243,7 @@ function main(){
 
 	function render(time){
 		
-		
+		moveCamera();
 		//stats.update();
 		step++;
 		
@@ -1303,6 +1303,40 @@ function main(){
         composer.setSize(window.innerWidth, window.innerHeight);
     }
 
+    let moveCameraForward = false;
+    let moveCameraBackward = false;
+    function moveCamera(){
+    	let forwardDest = new THREE.Vector3(0, 0, 0);
+    	let div = 200.0;
+    	if (moveCameraForward){
+    		let dist = camera.position.distanceTo(forwardDest);
+    		let subVec = forwardDest.sub(camera.position);
+
+    		subVec.divideScalar(div);
+    		//console.log(subVec, dist);
+    		if (dist > 7){
+    			camera.position.add(subVec);
+    			//console.log(camera.position);
+    		}
+    		else moveCameraForward = false;
+    	}
+
+    	else if (moveCameraBackward){
+    		
+    	}
+    	camera.lookAt(0, 0, 0);
+    }
+    function onDocumentKeyDown(event){
+    	var keyCode = event.which;
+    	console.log(keyCode);
+    	switch(keyCode){
+    		case 87:
+    			moveCameraForward = true;
+    		break;
+    	}
+    }
+
+    window.addEventListener('keydown', onDocumentKeyDown, false);
     window.addEventListener('resize', onResize, false);
 	requestAnimationFrame(render);
 }
