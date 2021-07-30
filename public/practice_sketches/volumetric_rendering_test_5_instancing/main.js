@@ -510,7 +510,7 @@ function main(){
 
 					
 					// ORIGINAL COLOR
-					//color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
+					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
 					//color.rgb = 1.0 - color.rgb;
 					
 					
@@ -705,7 +705,7 @@ function main(){
 	
 
 	controls.enableBoundary = false;
-	gui.add(controls, 'enableBoundary', false);
+	gui.add(controls, 'enableBoundary', false).listen();
 
 
 	// i: current index
@@ -887,7 +887,7 @@ function main(){
  	let addValue = false;
 	controls.continuousFeed = false;
 	controls.moveFeedSource = false;
-	gui.add(controls, 'continuousFeed', false);
+	gui.add(controls, 'continuousFeed', false).listen();
 	gui.add(controls, 'moveFeedSource', false).listen();
 	function getNewValue(index, x, y, z){
 		ss++;
@@ -1202,33 +1202,65 @@ function main(){
 		RD_PARAMS.sideNeighborCoef = sn;
 		RD_PARAMS.vertNeighborCoef = vn;
 	}
-	gui.add(controls, 'presets', ['SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'BLOWOUT', 'BLOWOUT_2', 'FN_ONLY']).onChange(function(m){
+	gui.add(controls, 'presets', 
+		['ERROR', 'ERROR_2', 'ERROR_3', 'ERROR_4','SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'BLOWOUT', 'BLOWOUT_2', 'FN_ONLY']).onChange(function(m){
 		switch(m){
+			case 'ERROR':
+				controls.threshold = 0.36;
+				controls.moveFeedSource = true;
+				controls.enableBoundary = false;
+				setRDParams(1.05, 0.14, 1.479, 0.021, 0.034, 0.04, 0.056, 0.015);
+				break;
+
+			case 'ERROR_2':
+				controls.threshold = 0.36;
+				controls.moveFeedSource = true;
+				controls.enableBoundary = false;
+				setRDParams(1.05, 0.14, 1.479, 0.04, 0.016, 0.038, 0.038, 0.038);
+				break;
+
+			case 'ERROR_3':
+				controls.threshold = 0.27;
+				controls.continuousFeed = true;
+				controls.moveFeedSource = true;
+				controls.enableBoundary = true;
+				setRDParams(0.55, 0.93, 4.125, 0.036, 0.035, 0.023, 0.04, 0.009);
+				break;
+			case 'ERROR_4':
+				controls.threshold = 0.32;
+				controls.continuousFeed = true;
+				controls.moveFeedSource = true;
+				controls.enableBoundary = true;
+				setRDParams(0.55, 0.27, 5.337, 0.051, 0.077, 0.029, 0.04, 0.009);
+				break;
 			case 'SEMI_MITOSIS':
 				controls.threshold = 0.82;
 				controls.moveFeedSource = false;
+				controls.enableBoundary = false;
 				setRDParams(0.6, 0.2, 1.0, 0.058, 0.07, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
 				break;
 			case 'SEMI_MITOSIS_2':
 				controls.threshold = 0.79;
 				controls.moveFeedSource = false;
+				controls.enableBoundary = false;
 				setRDParams(0.68, 0.12, 1.2, 0.009, 0.056, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
 				break;
 			case 'RING_PUFF':
 				controls.threshold = 0.82;
 				controls.moveFeedSource = false;
+				controls.enableBoundary = false;
 				setRDParams(0.73, 0.2, 1.4, 0.009, 0.056, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
 				break;
 			case 'BLOWOUT':
 				controls.threshold = 0.23;
 				controls.moveFeedSource = true;
-				
+				controls.enableBoundary = false;
 				setRDParams(0.84, 0.93, 1.2, 0.057, 0.062, 0.167, 0, 0);
 				break;
 			case 'BLOWOUT_2':
 				controls.threshold = 0.19;
 				controls.moveFeedSource = true;
-				
+				controls.enableBoundary = false;
 				setRDParams(0.75, 1.13, 1.148, 0.043, 0.062, 0.167, 0, 0);
 				break;
 			case 'FN_ONLY':
@@ -1322,7 +1354,15 @@ function main(){
     	}
 
     	else if (moveCameraBackward){
-    		
+    		let dist = camera.position.distanceTo(forwardDest);
+    		let subVec = forwardDest.sub(camera.position);
+    		subVec.divideScalar(div);
+    		//console.log(subVec, dist);
+    		if (dist < 13){
+    			camera.position.sub(subVec);
+    			//console.log(camera.position);
+    		}
+    		else moveCameraBackward = false;
     	}
     	camera.lookAt(0, 0, 0);
     }
@@ -1332,7 +1372,10 @@ function main(){
     	switch(keyCode){
     		case 87:
     			moveCameraForward = true;
-    		break;
+    			break;
+    		case 83:
+    			moveCameraBackward = true;
+    			break;
     	}
     }
 
