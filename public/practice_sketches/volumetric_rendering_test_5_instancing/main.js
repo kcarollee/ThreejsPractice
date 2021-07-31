@@ -499,7 +499,7 @@ function main(){
 					//color.rgb = rm;
 					
 					color.rgb = vec3(color.r + color.g + color.b);
-					color.rgb *= 0.25;
+					//color.rgb *= 0.25;
 					vec3 light = vec3(dot(lm, n) + pow(dot(rm , normalize(vDirection)), 1.0)) + vec3(1.0);
 					//color.rgb = light + 0.25;
 					color.r += n.g;
@@ -510,7 +510,7 @@ function main(){
 
 					
 					// ORIGINAL COLOR
-					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
+					//color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
 					//color.rgb = 1.0 - color.rgb;
 					
 					
@@ -1017,6 +1017,7 @@ function main(){
 
 
 	let currentIndex;
+	let switchMeshPosFlag = true;
 	function updateTexture(){
 
 		/*
@@ -1123,32 +1124,52 @@ function main(){
     	let mesh9 = new THREE.Mesh(geometry, material);
     	//mesh2.rotation.set(0, Math.PI, 0);
     	
-    	mesh2.position.set(1, 1, -1);
     	
-    	
-
-    	//mesh3.rotation.set(0, -Math.PI, 0);
-    	mesh3.position.set(-1, -1, 1);
 
 
     	mesh4.rotation.set(0, 0, -Math.PI);
-    	mesh4.position.set(1, 1, 1);
+    	
 
     	mesh5.rotation.set(0, 0, Math.PI);
-    	mesh5.position.set(-1, -1, -1);
+    	
 
     	mesh6.rotation.set(0, Math.PI, 0);
-    	mesh6.position.set(-1, 1, -1);
+    	
 
     	mesh7.rotation.set(0, -Math.PI, 0);
-    	mesh7.position.set(1, -1, 1);
+    	
 
 
     	mesh8.rotation.set(0, 0, -Math.PI);
-    	mesh8.position.set(-1, 1, 1);
+    	
 
     	mesh9.rotation.set(0, 0, Math.PI);
-    	mesh9.position.set(1, -1, -1);
+    	
+
+    	if (step % 60 == 0) switchMeshPosFlag = !switchMeshPosFlag;
+    	if (switchMeshPosFlag){
+    		mesh8.visible = true;
+			mesh9.visible = true;
+    		mesh2.position.set(1, 1, -1);
+    		mesh3.position.set(-1, -1, 1);
+    		mesh4.position.set(1, 1, 1);
+			mesh5.position.set(-1, -1, -1);
+			mesh6.position.set(-1, 1, -1);
+			mesh7.position.set(1, -1, 1);
+			mesh8.position.set(-1, 1, 1);
+			mesh9.position.set(1, -1, -1);
+		}
+
+		else {
+    		mesh2.position.set(0, 0, -1);
+    		mesh3.position.set(0, 0, 1);
+    		mesh4.position.set(0, 1, 0);
+			mesh5.position.set(0, -1, 0);
+			mesh6.position.set(1, 0, 0);
+			mesh7.position.set(-1, 0, 0);
+			mesh8.visible = false;
+			mesh9.visible = false;
+		}
 
     	
     	let rdmeshGroup = new THREE.Mesh();
@@ -1178,6 +1199,16 @@ function main(){
     	material.dispose();
 	}
 
+// BACKGROUND GEOM
+	let knotTex = new THREE.TextureLoader().load('tex.png');
+	let knotGeom = new THREE.TorusKnotGeometry(30, 3, 200, 3, 2, 7);
+	let knotMat = new THREE.MeshBasicMaterial({map: knotTex});
+
+	let knot = new THREE.Mesh(knotGeom, knotMat);
+	knotTex.wrapS = THREE.RepeatWrapping;
+	knotTex.wrapT = THREE.RepeatWrapping;
+
+	scene.add(knot);
 // POST PROCESSING
 	let renderPass = new RenderPass(scene, camera);
 	let smaaPass = new SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
@@ -1285,6 +1316,11 @@ function main(){
 
 		scene.rotation.y = step * 0.005;
 		mirrorArr.forEach(m => scene.add(m));
+		//knot.rotation.x = step * 0.01;
+		//knot.rotation.y = step * 0.01;
+		//knot.rotation.z = step * 0.01;
+
+		scene.add(knot);
 		scene.add(light);
 		scene.add(frameGroup);
 		scene.getObjectByName("volumeMesh").material.uniforms.cameraPos.value.copy( camera.position );
@@ -1370,10 +1406,10 @@ function main(){
     	var keyCode = event.which;
     	console.log(keyCode);
     	switch(keyCode){
-    		case 87:
+    		case 88:
     			moveCameraForward = true;
     			break;
-    		case 83:
+    		case 90:
     			moveCameraBackward = true;
     			break;
     	}
