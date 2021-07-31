@@ -510,8 +510,8 @@ function main(){
 
 					
 					// ORIGINAL COLOR
-					color.rgb *= vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
-					//color.rgb = 1.0 - color.rgb;
+					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
+					color.rgb = 1.0 - color.rgb;
 					
 					
 					vec3 ref = refract(-vDirection, n, 1.0 / 0.91);

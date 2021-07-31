@@ -45,11 +45,11 @@ class CurvedTree{
         this.deleteFlag = false;
         this.rand = Math.random() * 10;
         
-        this.evalStack = [];
+        this.evalQueue = [];
         this.evalComplete = false;
         this.branchParams = branchParams;
 
-        var firstPointsOnStack;
+        var firstPointsOnQueue;
         var randomAngle = (Math.random() * Math.PI - 1.5 * Math.PI);
             
         var centerX = this.trunkPos.x + this.branchParams.spiralRadius  * Math.cos(randomAngle);
@@ -71,7 +71,7 @@ class CurvedTree{
             this.points.push(new THREE.Vector3(x, y, z));
 
             if (i != this.pointsNum - 1 && Math.random() > 0.1 && i > this.pointsNum * 0.25){
-                var firstPointsOnStack = {
+                var firstPointsOnQueue = {
                     pointsNum: Math.floor(this.pointsNum * 0.5),
                     pos: new THREE.Vector3(x, y, z),
                     spiralRadius: this.branchParams.spiralRadius * 1.2,
@@ -79,7 +79,7 @@ class CurvedTree{
                     heightCoef: this.branchParams.heightCoef * 0.95,
                     noiseCoef: this.branchParams.noiseCoef * 2.0
                 };
-                this.evalStack.push(firstPointsOnStack);
+                this.evalQueue.push(firstPointsOnQueue);
             }
         }
         /*
@@ -96,9 +96,9 @@ class CurvedTree{
         this.tubeGroup.add(branchMesh);
     }
 
-    getTopOfStackString(){
-        var t = this.evalStack[0];
-        return "top of stack: " + t.pos.x + " " + t.pos.y + " " + t.pos.z + "<br>" + 
+    getTopOfQueueString(){
+        var t = this.evalQueue[0];
+        return "top of Queue: " + t.pos.x + " " + t.pos.y + " " + t.pos.z + "<br>" + 
         "spiralRadius: " + t.spiralRadius + "<br>" +
         "height coef: " + t.heightCoef + "<br>" +
         "thickness: " + t.thickness + "<br>" ;
@@ -128,10 +128,10 @@ class CurvedTree{
     }
 
     generatePointsIncrementally(){
-        if (!this.evalStack.length == 0){
+        if (!this.evalQueue.length == 0){
             var branchPoints = [];
             var r = Math.random();
-            var evalTarget = this.evalStack[0];
+            var evalTarget = this.evalQueue[0];
             var branchPos = evalTarget.pos;
             var randomAngle = (Math.random() * Math.PI - 1.5 * Math.PI);
             
@@ -158,7 +158,7 @@ class CurvedTree{
                     Math.random() > 0.75 && 
                     i > this.pointsNum * 0.25){
                     
-                    var firstPointsOnStack = {
+                    var firstPointsOnQueue = {
                         pointsNum: Math.floor(evalTarget.pointsNum * 0.5),
                         pos: pos,
                         spiralRadius: evalTarget.spiralRadius * 0.5,
@@ -166,9 +166,9 @@ class CurvedTree{
                         noiseCoef: evalTarget.noiseCoef * 2.0,
                         thickness: evalTarget.thickness * 0.5
                     };
-                    //console.log(firstPointsOnStack.pointsNum);
-                    //console.log(firstPointsOnStack.pointsNum);
-                    this.evalStack.push(firstPointsOnStack);
+                    //console.log(firstPointsOnQueue.pointsNum);
+                    //console.log(firstPointsOnQueue.pointsNum);
+                    this.evalQueue.push(firstPointsOnQueue);
                 }
                 else {
                     if (i == evalTarget.pointsNum - 1){
@@ -183,7 +183,7 @@ class CurvedTree{
             var branchMesh = new THREE.Mesh(branchGeom, this.shaderMat);
 
             this.tubeGroup.add(branchMesh);
-            this.evalStack.splice(0, 1);
+            this.evalQueue.splice(0, 1);
         }
         else this.evalComplete = true;
     }
@@ -386,13 +386,14 @@ function init() {
         }
     };
     p5Canvas = new p5(p5Sketch);
+    p5Canvas.canvas.style.display = 'none';
     //console.log(p5Canvas.canvas);
     var text = document.createElement('div');
     text.style.position = 'absolute';
     //text.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
 
     text.style.backgroundColor = "white";
-    text.style.top = 60 + 'px';
+    text.style.top = 30 + 'px';
     text.style.left = 25 + 'px';
     text.style.color = "red";
     text.style.fontSize = "11px";
@@ -419,7 +420,7 @@ function init() {
 
 
 
-    scene.add(camera);
+    //scene.add(camera);
 
     renderer.setClearColor(0x550033, 1.0);
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -434,8 +435,9 @@ function init() {
     orbitControls.update();
     
     camera.position.x = 0;
-    camera.position.y = 60;
-    camera.position.z = 300;
+    camera.position.y = 500;
+    camera.position.z = 800;
+
     camera.lookAt(scene.position);
 
     var shaderMat = new THREE.ShaderMaterial({
@@ -498,10 +500,10 @@ function init() {
     renderScene();
     deleteTarget = treeArr[0];
     var step = 0;
-
+    let stop = false;
     function animateScene() {
         step++;
-
+        scene.rotation.y = step * 0.01;
         /*
         if (!tree.genComplete){
             if (tree.indexCount < tree.pointsNum){
@@ -515,9 +517,9 @@ function init() {
 
         if (newTreeRef != undefined){
             if (!newTreeRef.genComplete){
-                text.innerHTML = "new tree's evaluation stack: <br>" + 
-                "size: " + newTreeRef.evalStack.length + "<br>" +
-                newTreeRef.getTopOfStackString() + "<br>";
+                text.innerHTML = "new tree's evaluation queue: <br>" + 
+                "size: " + newTreeRef.evalQueue.length + "<br>" +
+                newTreeRef.getTopOfQueueString() + "<br>";
             }
         }
         else text.innerHTML = "";
@@ -583,17 +585,17 @@ function init() {
         } catch{}
 
         
-
+;
         //document.getElementById("wall").innerHTML = Math.random()
         /*
         if (newTreeRef){
-            document.getElementById("wall").innerHTML = "evaluation stack of new tree:<br>";
+            document.getElementById("wall").innerHTML = "evaluation Queue of new tree:<br>";
         }
         */
 
         
         /*
-        treeArr[treeArr.length - 1].evalStack.forEach(function (elem){
+        treeArr[treeArr.length - 1].evalQueue.forEach(function (elem){
             text.innerHTML += elem.pos.x + "<br>";
         });
         */
@@ -603,7 +605,7 @@ function init() {
         }
         */
 
-         //if (treeArr[treeArr.length-1].evalStack.length>1)document.getElementById("wall").innerHTML += treeArr[treeArr.length - 1].evalStack[0].pos.x;
+         //if (treeArr[treeArr.length-1].evalQueue.length>1)document.getElementById("wall").innerHTML += treeArr[treeArr.length - 1].evalQueue[0].pos.x;
     }
 
     
@@ -629,6 +631,19 @@ function init() {
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
+
+    function onDocumentKeyDown(event){
+        var keyCode = event.which;
+        console.log(keyCode);
+        switch(keyCode){
+            case 83:
+                stop = true;
+                break;
+            
+        }
+    }
+
+    window.addEventListener('keydown', onDocumentKeyDown, false);
 
 
     window.addEventListener('resize', onResize, false);
