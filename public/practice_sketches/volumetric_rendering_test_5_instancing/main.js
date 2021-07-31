@@ -510,7 +510,7 @@ function main(){
 
 					
 					// ORIGINAL COLOR
-					//color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
+					color.rgb*= vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
 					//color.rgb = 1.0 - color.rgb;
 					
 					
@@ -1094,7 +1094,7 @@ function main(){
     	        //mapPrev: {value: texturePrev},
     	        cameraPos: {value: new THREE.Vector3()},
     	        threshold: {value: controls.threshold},
-    	        steps: {value: 500},
+    	        steps: {value: 200},
     	        //tex: {value: textureImage}
     	    },
     	    vertexShader,
@@ -1244,10 +1244,10 @@ function main(){
 				break;
 
 			case 'ERROR_2':
-				controls.threshold = 0.36;
+				controls.threshold = 0.59;
 				controls.moveFeedSource = true;
-				controls.enableBoundary = false;
-				setRDParams(1.05, 0.14, 1.479, 0.04, 0.016, 0.038, 0.038, 0.038);
+				controls.enableBoundary = true;
+				setRDParams(0.59, 0.14, 3.023, 0.042, 0.031, 0.081, 0.1, 0.037);
 				break;
 
 			case 'ERROR_3':
@@ -1305,7 +1305,8 @@ function main(){
 	let step = 0;
 
 	function render(time){
-		
+		knotGeom.p = 5 + 5 * Math.sin(step * 0.01);
+
 		moveCamera();
 		//stats.update();
 		step++;

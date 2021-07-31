@@ -277,7 +277,7 @@ function main(){
 
 	
 	let gap = 3.0;
-	let refGeom = new THREE.PlaneGeometry(gap * 2.0 - 0.25, gap * 2.0 - 0.25);
+	let refGeom = new THREE.PlaneGeometry(gap * 2.0, gap * 2.0);
 	let mirrorArr = [];
 	let mirrorOptions = {
 		clipBias: 0.003,
@@ -412,9 +412,9 @@ function main(){
 		time *= 0.001;
 		
 		scene.rotation.y = step * 0.005;
-		mirrorArr.forEach(m => scene.add(m));
-		//knot.rotation.x = step * 0.01;
-		//knot.rotation.y = step * 0.01;
+		//mirrorArr.forEach(m => scene.add(m));
+		knot.rotation.x = step * 0.01;
+		knot.rotation.y = step * 0.01;
 		//knot.rotation.z = step * 0.01;
 
 		
