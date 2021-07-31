@@ -411,10 +411,10 @@ function main(){
 		//scene.rotation.set(0, step * 0.005, 0);
 		time *= 0.001;
 		
-		scene.rotation.y = step * 0.005;
+		//scene.rotation.y = step * 0.005;
 		//mirrorArr.forEach(m => scene.add(m));
-		knot.rotation.x = step * 0.01;
-		knot.rotation.y = step * 0.01;
+		//knot.rotation.x = step * 0.01;
+		//knot.rotation.y = step * 0.01;
 		//knot.rotation.z = step * 0.01;
 
 		

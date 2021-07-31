@@ -499,7 +499,7 @@ function main(){
 					//color.rgb = rm;
 					
 					color.rgb = vec3(color.r + color.g + color.b);
-					//color.rgb *= 0.25;
+					color.rgb *= 0.25;
 					vec3 light = vec3(dot(lm, n) + pow(dot(rm , normalize(vDirection)), 1.0)) + vec3(1.0);
 					//color.rgb = light + 0.25;
 					color.r += n.g;
@@ -510,7 +510,7 @@ function main(){
 
 					
 					// ORIGINAL COLOR
-					color.rgb*= vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
+					color.rgb *= vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
 					//color.rgb = 1.0 - color.rgb;
 					
 					
@@ -1201,10 +1201,11 @@ function main(){
 
 // BACKGROUND GEOM
 	let knotTex = new THREE.TextureLoader().load('tex.png');
-	let knotGeom = new THREE.TorusKnotGeometry(30, 3, 200, 3, 2, 7);
+	let knotGeom = new THREE.TorusKnotGeometry(30, 3, 500, 3, 2, 7);
 	let knotMat = new THREE.MeshBasicMaterial({map: knotTex});
 
 	let knot = new THREE.Mesh(knotGeom, knotMat);
+	knot.rotation.x = 90;
 	knotTex.wrapS = THREE.RepeatWrapping;
 	knotTex.wrapT = THREE.RepeatWrapping;
 
@@ -1238,6 +1239,7 @@ function main(){
 		switch(m){
 			case 'ERROR':
 				controls.threshold = 0.36;
+				controls.continuousFeed = true;
 				controls.moveFeedSource = true;
 				controls.enableBoundary = false;
 				setRDParams(1.05, 0.14, 1.479, 0.021, 0.034, 0.04, 0.056, 0.015);
@@ -1412,6 +1414,12 @@ function main(){
     			break;
     		case 90:
     			moveCameraBackward = true;
+    			break;
+    		case 82:
+    			controls.reset();
+    			break;
+    		case 65:
+    			controls.addValue();
     			break;
     	}
     }
