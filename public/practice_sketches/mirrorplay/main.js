@@ -359,7 +359,7 @@ function main(){
 
 // BACKGROUND GEOM
 	let knotTex = new THREE.TextureLoader().load('tex.png');
-	let knotGeom = new THREE.TorusKnotGeometry(30, 7, 400, 3, 2, 11);
+	let knotGeom = new THREE.TorusKnotGeometry(30, 7, 1000, 3, 2, 11);
 	let knotMat = new THREE.MeshBasicMaterial({
 		map: knotTex,
 		morphTargets: true
