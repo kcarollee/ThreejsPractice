@@ -257,7 +257,7 @@ function main(){
 	const fov = 45;
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
 	const near = 0.1;
-	const far = 100;
+	const far = 1000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
 	camera.position.set(10, 2, 10);
@@ -345,32 +345,11 @@ function main(){
 	const gui = new dat.GUI();
 	const controls = new function(){
 		
-		this.threshold = 0.16;
+		
 		
 	}
 
-	gui.add(controls, 'threshold', 0, 1).listen().onChange(function (e){
-		controls.threshold = e;
-		material.uniforms.threshold.value = controls.threshold;
-	});
 	
-
-
-
-	let testFunc1 = (x, y, z) => {
-		let dx = 0.5;
-    	let dy = 0.5;
-    	let dz = 0.5;
-    	            
-    	let mx = (x - dx);
-    	let my = (y - dy);
-    	let mz = (z - dz);
-
-
-    	let d = Math.sqrt(mx * mx + my * my + mz * mz);
-    	//d = Math.sin(d * 0.1 + step * 0.001);
-    	return d;
-	};
 
 
 
@@ -381,10 +360,29 @@ function main(){
 // BACKGROUND GEOM
 	let knotTex = new THREE.TextureLoader().load('tex.png');
 	let knotGeom = new THREE.TorusKnotGeometry(30, 7, 400, 3, 2, 11);
-	let knotMat = new THREE.MeshBasicMaterial({map: knotTex});
+	let knotMat = new THREE.MeshBasicMaterial({
+		map: knotTex,
+		morphTargets: true
+	});
 
+
+	knotGeom.morphAttributes.position = [];
+	let knotMorphPositions = [];
+	let knotInitialPosAttribute = knotGeom.attributes.position;
+	console.log(knotInitialPosAttribute)
+	let perlin = new ImprovedNoise();
+	for (let i = 0; i < knotInitialPosAttribute.count; i++){
+		let x = knotInitialPosAttribute.getX(i) + perlin.noise(knotInitialPosAttribute.getX(i), knotInitialPosAttribute.getY(i), knotInitialPosAttribute.getZ(i));
+		let y = knotInitialPosAttribute.getY(i) + perlin.noise(knotInitialPosAttribute.getZ(i), knotInitialPosAttribute.getX(i), knotInitialPosAttribute.getY(i));
+		let z = knotInitialPosAttribute.getZ(i) + perlin.noise(knotInitialPosAttribute.getY(i), knotInitialPosAttribute.getZ(i), knotInitialPosAttribute.getX(i));
+
+		knotMorphPositions.push(x, y, z);
+	}
+
+	knotGeom.morphAttributes.position[0] = new THREE.Float32BufferAttribute(knotMorphPositions, 3);
 	let knot = new THREE.Mesh(knotGeom, knotMat);
 	
+
 	
 	scene.add(knot);
 // POST PROCESSING
@@ -419,7 +417,7 @@ function main(){
 
 		
 		
-		
+		knot.morphTargetInfluences[0] = 2.0 * Math.sin(step * 0.01);
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;

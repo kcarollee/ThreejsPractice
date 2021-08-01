@@ -1221,8 +1221,13 @@ function main(){
 
 // PRESETS
 	
-
-	controls.presets = '';
+	let presetsArr = ['ERROR', 'ERROR_2', 'ERROR_3', 'ERROR_4','SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'BLOWOUT', 'BLOWOUT_2', 'FN_ONLY'];
+	let presetsIndex = 0;
+	controls.presets = 'BLOWOUT';
+	controls.threshold = 0.23;
+	controls.moveFeedSource = true;
+	controls.enableBoundary = false;
+	setRDParams(0.84, 0.93, 1.2, 0.057, 0.062, 0.167, 0, 0);
 	function setRDParams(a, b, t, f, k, fn, sn, vn){
 		
 		RD_PARAMS.da = a;
@@ -1234,8 +1239,8 @@ function main(){
 		RD_PARAMS.sideNeighborCoef = sn;
 		RD_PARAMS.vertNeighborCoef = vn;
 	}
-	gui.add(controls, 'presets', 
-		['ERROR', 'ERROR_2', 'ERROR_3', 'ERROR_4','SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'BLOWOUT', 'BLOWOUT_2', 'FN_ONLY']).onChange(function(m){
+
+	function switchMode(m){
 		switch(m){
 			case 'ERROR':
 				controls.threshold = 0.36;
@@ -1302,13 +1307,17 @@ function main(){
 				RD_PARAMS.vertNeighborCoef = 0.0;
 				break;
 		}
-	});
+	}
+	gui.add(controls, 'presets', 
+		presetsArr).onChange(switchMode).listen();
 
 	let step = 0;
 
 	function render(time){
 		knotGeom.p = 5 + 5 * Math.sin(step * 0.01);
-
+		if (decrementThreshold){
+			if (controls.threshold < 1) controls.threshold += 0.01;
+		}
 		moveCamera();
 		//stats.update();
 		step++;
@@ -1376,6 +1385,7 @@ function main(){
 
     let moveCameraForward = false;
     let moveCameraBackward = false;
+    let decrementThreshold = false;
     function moveCamera(){
     	let forwardDest = new THREE.Vector3(0, 0, 0);
     	let div = 200.0;
@@ -1420,6 +1430,16 @@ function main(){
     			break;
     		case 65:
     			controls.addValue();
+    			break;
+    		case 49:
+    			controls.presets = presetsArr[presetsIndex];
+    			switchMode(controls.presets);
+    			presetsIndex++;
+    			if (presetsIndex > 3) presetsIndex = 7;
+    			
+    			break;
+    		case 84:
+    			decrementThreshold = true;
     			break;
     	}
     }
