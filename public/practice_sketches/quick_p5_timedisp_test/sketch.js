@@ -21,8 +21,9 @@ class SubImage{
   }
   display(pg, randDeg){
     this.updateFrames(pg);
-    let wdiv = int(this.w / float(this.subImgNum));
-    let hdiv = int(this.h / float(this.subImgNum));
+    let wdiv = (this.w / float(this.subImgNum));
+    let hdiv = (this.h / float(this.subImgNum));
+
     let rd = randDeg;
     switch(this.mode){
       // vertical. rightmost = latest frame
@@ -89,17 +90,20 @@ function afterLoad(){
   video.play();
 }
 function setup() {
-  createCanvas(600, 600);
-  pgf = createGraphics(width, height, WEBGL);
-  pgbg = createGraphics(width, height, WEBGL);
+ 
   textFont(font);
-  textSize(13);
+  textSize(8);
   //let gl = pgf._renderer.GL;
   //gl.disable(gl.DEPTH_TEST);
 
-  video = createVideo('video1.mp4', afterLoad);
+  video = createVideo('video5.mp4', afterLoad);
+  createCanvas(video.width * 3, video.height * 3);
+  pgf = createGraphics(width, height, WEBGL);
+  pgbg = createGraphics(width, height, WEBGL);
   video.loop();
   video.play();
+  video.hide();
+  video.volume(0)
 }
 
 function draw() {
@@ -115,22 +119,26 @@ function draw() {
   
   
   pgf.background(0);
+  pgf.noStroke();
+  pgf.texture(video);
+  pgf.plane(width, height);
   /*
   pgf.push();
   pgf.translate(0, 0, -100);
   pgf.image(pgbg, -width * 0.5,- height * 0.5);
   pgf.pop();
   */
+
+  /*
   pgf.push();
   pgf.translate(0, 0,0);
   pgf.rotateX(frameCount * 0.02);
   pgf.rotateY(frameCount * 0.02);
   pgf.rotateZ(frameCount * 0.02);
   pgf.noFill();
-  //pgf.strokeWeight(3);
-  pgf.noStroke();
-  //pgf.stroke(255);
-  pgf.texture(pgbg);
+  
+  
+  pgf.texture(video);
   let boxNum = 3;
   let boxInc = 60;
   
@@ -144,26 +152,11 @@ function draw() {
   //pgf.translate(0, 1000, 0);
   pgf.rotateZ(PI);
   pgf.noStroke();
-  pgf.texture(pgbg);
+  pgf.texture(video);
   pgf.sphere(500);
   pgf.pop();
-  /*
-  pgf.push();
-  pgf.translate(0, 0, 500);
-  pgf.rotateX(frameCount * 0.001);
-  pgf.rotateY(frameCount * 0.010);
-  pgf.rotateZ(frameCount * 0.001);
-  pgf.texture(pgbg);
-  pgf.box(100);
-  pgf.pop();
   */
-  /*
-  pgf.push();
-  pgf.translate(0, 200, 0);
-  pgf.rotateX(HALF_PI);
-  pgf.plane(300, 300);
-  pgf.pop();
-  */
+ 
   pgf._renderer._update();
   
   image(pgf, 0, 0);
@@ -172,6 +165,7 @@ function draw() {
   
   if (md) {
     noFill();
+
     stroke(255);
     rect(mCoord1[0], mCoord1[1], mouseX - mCoord1[0], mouseY - mCoord1[1]);
   }
@@ -179,7 +173,7 @@ function draw() {
   push();
   noStroke();
   fill(255);
-  text("NEXT DISPLACEMENT MODE (W/S): " + modeArr[nextMode], 10, 20);
+  text("NEXT MODE (W/S): " + modeArr[nextMode], 10, 20);
   text("NUMBER OF FRAMES PER DISPLACEMENT (Q/E): " + subImageNum, 10, 33);
   text("RANDOM RANGE (A/D): " + randDeg.toFixed(3), 10, 46);
   text("DELETE DISPLACEMENT AREA (X)", 10, 59);
