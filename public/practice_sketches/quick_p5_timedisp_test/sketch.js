@@ -8,6 +8,7 @@ let modeArr = ['VERTICAL, RIGHTMOST LATEST', 'VERTICAL, LEFTMOST LATEST',
                'HORIZONTAL, BOTTOMMOST LATEST', 'HORIZONTAL, TOPMOST LATEST', 'VERTICAL RANDOM', 'HORIZONTAL RANDOM']; // 0:vert, 1:hori 
 let font;
 let video;
+let video2;
 class SubImage{
   constructor(pos1, pos2, pg, subImgNum, mode){
     this.pos1 = pos1;
@@ -21,8 +22,8 @@ class SubImage{
   }
   display(pg, randDeg){
     this.updateFrames(pg);
-    let wdiv = (this.w / float(this.subImgNum));
-    let hdiv = (this.h / float(this.subImgNum));
+    let wdiv = int(this.w / float(this.subImgNum));
+    let hdiv = int(this.h / float(this.subImgNum));
 
     let rd = randDeg;
     switch(this.mode){
@@ -96,19 +97,28 @@ function setup() {
   //let gl = pgf._renderer.GL;
   //gl.disable(gl.DEPTH_TEST);
 
-  video = createVideo('video5.mp4', afterLoad);
+  video = createVideo('video1.mp4', afterLoad);
+  video2 = createVideo('video2.mp4', afterLoad);
+
   createCanvas(video.width * 3, video.height * 3);
   pgf = createGraphics(width, height, WEBGL);
   pgbg = createGraphics(width, height, WEBGL);
+  
   video.loop();
-  video.play();
+ video.play();
   video.hide();
   video.volume(0)
+
+
+  video2.loop();
+  video2.play();
+  video2.hide();
+  video2.volume(0)
+
 }
 
 function draw() {
   background(220);
-  
   
   pgbg.background(0, 0);
   pgbg.shader(shd1);
@@ -121,7 +131,7 @@ function draw() {
   pgf.background(0);
   pgf.noStroke();
   pgf.texture(video);
-  pgf.plane(width, height);
+  pgf.plane(width + 150 * Math.sin(frameCount * 0.1), height);
   /*
   pgf.push();
   pgf.translate(0, 0, -100);
@@ -178,10 +188,20 @@ function draw() {
   text("RANDOM RANGE (A/D): " + randDeg.toFixed(3), 10, 46);
   text("DELETE DISPLACEMENT AREA (X)", 10, 59);
   pop();
+
+  swapVideo();
 }
 
 function mousePressed(){
   mCoord1 = [mouseX, mouseY];
+}
+
+function swapVideo(){
+  let temp = video;
+  video = video2;
+  video2 = temp;
+
+  
 }
 let md = false;
 function mouseDragged(){
