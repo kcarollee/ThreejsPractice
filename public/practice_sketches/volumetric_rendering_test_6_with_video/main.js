@@ -157,6 +157,8 @@ function main(){
         // 3d texture sent from 'const texture = new THREE.DataTexture3D(data, size, size, size);''
         uniform sampler3D map;
 		uniform sampler3D mapPrev;
+
+		uniform sampler2D videoTex;
 		
 		uniform vec3 lightDir;
         
@@ -242,6 +244,8 @@ function main(){
 			
 			
 			delta /= steps;
+
+			vec3 texCol = texture(videoTex, p.xz).rgb;
 			
 			for ( float t = bounds.x; t < bounds.y; t += delta ) {
 				
@@ -277,6 +281,7 @@ function main(){
 					//color.rgb -= texture(tex, p.xy * 0.1 + ref.xy).rgb;
    					//color.rgb -= p * 0.25;
 					color.a = 1.;
+					
 					break;
 				}
 				p += rayDir * delta;
@@ -368,7 +373,7 @@ function main(){
 
 	
 	
-	controls.dataSize = 32;
+	controls.dataSize = 150;
 	gui.add(controls, 'dataSize', 8, 256);
 
 	function getFlatIndex(x, y, z, size){
@@ -732,6 +737,15 @@ function main(){
     	// filling the data array with values
     	for (let z = 0; z < size; z++){
     	    for (let y = 0; y < size; y++){
+
+    	    	// width: 648
+    	    	// height: 450
+    	    	// map row of slice to the video's height
+    	    	// map col of slice to the video's width
+    	    	// get flat index in videoPixelArr using the mapped coordinates
+    	    	// get the color values in vidoePixelArr at the index above
+
+    	    	let rs = Math.floor(mapLinear(y, 0, size, 0, 450));
     	        for (let x = 0; x < size; x++){
     	        	
     	        	/*
@@ -748,9 +762,15 @@ function main(){
     	            //console.log(idx + " " + adjacentIndices);
     	            let d = getNewValue(idx, vector.x, vector.y, vector.z);
 					*/
-					let offset = 4 * (y * Math.floor(450 / size) + x * Math.floor(648 / size));
-					let d = videoPixelArr[offset];
-					//d /= 3;
+
+					let cs = Math.floor(mapLinear(x, 0, size, 0, 648));
+
+					let fi = rs * 648 + cs; // flat index
+
+					let offset = 4 * fi;
+					let d = videoPixelArr[offset] + videoPixelArr[offset + 1] + videoPixelArr[offset + 2];
+					d /= 3;
+					d = 256 - d;
     	            data[i++] = mapLinear(d, 0, 256, 0, 256); // map to a value between 0 and 256
     	        }
     	    }
@@ -782,7 +802,7 @@ function main(){
     	        cameraPos: {value: new THREE.Vector3()},
     	        threshold: {value: controls.threshold},
     	        steps: {value: 500},
-    	        //tex: {value: textureImage}
+    	       videoTex: {value: p5Texture},
     	    },
     	    vertexShader,
     	    fragmentShader,

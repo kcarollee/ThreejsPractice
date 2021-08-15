@@ -9,6 +9,9 @@ let modeArr = ['VERTICAL, RIGHTMOST LATEST', 'VERTICAL, LEFTMOST LATEST',
 let font;
 let video;
 let video2;
+
+
+
 class SubImage{
   constructor(pos1, pos2, pg, subImgNum, mode){
     this.pos1 = pos1;
@@ -97,8 +100,8 @@ function setup() {
   //let gl = pgf._renderer.GL;
   //gl.disable(gl.DEPTH_TEST);
 
-  video = createVideo('video1.mp4', afterLoad);
-  video2 = createVideo('video2.mp4', afterLoad);
+  video = createVideo('test1.mp4', afterLoad);
+ 
 
   createCanvas(video.width * 3, video.height * 3);
   pgf = createGraphics(width, height, WEBGL);
@@ -110,10 +113,7 @@ function setup() {
   video.volume(0)
 
 
-  video2.loop();
-  video2.play();
-  video2.hide();
-  video2.volume(0)
+ 
 
 }
 
@@ -131,7 +131,7 @@ function draw() {
   pgf.background(0);
   pgf.noStroke();
   pgf.texture(video);
-  pgf.plane(width + 150 * Math.sin(frameCount * 0.1), height);
+  pgf.plane(width, height);
   /*
   pgf.push();
   pgf.translate(0, 0, -100);
@@ -197,10 +197,7 @@ function mousePressed(){
 }
 
 function swapVideo(){
-  let temp = video;
-  video = video2;
-  video2 = temp;
-
+ 
   
 }
 let md = false;
