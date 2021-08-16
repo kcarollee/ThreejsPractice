@@ -27,19 +27,27 @@ function main(){
 		let video;
 
         sketch.setup = () => {
+
+        	
+        	
         	video = sketch.createVideo('video1.mp4');
 			video.play();
 			video.loop();
 
+
+			
 			videoWidth = video.width;
 			videoHeight = video.height;
 			
-
+			sketch.createCanvas(648, 450);
 		}
 		sketch.draw = () => {
 			//console.log(videoWidth, videoHeight);
 			video.loadPixels();
            	videoPixelArr = video.pixels;
+
+           	//sketch.background(150 + 100 * Math.sin(step), 0, 0);
+           	sketch.image(video, 0, 0);
 			if (p5Texture) p5Texture.needsUpdate = true;
 		}
 
@@ -245,7 +253,7 @@ function main(){
 			
 			delta /= steps;
 
-			vec3 texCol = texture(videoTex, p.xz).rgb;
+			vec3 texCol = vec3(texture(videoTex, p.xz + 0.5).r);
 			
 			for ( float t = bounds.x; t < bounds.y; t += delta ) {
 				
@@ -277,11 +285,11 @@ function main(){
 					color.rgb = vec3(dot(lm, n) + pow(dot(-rm , normalize(vDirection)), 1.0));
 					color.rgb = 1.0 - color.rgb;
 					*/
-					vec3 ref = refract(-vDirection, n, 1.0 / 0.91);
-					//color.rgb -= texture(tex, p.xy * 0.1 + ref.xy).rgb;
+					//vec3 ref = refract(-vDirection, n, 1.0 / 0.91);
+					//color.rgb += texture(videoTex, p.xy * 0.1 + ref.xy).rgb;
    					//color.rgb -= p * 0.25;
 					color.a = 1.;
-					
+					color.rgb = texCol;
 					break;
 				}
 				p += rayDir * delta;
@@ -373,7 +381,7 @@ function main(){
 
 	
 	
-	controls.dataSize = 150;
+	controls.dataSize = 100;
 	gui.add(controls, 'dataSize', 8, 256);
 
 	function getFlatIndex(x, y, z, size){
@@ -708,6 +716,13 @@ function main(){
 	controls.scaleCoef = 1.0;
 	gui.add(controls, 'scaleCoef', 0.0, 2.0);
 	let currentIndex;
+
+
+
+	let debugMat = new THREE.MeshBasicMaterial({map: p5Texture, opacity: 0.7});
+	let debugGeom = new THREE.BoxGeometry(2, 2, 2);
+	let debugCube = new THREE.Mesh(debugGeom, debugMat);
+	//scene.add(debugCube);
 	function updateTexture(){
 
 		/*
@@ -815,10 +830,10 @@ function main(){
     	let geometry = new THREE.BoxGeometry(1, 1, 1);
     
 
-    	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
+    	//let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000, wireframe: true});
     	let mesh = new THREE.Mesh(geometry,material);
     	
-    	let mesh2 = new THREE.Mesh(geometry, material);
+    	//let mesh2 = new THREE.Mesh(geometry, material);
     	//mesh2.position.set(0, 10, -1);
     	mesh.position.set(0, 0, 0);
     	mesh.name = 'volumeMesh';
