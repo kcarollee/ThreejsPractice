@@ -75,7 +75,8 @@ function main(){
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 100;
-	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	//const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	const camera = new THREE.OrthographicCamera();
 
 	camera.position.set(0, 0, 2);
 	camera.lookAt(0, 0, 0);
@@ -123,6 +124,8 @@ function main(){
     texturePrev.minFilter = THREE.LinearFilter;
 	texturePrev.magFilter = THREE.LinearFilter;
     texturePrev.unpackAlignment = 1; // 4 b y default.
+
+    
 	
     
 // MATERIAL
@@ -253,7 +256,7 @@ function main(){
 			
 			delta /= steps;
 
-			vec3 texCol = vec3(texture(videoTex, p.xz + 0.5).r);
+			vec3 texCol = vec3(texture(videoTex, p.xy + 0.5).rgb);
 			
 			for ( float t = bounds.x; t < bounds.y; t += delta ) {
 				
@@ -414,170 +417,7 @@ function main(){
 	gui.add(controls, 'enableBoundary', false);
 
 
-	// i: current index
-	// a: index in isOutOfBounds
-
-	function getLeftIndex(i, s, a){
-		if (i % s != 0) {
-			isOutOfBounds[a] = false;
-			return i - 1;
-		}
-		else {
-			isOutOfBounds[a] = true;
-			return i - 1 + s;
-		}
-		//return i % s != 0 ? i - 1 : i - 1 + s;
-	}
-
-	function getRightIndex(i, s, a){
-		if ((i + 1) % s != 0) {
-			isOutOfBounds[a] = false;
-			return i + 1;
-		}
-		else{
-			isOutOfBounds[a] = true;
-			return i + 1 - s;
-		}
-		//return (i + 1) % s != 0 ? i + 1 : i + 1 - s;
-	}
-
-	function getDownIndex(i, ss, tms, a){
-		if (i < tms) {
-			isOutOfBounds[a] = false;
-			return i + ss;
-		}
-		else {
-			isOutOfBounds[a] = true;
-			return i - tms;
-		}
-		//return i < tms ? i + ss : i - tms;
-	}
-
-	function getUpIndex(i, ss, tms, a){
-		if (i >= ss){
-			isOutOfBounds[a] = false;
-			 return i - ss;
-		}
-		else {
-			isOutOfBounds[a] = true;
-			return i + tms;
-		}
-		//return i >= ss ? i - ss : i + tms;
-	}
-
-	function getBackIndex(i, s, ss, a){
-		let bf = Math.floor(i / ss) * ss;
-		if ((i < bf) || (i >= bf + s)){
-			isOutOfBounds[a] = false;
-		 	return i - s;
-		 }
-		else {
-			isOutOfBounds[a] = true;
-			return i - s + ss;
-		}
-		/*
-		return (i < bf) || (i >= bf + s) ?
-				i - s : 
-				i - s + ss ;
-		*/
-	}
-
-	function getFrontIndex(i, s, ss, a){
-		let ff = Math.floor((i + s) / ss) * ss;
-		if ((i < ff - s) || (i >= ff)){
-			isOutOfBounds[a] = false;
-			return i + s;
-		}
-		else{
-			isOutOfBounds[a] = true;
-			return i - ss + s;
-		}
-		/*
-		return (i < ff - s) || (i >= ff) ? 
-				i + s :
-				i - ss + s;
-		*/
-	}
-	function calcNeighborIndices(i, size){
-		let sizeSquared = Math.pow(size, 2);
-        let sizeTripled = Math.pow(size, 3);
-        let tms = sizeTripled - sizeSquared;
-        //let ff = Math.floor((i + size) / sizeSquared) * sizeSquared; // front floored
-        //let bf = Math.floor(i / sizeSquared) * sizeSquared; // back floored
-		// NEEDS MAJOR FIXING UP
-		// face sharing
-		adjacentIndices[0] = getLeftIndex(i, size, 0);//i % size != 0 ? i - 1 : i - 1 + size; // l
-		adjacentIndices[1] = getRightIndex(i, size, 1);//(i + 1) % size != 0 ? i + 1 : i + 1 - size; // r
-		adjacentIndices[2] = getDownIndex(i, sizeSquared, tms, 2);//i < tms ? i + sizeSquared : i - tms; // d
-		adjacentIndices[3] = getUpIndex(i, sizeSquared, tms, 3);//i >= sizeSquared ? i - sizeSquared : i + tms; // u
-		adjacentIndices[4] = getBackIndex(i, size, sizeSquared, 4);
-							//(i < bf) || (i >= bf + size) ?
-							//i - size : 
-							//i - size + sizeSquared ; // b
-		adjacentIndices[5] = getFrontIndex(i, size, sizeSquared, 5);
-							//(i < ff - size) || (i >= ff) ? 
-							//i + size :
-							//i - sizeSquared + size; // f
-
-		// side sharing
-		adjacentIndices[6] = getLeftIndex(adjacentIndices[5], size, 6);//mod(adjacentIndices[5] - 1, size); // fl = f - 1 // f's left
-		adjacentIndices[7] = getRightIndex(adjacentIndices[5], size, 7);//mod(adjacentIndices[5] + 1, size); // fr = f + 1 // f's right
-		adjacentIndices[8] = getDownIndex(adjacentIndices[5], sizeSquared, tms, 8);//mod(adjacentIndices[2] + size, sizeSquared); // fd = d + size // f's down
-		adjacentIndices[9] = getUpIndex(adjacentIndices[5], sizeSquared, tms, 9);//mod(adjacentIndices[3] + size, sizeSquared); // fu = u + size // f's up
-		
-		
-		adjacentIndices[10] = getLeftIndex(adjacentIndices[4], size, 10);//mod(adjacentIndices[4] - 1, size); // bl = b - 1 // b's left
-		adjacentIndices[11] = getRightIndex(adjacentIndices[4], size, 11);//mod(adjacentIndices[4] + 1, size); // br = b + 1 // b's right
-		adjacentIndices[12] = getDownIndex(adjacentIndices[4], sizeSquared, tms, 12);//mod(adjacentIndices[2] - size, sizeSquared); //  bd = d - size // b's down
-		adjacentIndices[13] = getUpIndex(adjacentIndices[4], sizeSquared, tms, 13);//mod(adjacentIndices[3] - size, sizeSquared); // bu = u - size // b's up
-
-		
-		adjacentIndices[14] = getLeftIndex(adjacentIndices[3], size, 14);//mod(adjacentIndices[3] - 1, size); // ul = u - 1 // u's left
-		adjacentIndices[15] = getRightIndex(adjacentIndices[3], size, 15);//mod(adjacentIndices[3] + 1, size); // ur = u + 1 // u's right
-		adjacentIndices[16] = getLeftIndex(adjacentIndices[2], size, 16);//mod(adjacentIndices[2] - 1, size); // dl = d - 1 // d's left
-		adjacentIndices[17] = getRightIndex(adjacentIndices[2], size, 17);//mod(adjacentIndices[2] + 1, size); // dr = d + 1 // d's right
-
-		// vertex sharing
-		adjacentIndices[18] = getLeftIndex(adjacentIndices[9], size, 18);//mod(adjacentIndices[9] - 1, size); // ful = fu - 1 // fu's left
-		adjacentIndices[19] = getRightIndex(adjacentIndices[9], size, 19);//mod(adjacentIndices[9] + 1, size); // fur = fu + 1 // fu's right
-		adjacentIndices[20] = getLeftIndex(adjacentIndices[8], size, 20);//mod(adjacentIndices[8] - 1, size); // fdl = fd - 1 // fd's left
-		adjacentIndices[21] = getRightIndex(adjacentIndices[8], size, 21);//mod(adjacentIndices[8] + 1, size); // fdr = fd + 1`// fd's right
-
-		adjacentIndices[22] = getLeftIndex(adjacentIndices[13], size, 22);//mod(adjacentIndices[17] - 1, size); // bul = bu - 1 // bu's left
-		adjacentIndices[23] = getRightIndex(adjacentIndices[13], size, 23);//mod(adjacentIndices[17] + 1, size); // bur = bu + 1 // bu's right
-		adjacentIndices[24] = getLeftIndex(adjacentIndices[12], size, 24);//mod(adjacentIndices[16] - 1, size); // bdl = bd - 1 // bd's left
-		adjacentIndices[25] = getRightIndex(adjacentIndices[12], size, 25);//mod(adjacentIndices[16] + 1, size); // bdr = bd + 1 // bd's right
-		
-	}
-
-
-
-
-
-	let RD_PARAMS = {
-		da: 0.6,
-		db: 0.2,
-		dt: 1.0,
-		feed: 0.03,
-		kill: 0.06,
-		faceNeighborCoef: 1.0 / 26.0,
-		sideNeighborCoef: 1.0 / 26.0,
-		vertNeighborCoef: 1.0 / 26.0,
-
-	}
-
-	let paramFolder = gui.addFolder('RD_PARAMS');
-
-	paramFolder.add(RD_PARAMS, 'da', 0.0, 1.5).listen();
-	paramFolder.add(RD_PARAMS, 'db', 0.0, 1.5).listen();
-	paramFolder.add(RD_PARAMS, 'dt', 0.0, 10.0).listen().step(0.001);
-	paramFolder.add(RD_PARAMS, 'feed', 0.0, 0.1).listen().step(0.001);
-	paramFolder.add(RD_PARAMS, 'kill', 0.0, 0.1).listen().step(0.001);
-	paramFolder.add(RD_PARAMS, 'faceNeighborCoef', 0.0, 0.25).listen().step(0.001);
-	paramFolder.add(RD_PARAMS, 'sideNeighborCoef', 0.0, 0.25).listen().step(0.001);
-	paramFolder.add(RD_PARAMS, 'vertNeighborCoef', 0.0, 0.25).listen().step(0.001);
-
-
+	
 	
 
 	function distSquared(x0, y0, z0, x1, y1, z1){
@@ -595,103 +435,10 @@ function main(){
 	controls.moveFeedSource = false;
 	gui.add(controls, 'continuousFeed', false);
 	gui.add(controls, 'moveFeedSource', false).listen();
-	function getNewValue(index, x, y, z){
-		ss++;
-		let asum = 0.0;
-		let bsum = 0.0;
-		let fc = RD_PARAMS.faceNeighborCoef;
-		let sc = RD_PARAMS.sideNeighborCoef;
-		let vc = RD_PARAMS.vertNeighborCoef;
-		let da = RD_PARAMS.da;
-		let db = RD_PARAMS.db;
-		let dt = RD_PARAMS.dt;
-		let feed = RD_PARAMS.feed;
-		let kill = RD_PARAMS.kill;
-
-		adjacentIndices.forEach(function(adjIndex, i){
-			if (controls.enableBoundary && isOutOfBounds[i]){
-				asum -= 10;
-				bsum -= 10;
-			 return;
-			}
-			if (i < 6){
-				asum += aPrevValues[adjIndex] * fc;
-				bsum += bPrevValues[adjIndex] * fc;
-			}
-
-			else if (i < 18){
-				asum += aPrevValues[adjIndex] * sc;
-				bsum += bPrevValues[adjIndex] * sc;
-			}
-
-			else if (i < 26){
-				asum += aPrevValues[adjIndex] * vc;
-				bsum += bPrevValues[adjIndex] * vc;
-			}
-		})
-
-		asum -= aPrevValues[index];
-		bsum -= bPrevValues[index];
-
-		let a = aPrevValues[index];
-		let b = bPrevValues[index];
-
-		let abb = a * b * b;
-
-		
-
-		if (addValue || controls.continuousFeed){
-			
-			
-			
-
-			let ra = 0.5;
-			let dist;
-			if (controls.moveFeedSource){
-				 dist = Math.sqrt(distSquared(x, y, z, ra * Math.sin(step * 0.01), ra * Math.cos(step * 0.01), ra * Math.cos(step * 0.01)));
-			}
-			else{
-				dist = Math.sqrt(distSquared(x, y, z, 0, 0, 0));
-			}
-			let r = 0.1;
-			dist = dist > r ? 0.0 : 1.0;
-			b += dist;
-			
-			/*
-			let rand = perlin.noise(x * 10.0 + step * 0.001, y * 10.0 + step * 0.001, z * 10.0 + step * 0.001);
-			rand = rand > 0 ? 0.0 : 1.0;
-			b += rand;
-			*/
-			
-		}
-
-		a += (da * asum - abb + feed * (1.0 - a)) * dt;
-		b += (db * bsum + abb - (feed + kill) * b) * dt;
-		a = clamp(a, 0.0, 1.0);
-		b = clamp(b, 0.0, 1.0);
-
-		aNextValues[index] = a;
-		bNextValues[index] = b;
-
-		return 1.0 - Math.abs(a - b) ;
-	}
-
-	controls.addValue = function(){
-		addValue = true;
-	}
-	gui.add(controls, 'addValue');
+	
 
 
-
-	function swapValues(){
-
-		aNextValues.forEach(function(v, i){
-			aPrevValues[i] = v;
-		})
-		bNextValues.forEach(function(v, i){
-			bPrevValues[i] = v;
-		})
-	}
+	
 
 	controls.debug = function(){
 		console.log(videoPixelArr);
@@ -699,22 +446,6 @@ function main(){
 	}
 	gui.add(controls, 'debug');
 
-	controls.reset = function(){
-		aPrevValues = [];
-		aNextValues = [];
-		bNextValues = [];
-		bPrevValues = [];
-
-		for (let i = 0; i < Math.pow(size, 3); i++){
-			aPrevValues.push(1);
-			bPrevValues.push(0);
-			aNextValues.push(1);
-			bNextValues.push(0);
-		}
-	}
-	gui.add(controls, 'reset');
-	controls.scaleCoef = 1.0;
-	gui.add(controls, 'scaleCoef', 0.0, 2.0);
 	let currentIndex;
 
 
@@ -783,16 +514,16 @@ function main(){
 					let fi = rs * 648 + cs; // flat index
 
 					let offset = 4 * fi;
-					let d = videoPixelArr[offset] + videoPixelArr[offset + 1] + videoPixelArr[offset + 2];
-					d /= 3;
+					let d = videoPixelArr[offset];
+					//d /= 3;
 					d = 256 - d;
     	            data[i++] = mapLinear(d, 0, 256, 0, 256); // map to a value between 0 and 256
     	        }
     	    }
     	}
-    	if (addValue) addValue = false;
+    	
 
-    	swapValues();
+    	
 
     	//console.log(dataPrev[63543] + " " + data[63543]);
 
@@ -855,49 +586,6 @@ function main(){
 
 // PRESETS
 	
-
-	controls.presets = '';
-	function setRDParams(a, b, t, f, k, fn, sn, vn){
-		
-		RD_PARAMS.da = a;
-		RD_PARAMS.db = b;
-		RD_PARAMS.dt = t;
-		RD_PARAMS.feed = f;
-		RD_PARAMS.kill = k;
-		RD_PARAMS.faceNeighborCoef = fn;
-		RD_PARAMS.sideNeighborCoef = sn;
-		RD_PARAMS.vertNeighborCoef = vn;
-	}
-	gui.add(controls, 'presets', ['SEMI_MITOSIS', 'SEMI_MITOSIS_2', 'RING_PUFF', 'BLOWOUT','FN_ONLY']).onChange(function(m){
-		switch(m){
-			case 'SEMI_MITOSIS':
-				controls.threshold = 0.82;
-				controls.moveFeedSource = false;
-				setRDParams(0.6, 0.2, 1.0, 0.058, 0.07, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
-				break;
-			case 'SEMI_MITOSIS_2':
-				controls.threshold = 0.79;
-				controls.moveFeedSource = false;
-				setRDParams(0.68, 0.12, 1.2, 0.009, 0.056, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
-				break;
-			case 'RING_PUFF':
-				controls.threshold = 0.82;
-				controls.moveFeedSource = false;
-				setRDParams(0.73, 0.2, 1.4, 0.009, 0.056, 1.0 / 26.0, 1.0 / 26.0, 1.0 / 26.0);
-				break;
-			case 'BLOWOUT':
-				controls.threshold = 0.23;
-				controls.moveFeedSource = true;
-				
-				setRDParams(0.84, 0.93, 1.2, 0.057, 0.062, 0.167, 0, 0);
-				break;
-			case 'FN_ONLY':
-				RD_PARAMS.faceNeighborCoef = 1.0 / 6.0;
-				RD_PARAMS.sideNeighborCoef = 0.0;
-				RD_PARAMS.vertNeighborCoef = 0.0;
-				break;
-		}
-	});
 
 	let step = 0;
 
