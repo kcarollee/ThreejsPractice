@@ -75,8 +75,8 @@ function main(){
 	const aspect = window.innerWidth / window.innerHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 100;
-	//const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-	const camera = new THREE.OrthographicCamera();
+	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	//const camera = new THREE.OrthographicCamera();
 
 	camera.position.set(0, 0, 2);
 	camera.lookAt(0, 0, 0);
@@ -93,7 +93,7 @@ function main(){
 
     let size = 32;
     let data = new Uint8Array(size * size * size); // 3 dimensional array flattened
-    let dataPrev = new Uint8Array(size * size * size);
+   
     let i = 0;
     let perlin = new ImprovedNoise();
     let vector = new THREE.Vector3();
@@ -106,11 +106,10 @@ function main(){
                 vector.set(x, y, z).divideScalar(size);
                 let d = perlin.noise(vector.x * 6.5, vector.y * 6.5, vector.z * 6.5);
                 data[i++] = d * 128 + 128;
-                dataPrev[i++] = 0; // initialize previous textue
+               
             }
         }
     }
-    
 
     let texture = new THREE.DataTexture3D(data, size, size, size);
     texture.format = THREE.RedFormat;
@@ -118,14 +117,21 @@ function main(){
 	texture.magFilter = THREE.LinearFilter;
     texture.unpackAlignment = 1; // 4 b y default.
 
-    
-    let texturePrev = new THREE.DataTexture3D(data, size, size, size);
-    texturePrev.format = THREE.RedFormat;
-    texturePrev.minFilter = THREE.LinearFilter;
-	texturePrev.magFilter = THREE.LinearFilter;
-    texturePrev.unpackAlignment = 1; // 4 b y default.
+    let videoData = [];
 
     
+
+    let videoDataTexture = new THREE.DataTexture(
+    	Uint8Array.from(videoData),
+    	size,
+    	size,
+    	THREE.RGBAFormat,
+    	THREE.UnsignedByteType,
+    	THREE.UVMapping
+    );
+
+    videoDataTexture.needsUpdate = true;
+
 	
     
 // MATERIAL
@@ -170,6 +176,7 @@ function main(){
 		uniform sampler3D mapPrev;
 
 		uniform sampler2D videoTex;
+		uniform sampler2D videoDataTex;
 		
 		uniform vec3 lightDir;
         
@@ -257,6 +264,8 @@ function main(){
 			delta /= steps;
 
 			vec3 texCol = vec3(texture(videoTex, p.xy + 0.5).rgb);
+
+			vec3 vdCol = vec3(texture(videoDataTex, p.xy  + 0.5).rgb);
 			
 			for ( float t = bounds.x; t < bounds.y; t += delta ) {
 				
@@ -292,14 +301,14 @@ function main(){
 					//color.rgb += texture(videoTex, p.xy * 0.1 + ref.xy).rgb;
    					//color.rgb -= p * 0.25;
 					color.a = 1.;
-					color.rgb = texCol;
+					color.rgb = vdCol;
 					break;
 				}
 				p += rayDir * delta;
 
 			}
 			
-			color.rgb = 1.0 - color.rgb;
+			//color.rgb = 1.0 - color.rgb;
 
 			/*
 
@@ -363,29 +372,12 @@ function main(){
 		material.uniforms.threshold.value = controls.threshold;
 	});
 	
-
-
-
-	let testFunc1 = (x, y, z) => {
-		let dx = 0.5;
-    	let dy = 0.5;
-    	let dz = 0.5;
-    	            
-    	let mx = (x - dx);
-    	let my = (y - dy);
-    	let mz = (z - dz);
-
-
-    	let d = Math.sqrt(mx * mx + my * my + mz * mz);
-    	//d = Math.sin(d * 0.1 + step * 0.001);
-    	return d;
-	};
-
-
 	
-	
-	controls.dataSize = 100;
+	controls.dataSize = 150;
 	gui.add(controls, 'dataSize', 8, 256);
+
+	controls.shift = 0;
+	gui.add(controls, 'shift', 0, 1000);
 
 	function getFlatIndex(x, y, z, size){
 		return x + size * (y + size * z);
@@ -395,27 +387,7 @@ function main(){
   		return ((n % m) + m) % m;
 	}
 
-	let adjacentIndices = [];
-	let isOutOfBounds = [];
-	let aPrevValues = [];
-	let bPrevValues = [];
-	let aNextValues = [];
-	let bNextValues = [];
-	for (let i = 0; i < 26; i++) {
-		adjacentIndices.push(0);
-		isOutOfBounds.push(false);
-	}
-	for (let i = 0; i < Math.pow(size, 3); i++){
-		aPrevValues.push(1);
-		bPrevValues.push(0);
-		aNextValues.push(1);
-		bNextValues.push(0);
-	}
 	
-
-	controls.enableBoundary = false;
-	gui.add(controls, 'enableBoundary', false);
-
 
 	
 	
@@ -427,16 +399,6 @@ function main(){
 	function clamp(x, min, max){
 		return Math.min(Math.max(x, min), max);
 	}
-
-	// index : current index
- 	let ss = 0;
- 	let addValue = false;
-	controls.continuousFeed = false;
-	controls.moveFeedSource = false;
-	gui.add(controls, 'continuousFeed', false);
-	gui.add(controls, 'moveFeedSource', false).listen();
-	
-
 
 	
 
@@ -513,7 +475,8 @@ function main(){
 
 					let fi = rs * 648 + cs; // flat index
 
-					let offset = 4 * fi;
+					let offset = 4 * (fi + controls.shift);
+					offset %= videoPixelArr.length;
 					let d = videoPixelArr[offset];
 					//d /= 3;
 					d = 256 - d;
@@ -521,6 +484,35 @@ function main(){
     	        }
     	    }
     	}
+
+    	videoData = [];
+
+    	for (let y = 0; y < size; y++){
+    		let rs = Math.floor(mapLinear(y, 0, size, 0, 450));
+    		for (let x = 0; x < size; x++){
+    			let cs = Math.floor(mapLinear(x, 0, size, 0, 648));
+
+				let fi = rs * 648 + cs; // flat index
+
+				let offset = 4 * (fi + controls.shift);
+				offset %= videoPixelArr.length;
+				
+
+    			videoData.push(videoPixelArr[offset], videoPixelArr[offset + 1], 
+    						videoPixelArr[offset + 2], videoPixelArr[offset + 3]);
+    		}
+    	}
+
+    	videoDataTexture = new THREE.DataTexture(
+    		Uint8Array.from(videoData),
+    		size,
+    		size
+    		//THREE.RGBAFormat,
+    		//THREE.UnsignedByteType,
+    		//THREE.UVMapping
+    	);
+
+    	videoDataTexture.needsUpdate = true;
     	
 
     	
@@ -548,7 +540,8 @@ function main(){
     	        cameraPos: {value: new THREE.Vector3()},
     	        threshold: {value: controls.threshold},
     	        steps: {value: 500},
-    	       videoTex: {value: p5Texture},
+    	       	videoTex: {value: p5Texture},
+    	       	videoDataTex: {value: videoDataTexture}
     	    },
     	    vertexShader,
     	    fragmentShader,
