@@ -1,7 +1,12 @@
+// https://stackoverflow.com/questions/42562056/how-to-use-rendering-result-of-scene-as-texture-in-threejs
+// https://threejs.org/examples/webgl_rtt.html
 function main(){
 	let step = 0;
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
+
+
+
 
 //CAMERA
 	const cameraArr = [];
@@ -11,21 +16,23 @@ function main(){
 	const far = 1000;
 	const camera1 = new THREE.PerspectiveCamera(fov, aspect, near, far);
 	const camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-	camera1.position.set(0, 20, 30);
-	camera2.position.set(0, 0, 30);
-	// x > 0: rotate cam left
-	// y > 0: rotate cam up
-	// z > 0: 
-	camera2.lookAt(new THREE.Vector3(10, 0, 0)); 
+	camera1.position.set(0, 0, 10);
+	camera2.position.set(0, 0, -30);
+	
+	camera2.lookAt(new THREE.Vector3(0, 0, 0)); 
 
 	cameraArr.push(camera1, camera2);
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xCCCCCC);
 	
+//RENDERTARGETS
+	const renderTarget0 = new THREE.WebGLRenderTarget(canvas.clientWidth , canvas.clientHeight );
+	const renderTarget1 = new THREE.WebGLRenderTarget(canvas.clientWidth , canvas.clientHeight );
 
 //GEOMETRIES
+
 	const cubeMat = new THREE.MeshNormalMaterial();
-	const cubeGeom = new THREE.BoxGeometry(10, 10, 10);
+	const cubeGeom = new THREE.BoxGeometry(1, 1, 1);
 	const cubeNum = 1000;
 	for (let i = 0; i < cubeNum; i++){
 		const cube = new THREE.Mesh(cubeGeom, cubeMat);
@@ -33,6 +40,16 @@ function main(){
 		cube.scale.set(Math.random() * 0.5, Math.random() * 0.5, Math.random() * 0.5);
 		scene.add(cube);
 	}
+	
+
+	const planeGeom = new THREE.PlaneGeometry(10, 10, 10);
+	const planeMat = new THREE.MeshBasicMaterial({
+		map: renderTarget0.texture,
+		side: THREE.DoubleSide
+	});
+	const plane = new THREE.Mesh(planeGeom, planeMat);
+	//plane.rotation.set(0, 0, 0);
+	scene.add(plane);
 	
 	
 
@@ -49,19 +66,35 @@ function main(){
 	
 	gui.add(controls, 'debug');
 
+
+	let tick = true;
 	function render(time){
 		time *= 0.001;
 		step += 1;
 		
 
-		//camera2.lookAt(new THREE.Vector3(0, 5 + 5 * Math.sin(step * 0.01), 0))
+		
+		renderer.setRenderTarget(renderTarget0);
+		renderer.clear();
+		renderer.render(scene, camera2);
+
+		camera2.position.set(0, 0, -30 + 15 * Math.sin(step * 0.1));
+
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
-			camera2.aspect = canvas.clientWidth / canvas.clientHeight;
-			camera2.updateProjectionMatrix();
+			camera1.aspect = canvas.clientWidth / canvas.clientHeight;
+			camera1.updateProjectionMatrix();
 		}
-		renderer.render(scene, camera2);
+
+		renderer.setRenderTarget(null);
+		renderer.clear();
+		renderer.render(scene, camera1);
+
+		
 		requestAnimationFrame(render);
+		
+
+		
 		
 		/*
 		cameraArr.forEach(function(c, i){
