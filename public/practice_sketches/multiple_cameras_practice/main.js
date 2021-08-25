@@ -1,12 +1,61 @@
 // https://stackoverflow.com/questions/42562056/how-to-use-rendering-result-of-scene-as-texture-in-threejs
 // https://threejs.org/examples/webgl_rtt.html
+import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
+
+const DEFAULT_CAM_CONFIGS = {
+	fov: 75, 
+	aspect: window.innerWidth/window.innerHeight, 
+	near: 0.1, 
+	far: 1000
+}
+
+class RenderTargetCamera{
+	// lookAt: Vector3
+	constructor(posx, posy, posz, lookAt, configs = DEFAULT_CAM_CONFIGS){
+		this.camera = new THREE.PerspectiveCamera(configs.fov, configs.aspect, configs.near, configs.far);
+		this.camera.position.set(posx, posy, posz);
+		this.cameraLookAt = lookAt;
+		this.camera.lookAt(lookAt);
+		this.renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
+
+		// CAMERA MODEL
+		this.cameraMesh = new THREE.Mesh(RenderTargetCamera.camGeometry, RenderTargetCamera.camMaterial);
+
+	}
+
+	updateCameraPosition(x, y, z){
+		this.camera.position.set(x, y, z);
+		this.cameraMesh.position.set(x, y, z);
+	}
+
+	updateCameraLookAt(x, y, z){
+		this.cameraLookAt.set(x, y, z);
+		this.camera.lookAt(this.cameraLookAt);
+	}
+
+	renderOntoRenderTarget(renderer, scene){
+		renderer.setRenderTarget(this.renderTarget);
+		renderer.clear();
+		renderer.render(scene, this.camera);
+	}
+
+	// don't forget to add mesh to the scene
+	getMesh(){
+		return this.cameraMesh;
+	}	
+
+	getCameraViewTexture(){
+		return this.renderTarget.texture;
+	}
+}
+
+RenderTargetCamera.camGeometry = new THREE.BoxGeometry(1, 1, 1);
+RenderTargetCamera.camMaterial = new THREE.MeshNormalMaterial();
+
 function main(){
 	let step = 0;
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
-
-
-
 
 //CAMERA
 	const cameraArr = [];
@@ -14,26 +63,21 @@ function main(){
 	const aspect = canvas.clientWidth / canvas.clientHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 1000;
-	const camera1 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-	const camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-	camera1.position.set(0, 0, 10);
-	camera2.position.set(0, 0, -30);
+	const mainCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	mainCamera.position.set(0, 0, 10);
+	new OrbitControls(mainCamera, renderer.domElement);
+	const testCamera = new RenderTargetCamera(0, 0, -30, new THREE.Vector3(0, 0, 0));
 	
-	camera2.lookAt(new THREE.Vector3(0, 0, 0)); 
-
-	cameraArr.push(camera1, camera2);
+	
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xCCCCCC);
+	scene.background = new THREE.Color(0x000000);
 	
-//RENDERTARGETS
-	const renderTarget0 = new THREE.WebGLRenderTarget(canvas.clientWidth , canvas.clientHeight );
-	const renderTarget1 = new THREE.WebGLRenderTarget(canvas.clientWidth , canvas.clientHeight );
 
 //GEOMETRIES
 
 	const cubeMat = new THREE.MeshNormalMaterial();
 	const cubeGeom = new THREE.BoxGeometry(1, 1, 1);
-	const cubeNum = 1000;
+	const cubeNum = 100;
 	for (let i = 0; i < cubeNum; i++){
 		const cube = new THREE.Mesh(cubeGeom, cubeMat);
 		cube.position.set(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5);
@@ -42,14 +86,16 @@ function main(){
 	}
 	
 
-	const planeGeom = new THREE.PlaneGeometry(10, 10, 10);
+	const planeGeom = new THREE.PlaneGeometry(20, 20, 20);
 	const planeMat = new THREE.MeshBasicMaterial({
-		map: renderTarget0.texture,
+		map: testCamera.getCameraViewTexture(),
 		side: THREE.DoubleSide
 	});
 	const plane = new THREE.Mesh(planeGeom, planeMat);
 	//plane.rotation.set(0, 0, 0);
 	scene.add(plane);
+
+	scene.add(testCamera.getMesh());
 	
 	
 
@@ -73,22 +119,21 @@ function main(){
 		step += 1;
 		
 
+		testCamera.updateCameraPosition(15 * Math.cos(step * 0.01), 0, 15 * Math.sin(step * 0.01));
+		testCamera.updateCameraLookAt(0, 0, 0);
+		testCamera.renderOntoRenderTarget(renderer, scene);
 		
-		renderer.setRenderTarget(renderTarget0);
-		renderer.clear();
-		renderer.render(scene, camera2);
-
-		camera2.position.set(0, 0, -30 + 15 * Math.sin(step * 0.1));
+		
 
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
-			camera1.aspect = canvas.clientWidth / canvas.clientHeight;
-			camera1.updateProjectionMatrix();
+			mainCamera.aspect = canvas.clientWidth / canvas.clientHeight;
+			mainCamera.updateProjectionMatrix();
 		}
 
 		renderer.setRenderTarget(null);
 		renderer.clear();
-		renderer.render(scene, camera1);
+		renderer.render(scene, mainCamera);
 
 		
 		requestAnimationFrame(render);
