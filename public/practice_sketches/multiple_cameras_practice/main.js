@@ -1,6 +1,7 @@
 // https://stackoverflow.com/questions/42562056/how-to-use-rendering-result-of-scene-as-texture-in-threejs
 // https://threejs.org/examples/webgl_rtt.html
 import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
+//import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
 
 const DEFAULT_CAM_CONFIGS = {
 	fov: 75, 
@@ -47,10 +48,16 @@ class RenderTargetCamera{
 	getCameraViewTexture(){
 		return this.renderTarget.texture;
 	}
+
+	getCamera(){
+		return this.camera;
+	}
 }
 
 RenderTargetCamera.camGeometry = new THREE.BoxGeometry(1, 1, 1);
 RenderTargetCamera.camMaterial = new THREE.MeshNormalMaterial();
+
+
 
 function main(){
 	let step = 0;
@@ -59,29 +66,33 @@ function main(){
 
 //CAMERA
 	const cameraArr = [];
+	
 	const fov = 75;
 	const aspect = canvas.clientWidth / canvas.clientHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 1000;
-	const mainCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	
+	let mainCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 	mainCamera.position.set(0, 0, 10);
 	new OrbitControls(mainCamera, renderer.domElement);
 	const testCamera = new RenderTargetCamera(0, 0, -30, new THREE.Vector3(0, 0, 0));
 	
+	cameraArr.push(mainCamera, testCamera);
 	
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0x000000);
 	
 
 //GEOMETRIES
-
+	//const perlin = new ImprovedNoise();
 	const cubeMat = new THREE.MeshNormalMaterial();
 	const cubeGeom = new THREE.BoxGeometry(1, 1, 1);
 	const cubeNum = 100;
 	for (let i = 0; i < cubeNum; i++){
 		const cube = new THREE.Mesh(cubeGeom, cubeMat);
-		cube.position.set(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5);
-		cube.scale.set(Math.random() * 0.5, Math.random() * 0.5, Math.random() * 0.5);
+
+		cube.position.set(Math.random() * 50 - 25, 0, Math.random() * 50 - 25);
+		cube.scale.set(Math.random() * 2, Math.random() * 10, Math.random() * 2);
 		scene.add(cube);
 	}
 	
@@ -103,15 +114,34 @@ function main(){
 //GUI
 	const gui = new dat.GUI();
 	const controls = new function(){
-		
+		let cameraIndex = 0;
 		this.debug = function(){
 
+		}
+
+		this.switchCamera = function(){
+			
+			cameraIndex++;
+			cameraIndex %= cameraArr.length;
+			
+
+			if (cameraIndex == 0) {
+				mainCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+				mainCamera.position.set(0, 0, 10);
+				new OrbitControls(mainCamera, renderer.domElement);
+			}
+			
+			else mainCamera = cameraArr[cameraIndex].getCamera();
+			
+			
 		}
 	}
 
 	
 	gui.add(controls, 'debug');
+	gui.add(controls, 'switchCamera');
 
+	
 
 	let tick = true;
 	function render(time){
@@ -119,7 +149,7 @@ function main(){
 		step += 1;
 		
 
-		testCamera.updateCameraPosition(15 * Math.cos(step * 0.01), 0, 15 * Math.sin(step * 0.01));
+		testCamera.updateCameraPosition(15 * Math.cos(step * 0.01), 10, 15 * Math.sin(step * 0.01));
 		testCamera.updateCameraLookAt(0, 0, 0);
 		testCamera.renderOntoRenderTarget(renderer, scene);
 		
