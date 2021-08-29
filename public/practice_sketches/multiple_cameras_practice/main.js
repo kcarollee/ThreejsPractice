@@ -128,7 +128,7 @@ function main(){
 	const cubeNum = 1000;
 	
 
-	const shapeFunc = (x, y, z, steep) => (1000 / (Math.pow(x, steep) + Math.pow(y, steep) + Math.pow(z, steep)));
+	const shapeFunc1 = (x, y, z, steep) => (1000 / (10 + (Math.pow(x, steep) + Math.pow(y, steep) + Math.pow(z, steep))));
 	for (let i = 0; i < cubeNum; i++){
 		let rand = Math.random();
 		let cube;
@@ -138,9 +138,50 @@ function main(){
 
 		cube.position.set(Math.random() * dim - dim * 0.5, 0, Math.random() * dim - dim * 0.5);
 		//cube.scale.set(Math.random() * 5, Math.random() * 10, Math.random() * 5);
-		let scale = shapeFunc(cube.position.x, cube.position.y, cube.position.z, 2);
+		let scale = shapeFunc1(cube.position.x, cube.position.y, cube.position.z, 2);
 		cube.scale.set(Math.random() * 5, Math.random() * scale, Math.random() * 5);
 		scene.add(cube);
+	}
+
+	const torusNum = 50;
+	const torusGeom = new THREE.TorusGeometry(10, 1, 4, 4);
+	const torusMat = new THREE.MeshNormalMaterial();
+	let torusArr = [];
+	function getTorusPositionByIncrement(i){
+		let radius = 50;
+		let height = 40 + 20 * Math.sin(i * 3.0);
+		let x = radius * Math.cos(i);
+		let y = height;
+		let z = radius * Math.sin(i);
+		let pos = new THREE.Vector3(x, y, z);
+		return pos;
+	}
+
+	let increment = Math.PI * 2.0 / torusNum;
+	// init torus
+	for (let i = 0; i < torusNum; i++){
+		let torus = new THREE.Mesh(torusGeom, torusMat);
+		let pos = getTorusPositionByIncrement(increment * i);
+		let prevPos = getTorusPositionByIncrement(increment * (i - 1));
+		let lookAtVec = new THREE.Vector3();
+		lookAtVec.subVectors(prevPos, pos);
+		torus.lookAt(lookAtVec);
+		torus.position.copy(pos);
+		torusArr.push(torus);
+		scene.add(torus);
+	}
+
+	function distortTorus(){
+		for (let i = 0; i < torusArr.length; i++){
+
+			let torus = torusArr[i];
+			let pos = getTorusPositionByIncrement(increment * (i));
+			let prevPos = getTorusPositionByIncrement(increment * (i - 1));
+			let lookAtVec = new THREE.Vector3();
+			lookAtVec.subVectors(prevPos, pos);
+			torus.lookAt(lookAtVec);
+			torus.position.copy(pos);
+		}
 	}
 	
 
@@ -190,6 +231,7 @@ function main(){
 	
 
 	let tick = true;
+	let incrementForTorusCam = 0.01;
 	function render(time){
 		time *= 0.001;
 		step += 1;
@@ -201,10 +243,16 @@ function main(){
 		testCamera.renderOntoRenderTarget(renderer, scene);
 
 
+		distortTorus();
 		testCamera2.updateCameraMeshRotation();
+		let newPos = getTorusPositionByIncrement(incrementForTorusCam * step);
+		let lookAtPos = getTorusPositionByIncrement(incrementForTorusCam * (step + 10));
+		/*
 		testCamera2.updateCameraPosition(30 *  Math.sin((step - 0.01) * 0.01), 5 * Math.sin((step * 5 - 0.01) * 0.01), 30 *  Math.cos((step - 0.01) * 0.01));
 		testCamera2.updateCameraLookAt(30 *  Math.sin(step * 0.01), 5 * Math.sin(step * 5 * 0.01), 30 *  Math.cos(step * 0.01));
-
+		*/
+		testCamera2.updateCameraPosition(newPos.x, newPos.y, newPos.z);
+		testCamera2.updateCameraLookAt(lookAtPos.x, lookAtPos.y, lookAtPos.z);
 		testCamera2.renderOntoRenderTarget(renderer, scene);
 		
 		
