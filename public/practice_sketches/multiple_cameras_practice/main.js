@@ -1,10 +1,10 @@
 // https://stackoverflow.com/questions/42562056/how-to-use-rendering-result-of-scene-as-texture-in-threejs
 // https://threejs.org/examples/webgl_rtt.html
 import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
-//import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
+import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
 
 const DEFAULT_CAM_CONFIGS = {
-	fov: 75, 
+	fov: 60, 
 	aspect: window.innerWidth/window.innerHeight, 
 	near: 0.1, 
 	far: 1000
@@ -34,6 +34,22 @@ class RenderTargetCamera{
 		this.camera.lookAt(this.cameraLookAt);
 	}
 
+	updateCameraMeshRotation(){
+		//this.cameraMesh.rotation.set(1, 1, 0);
+		//this.cameraMesh.rotateX(1);
+		//this.cameraMesh.rotateY();
+		//this.cameraMesh.rotateZ();
+
+		let bisectVec = new THREE.Vector3();
+		let initVec = new THREE.Vector3(1, 0, 0);
+		let subVec = new THREE.Vector3();
+		subVec.subVectors(this.cameraLookAt, this.camera.position);
+		bisectVec = initVec.add(subVec).normalize();
+		
+
+		this.cameraMesh.rotateOnWorldAxis(bisectVec, Math.PI);
+	}
+
 	renderOntoRenderTarget(renderer, scene){
 		renderer.setRenderTarget(this.renderTarget);
 		renderer.clear();
@@ -55,7 +71,7 @@ class RenderTargetCamera{
 }
 
 RenderTargetCamera.camGeometry = new THREE.BoxGeometry(1, 1, 1);
-RenderTargetCamera.camMaterial = new THREE.MeshNormalMaterial();
+RenderTargetCamera.camMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000});
 
 
 
@@ -67,47 +83,73 @@ function main(){
 //CAMERA
 	const cameraArr = [];
 	
-	const fov = 75;
+	const fov = 60;
 	const aspect = canvas.clientWidth / canvas.clientHeight; // display aspect of the canvas
 	const near = 0.1;
 	const far = 1000;
 	
 	let mainCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	let mainCameraCopy;
 	mainCamera.position.set(0, 0, 10);
-	new OrbitControls(mainCamera, renderer.domElement);
+
+	const orbitControls = new OrbitControls(mainCamera, renderer.domElement);
+	orbitControls.update();
 	const testCamera = new RenderTargetCamera(0, 0, -30, new THREE.Vector3(0, 0, 0));
+	const testCamera2 = new RenderTargetCamera(0, 0, -30, new THREE.Vector3(0, 0, 0));
 	
-	cameraArr.push(mainCamera, testCamera);
+	cameraArr.push(mainCamera, testCamera, testCamera2);
 	
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0x000000);
 	
 
 //GEOMETRIES
-	//const perlin = new ImprovedNoise();
-	const cubeMat = new THREE.MeshNormalMaterial();
-	const cubeGeom = new THREE.BoxGeometry(1, 1, 1);
-	const cubeNum = 100;
-	for (let i = 0; i < cubeNum; i++){
-		const cube = new THREE.Mesh(cubeGeom, cubeMat);
-
-		cube.position.set(Math.random() * 50 - 25, 0, Math.random() * 50 - 25);
-		cube.scale.set(Math.random() * 2, Math.random() * 10, Math.random() * 2);
-		scene.add(cube);
-	}
-	
-
+	const dim = 100;
 	const planeGeom = new THREE.PlaneGeometry(20, 20, 20);
 	const planeMat = new THREE.MeshBasicMaterial({
 		map: testCamera.getCameraViewTexture(),
 		side: THREE.DoubleSide
 	});
+	const planeMat2 = new THREE.MeshBasicMaterial({
+		map: testCamera2.getCameraViewTexture(),
+		side: THREE.DoubleSide
+	});
 	const plane = new THREE.Mesh(planeGeom, planeMat);
+	const plane2 = new THREE.Mesh(planeGeom, planeMat2);
+
+	plane.position.set(-dim * 0.25, dim * 0.25, 0);
+	plane2.position.set(dim * 0.25, dim * 0.25, 0);
 	//plane.rotation.set(0, 0, 0);
 	scene.add(plane);
+	scene.add(plane2);
+
+	const cubeMat = new THREE.MeshNormalMaterial();
+	const cubeGeom = new THREE.BoxGeometry(1, 1, 1);
+	const cubeNum = 1000;
+	
+
+	const shapeFunc = (x, y, z, steep) => (1000 / (Math.pow(x, steep) + Math.pow(y, steep) + Math.pow(z, steep)));
+	for (let i = 0; i < cubeNum; i++){
+		let rand = Math.random();
+		let cube;
+		if (rand < 0.6) cube = new THREE.Mesh(cubeGeom, cubeMat);
+		else if (rand < 0.8) cube = new THREE.Mesh(cubeGeom, planeMat);
+		else cube = new THREE.Mesh(cubeGeom, planeMat2);
+
+		cube.position.set(Math.random() * dim - dim * 0.5, 0, Math.random() * dim - dim * 0.5);
+		//cube.scale.set(Math.random() * 5, Math.random() * 10, Math.random() * 5);
+		let scale = shapeFunc(cube.position.x, cube.position.y, cube.position.z, 2);
+		cube.scale.set(Math.random() * 5, Math.random() * scale, Math.random() * 5);
+		scene.add(cube);
+	}
+	
+
+	
+
+
 
 	scene.add(testCamera.getMesh());
-	
+	scene.add(testCamera2.getMesh());
 	
 
 	
@@ -127,11 +169,15 @@ function main(){
 
 			if (cameraIndex == 0) {
 				mainCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-				mainCamera.position.set(0, 0, 10);
+				mainCamera.position.set(0, 20, 100);
 				new OrbitControls(mainCamera, renderer.domElement);
 			}
 			
-			else mainCamera = cameraArr[cameraIndex].getCamera();
+			else {
+				let temp = mainCamera;
+				mainCameraCopy = temp;
+				mainCamera = cameraArr[cameraIndex].getCamera();
+			}
 			
 			
 		}
@@ -148,10 +194,19 @@ function main(){
 		time *= 0.001;
 		step += 1;
 		
-
-		testCamera.updateCameraPosition(15 * Math.cos(step * 0.01), 10, 15 * Math.sin(step * 0.01));
+		testCamera.updateCameraMeshRotation();
+		testCamera.updateCameraPosition(40 *  Math.cos(step * 0.01), 10, 40 *  Math.sin(step * 0.01));
 		testCamera.updateCameraLookAt(0, 0, 0);
+
 		testCamera.renderOntoRenderTarget(renderer, scene);
+
+
+		testCamera2.updateCameraMeshRotation();
+		testCamera2.updateCameraPosition(30 *  Math.sin((step - 0.01) * 0.01), 5 * Math.sin((step * 5 - 0.01) * 0.01), 30 *  Math.cos((step - 0.01) * 0.01));
+		testCamera2.updateCameraLookAt(30 *  Math.sin(step * 0.01), 5 * Math.sin(step * 5 * 0.01), 30 *  Math.cos(step * 0.01));
+
+		testCamera2.renderOntoRenderTarget(renderer, scene);
+		
 		
 		
 
