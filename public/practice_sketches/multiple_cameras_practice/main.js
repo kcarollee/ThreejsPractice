@@ -1,7 +1,11 @@
 // https://stackoverflow.com/questions/42562056/how-to-use-rendering-result-of-scene-as-texture-in-threejs
 // https://threejs.org/examples/webgl_rtt.html
-import {OrbitControls} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/OrbitControls.js";
-import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.128.0/examples/jsm/math/ImprovedNoise.js";
+import * as THREE from "https://cdn.skypack.dev/three@0.130.0/build/three.module.js";
+import {OrbitControls} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/controls/OrbitControls.js";
+import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/math/ImprovedNoise.js";
+import {EffectComposer} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/EffectComposer.js';
+import {RenderPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/RenderPass.js';
+import {SMAAPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/SMAAPass.js';
 
 const DEFAULT_CAM_CONFIGS = {
 	fov: 60, 
@@ -125,30 +129,52 @@ function main(){
 
 	const cubeMat = new THREE.MeshNormalMaterial();
 	const cubeGeom = new THREE.BoxGeometry(1, 1, 1);
-	const cubeNum = 1000;
+	const cubeNum = 2000;
 	
+	const xAxis = new THREE.Vector3(1, 0, 0);
+	const yAxis = new THREE.Vector3(0, 1, 0);
+	const zAxis = new THREE.Vector3(0, 0, 1);
 
 	const shapeFunc1 = (x, y, z, steep) => (1000 / (10 + (Math.pow(x, steep) + Math.pow(y, steep) + Math.pow(z, steep))));
 	for (let i = 0; i < cubeNum; i++){
 		let rand = Math.random();
 		let cube;
+		/*
 		if (rand < 0.6) cube = new THREE.Mesh(cubeGeom, cubeMat);
 		else if (rand < 0.8) cube = new THREE.Mesh(cubeGeom, planeMat);
 		else cube = new THREE.Mesh(cubeGeom, planeMat2);
-
+		*/
+		cube = new THREE.Mesh(cubeGeom, cubeMat);
 		cube.position.set(Math.random() * dim - dim * 0.5, 0, Math.random() * dim - dim * 0.5);
 		//cube.scale.set(Math.random() * 5, Math.random() * 10, Math.random() * 5);
 		let scale = shapeFunc1(cube.position.x, cube.position.y, cube.position.z, 2);
 		cube.scale.set(Math.random() * 5, Math.random() * scale, Math.random() * 5);
+		cube.rotateOnAxis(yAxis, Math.random() * Math.PI);
 		scene.add(cube);
 	}
 
-	const torusNum = 50;
-	const torusGeom = new THREE.TorusGeometry(10, 1, 4, 4);
+	const textureLoader = new THREE.TextureLoader();
+	const diffuse = textureLoader.load('test.jpeg');
+	diffuse.encoding = THREE.sRGBEncoding;
+	diffuse.wrapS = THREE.RepeatWrapping;
+	diffuse.wrapT = THREE.RepeatWrapping;
+	diffuse.repeat.x = 10;
+	diffuse.repeat.y = 10;
+	
+	const torusNum = 100;
+	const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 4);
+	//const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 50);
 	const torusMat = new THREE.MeshNormalMaterial();
+	const torusPhysicalMat = new THREE.MeshStandardMaterial({
+		roughness: 0.1,
+		metalness: 0.9,
+		//map: diffuse,
+		//envMap: diffuse,
+		color: 0xFFFFFF
+	});
 	let torusArr = [];
 	function getTorusPositionByIncrement(i){
-		let radius = 50;
+		let radius = 40;
 		let height = 40 + 20 * Math.sin(i * 3.0);
 		let x = radius * Math.cos(i);
 		let y = height;
@@ -160,8 +186,9 @@ function main(){
 	let increment = Math.PI * 2.0 / torusNum;
 	// init torus
 	for (let i = 0; i < torusNum; i++){
-		let torus = new THREE.Mesh(torusGeom, torusMat);
-		let pos = getTorusPositionByIncrement(increment * i);
+		//let torus = new THREE.Mesh(torusGeom, torusMat);
+		let torus = new THREE.Mesh(torusGeom, torusPhysicalMat);
+		let pos = getTorusPositionByIncrement(increment * (i));
 		let prevPos = getTorusPositionByIncrement(increment * (i - 1));
 		let lookAtVec = new THREE.Vector3();
 		lookAtVec.subVectors(prevPos, pos);
@@ -171,16 +198,21 @@ function main(){
 		scene.add(torus);
 	}
 
+	
 	function distortTorus(){
 		for (let i = 0; i < torusArr.length; i++){
-
 			let torus = torusArr[i];
-			let pos = getTorusPositionByIncrement(increment * (i));
-			let prevPos = getTorusPositionByIncrement(increment * (i - 1));
+			let pos = getTorusPositionByIncrement(increment * (i + step * 0.01));
+			let prevPos = getTorusPositionByIncrement(increment * (i - 1 + step * 0.01));
 			let lookAtVec = new THREE.Vector3();
 			lookAtVec.subVectors(prevPos, pos);
-			torus.lookAt(lookAtVec);
+			// multiplying by scalar yields desired result. but why???
+			torus.lookAt(lookAtVec.multiplyScalar(10000));
+			
 			torus.position.copy(pos);
+			torus.rotateOnAxis(zAxis, step * 0.01 + increment * i * 0.5);
+			let s = 1 + 0.25 * Math.sin(i + step * 0.025);
+			torus.scale.set(s, s, s);
 		}
 	}
 	
@@ -192,7 +224,30 @@ function main(){
 	scene.add(testCamera.getMesh());
 	scene.add(testCamera2.getMesh());
 	
+//LIGHTS
 
+	const light = new THREE.PointLight(0xffffff, 5, 0);
+	const light2 = new THREE.PointLight(0xffffff, 5, 0);
+	const light3 = new THREE.PointLight(0xffffff, 5, 0);
+	const light4 = new THREE.PointLight(0xffffff, 5, 0);
+	const lightDistFromCenter = 100;
+	light.position.set(0, 0, lightDistFromCenter);
+	light2.position.set(0, 0, -lightDistFromCenter);
+	light3.position.set(lightDistFromCenter, 0, 0);
+	light4.position.set(-lightDistFromCenter, 0, 0);
+	scene.add(light);
+	scene.add(light2);
+	scene.add(light3);
+	scene.add(light4);
+
+// POST PROCESSING
+	const renderPass = new RenderPass(scene, mainCamera);
+	const smaaPass = new SMAAPass(window.innderWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
+	const composer = new EffectComposer(renderer);
+
+	composer.setSize(window.innerWidth, window.innerHeight);
+	composer.addPass(renderPass);
+	composer.addPass(smaaPass);
 	
 //GUI
 	const gui = new dat.GUI();
@@ -263,11 +318,13 @@ function main(){
 			mainCamera.aspect = canvas.clientWidth / canvas.clientHeight;
 			mainCamera.updateProjectionMatrix();
 		}
-
+		
 		renderer.setRenderTarget(null);
 		renderer.clear();
 		renderer.render(scene, mainCamera);
+		
 
+		//composer.render();
 		
 		requestAnimationFrame(render);
 		
