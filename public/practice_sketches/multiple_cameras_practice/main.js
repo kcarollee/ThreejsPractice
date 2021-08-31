@@ -6,7 +6,7 @@ import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/
 import {EffectComposer} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/EffectComposer.js';
 import {RenderPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/RenderPass.js';
 import {SMAAPass} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/postprocessing/SMAAPass.js';
-
+import {BufferGeometryUtils} from 'https://cdn.skypack.dev/three@0.130.0/examples/jsm/utils/BufferGeometryUtils.js';
 const DEFAULT_CAM_CONFIGS = {
 	fov: 60, 
 	aspect: window.innerWidth/window.innerHeight, 
@@ -108,51 +108,11 @@ function main(){
 	
 
 //GEOMETRIES
-	const dim = 100;
-	const planeGeom = new THREE.PlaneGeometry(20, 20, 20);
-	const planeMat = new THREE.MeshBasicMaterial({
-		map: testCamera.getCameraViewTexture(),
-		side: THREE.DoubleSide
-	});
-	const planeMat2 = new THREE.MeshBasicMaterial({
-		map: testCamera2.getCameraViewTexture(),
-		side: THREE.DoubleSide
-	});
-	const plane = new THREE.Mesh(planeGeom, planeMat);
-	const plane2 = new THREE.Mesh(planeGeom, planeMat2);
 
-	plane.position.set(-dim * 0.25, dim * 0.25, 0);
-	plane2.position.set(dim * 0.25, dim * 0.25, 0);
-	//plane.rotation.set(0, 0, 0);
-	scene.add(plane);
-	scene.add(plane2);
-
-	const cubeMat = new THREE.MeshNormalMaterial();
-	const cubeGeom = new THREE.BoxGeometry(1, 1, 1);
-	const cubeNum = 2000;
-	
-	const xAxis = new THREE.Vector3(1, 0, 0);
-	const yAxis = new THREE.Vector3(0, 1, 0);
-	const zAxis = new THREE.Vector3(0, 0, 1);
-
-	const shapeFunc1 = (x, y, z, steep) => (1000 / (10 + (Math.pow(x, steep) + Math.pow(y, steep) + Math.pow(z, steep))));
-	for (let i = 0; i < cubeNum; i++){
-		let rand = Math.random();
-		let cube;
-		/*
-		if (rand < 0.6) cube = new THREE.Mesh(cubeGeom, cubeMat);
-		else if (rand < 0.8) cube = new THREE.Mesh(cubeGeom, planeMat);
-		else cube = new THREE.Mesh(cubeGeom, planeMat2);
-		*/
-		cube = new THREE.Mesh(cubeGeom, cubeMat);
-		cube.position.set(Math.random() * dim - dim * 0.5, 0, Math.random() * dim - dim * 0.5);
-		//cube.scale.set(Math.random() * 5, Math.random() * 10, Math.random() * 5);
-		let scale = shapeFunc1(cube.position.x, cube.position.y, cube.position.z, 2);
-		cube.scale.set(Math.random() * 5, Math.random() * scale, Math.random() * 5);
-		cube.rotateOnAxis(yAxis, Math.random() * Math.PI);
-		scene.add(cube);
-	}
-
+	const torusNum = 100;
+	const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 4);
+	//const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 50);
+	const torusMat = new THREE.MeshNormalMaterial();
 	const textureLoader = new THREE.TextureLoader();
 	const diffuse = textureLoader.load('test.jpeg');
 	diffuse.encoding = THREE.sRGBEncoding;
@@ -160,15 +120,10 @@ function main(){
 	diffuse.wrapT = THREE.RepeatWrapping;
 	diffuse.repeat.x = 10;
 	diffuse.repeat.y = 10;
-	
-	const torusNum = 100;
-	const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 4);
-	//const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 50);
-	const torusMat = new THREE.MeshNormalMaterial();
-	const torusPhysicalMat = new THREE.MeshStandardMaterial({
+	const physicalMat = new THREE.MeshStandardMaterial({
 		roughness: 0.1,
 		metalness: 0.9,
-		//map: diffuse,
+		map: diffuse,
 		//envMap: diffuse,
 		color: 0xFFFFFF
 	});
@@ -187,7 +142,7 @@ function main(){
 	// init torus
 	for (let i = 0; i < torusNum; i++){
 		//let torus = new THREE.Mesh(torusGeom, torusMat);
-		let torus = new THREE.Mesh(torusGeom, torusPhysicalMat);
+		let torus = new THREE.Mesh(torusGeom, physicalMat);
 		let pos = getTorusPositionByIncrement(increment * (i));
 		let prevPos = getTorusPositionByIncrement(increment * (i - 1));
 		let lookAtVec = new THREE.Vector3();
@@ -215,11 +170,75 @@ function main(){
 			torus.scale.set(s, s, s);
 		}
 	}
+
+	const dim = 25;
+	const planeGeom = new THREE.PlaneGeometry(20, 20, 20);
+	const planeMat = new THREE.MeshBasicMaterial({
+		map: testCamera.getCameraViewTexture(),
+		side: THREE.DoubleSide
+	});
+	const planeMat2 = new THREE.MeshBasicMaterial({
+		map: testCamera2.getCameraViewTexture(),
+		side: THREE.DoubleSide
+	});
+	const plane = new THREE.Mesh(planeGeom, planeMat);
+	const plane2 = new THREE.Mesh(planeGeom, planeMat2);
+
+	plane.position.set(-dim * 0.25, dim * 0.25, 0);
+	plane2.position.set(dim * 0.25, dim * 0.25, 0);
+	//plane.rotation.set(0, 0, 0);
+	scene.add(plane);
+	scene.add(plane2);
+
+	const bufferGeometryUtils = new BufferGeometryUtils();
+	const cubeArr = [];
 	
-
+	const cubeMat = new THREE.MeshNormalMaterial();
 	
+	const cubeNum = 2500;
+	
+	const xAxis = new THREE.Vector3(1, 0, 0);
+	const yAxis = new THREE.Vector3(0, 1, 0);
+	const zAxis = new THREE.Vector3(0, 0, 1);
 
+	const shapeFunc1 = (x, y, z, steep) => (1000 / (10 + (Math.pow(x, steep) + Math.pow(y, steep) + Math.pow(z, steep))));
+	for (let i = 0; i < cubeNum; i++){
+		
+		let cube;
+		/*
+		let rand = Math.random();
+		if (rand < 0.6) cube = new THREE.Mesh(cubeGeom, cubeMat);
+		else if (rand < 0.8) cube = new THREE.Mesh(cubeGeom, planeMat);
+		else cube = new THREE.Mesh(cubeGeom, planeMat2);
+		*/
 
+		// without merged geometries
+
+		/* 
+		cube = new THREE.Mesh(cubeGeom, cubeMat);
+		cube.position.set(Math.random() * dim - dim * 0.5, 0, Math.random() * dim - dim * 0.5);
+		//cube.scale.set(Math.random() * 5, Math.random() * 10, Math.random() * 5);
+		let scale = shapeFunc1(cube.position.x, cube.position.y, cube.position.z, 2);
+		cube.scale.set(Math.random() * 5, Math.random() * scale, Math.random() * 5);
+		cube.rotateOnAxis(yAxis, Math.random() * Math.PI);
+		//scene.add(cube);
+		*/
+
+		// with merged geometries
+		let xpos = Math.random() * dim - dim * 0.5;
+		let ypos = 0;
+		let zpos = Math.random() * dim - dim * 0.5;
+		let scale = shapeFunc1(xpos, ypos, zpos, 2);
+		cube = new THREE.BoxGeometry(1, 1, 1);
+		cube.translate(xpos, ypos, zpos);
+		cube.scale(Math.random() * 5, Math.random() * scale, Math.random() * 5);
+		cube.rotateY(Math.random() * Math.PI);
+
+		cubeArr.push(cube);
+	}
+	const cubeGeometries = BufferGeometryUtils.mergeBufferGeometries(cubeArr);
+	const cubesMesh = new THREE.Mesh(cubeGeometries, cubeMat);
+	scene.add(cubesMesh);
 
 	scene.add(testCamera.getMesh());
 	scene.add(testCamera2.getMesh());
