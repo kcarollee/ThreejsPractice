@@ -105,21 +105,32 @@ function main(){
 	
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0x000000);
+
+	const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, {
+		format: THREE.RGBFormat,
+		generateMipmaps: true,
+		minFilter: THREE.LinearMipmapLinearFilter
+	});
+
+	const cubeCamera = new THREE.CubeCamera(near, far, cubeRenderTarget);
+	scene.add(cubeCamera);
 	
 
 //GEOMETRIES
 
 	const torusNum = 100;
-	const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 4);
+	const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 40);
 	//const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 50);
 	const torusMat = new THREE.MeshNormalMaterial();
 	const textureLoader = new THREE.TextureLoader();
 	const diffuse = textureLoader.load('test.jpeg');
+	
 	diffuse.encoding = THREE.sRGBEncoding;
 	diffuse.wrapS = THREE.RepeatWrapping;
 	diffuse.wrapT = THREE.RepeatWrapping;
 	diffuse.repeat.x = 10;
 	diffuse.repeat.y = 10;
+	
 	const physicalMat = new THREE.MeshStandardMaterial({
 		roughness: 0.1,
 		metalness: 0.9,
@@ -127,7 +138,16 @@ function main(){
 		//envMap: diffuse,
 		color: 0xFFFFFF
 	});
+	
+	const cubeCameraMat = new THREE.MeshBasicMaterial({
+		//color: 0xFFFFFF,
+		envMap: cubeRenderTarget.texture,
+		reflectivity: 1,
+		refractionRatio: 0.92
+	})
+	
 	let torusArr = [];
+	
 	function getTorusPositionByIncrement(i){
 		let radius = 40;
 		let height = 40 + 20 * Math.sin(i * 3.0);
@@ -142,7 +162,8 @@ function main(){
 	// init torus
 	for (let i = 0; i < torusNum; i++){
 		//let torus = new THREE.Mesh(torusGeom, torusMat);
-		let torus = new THREE.Mesh(torusGeom, physicalMat);
+		//let torus = new THREE.Mesh(torusGeom, physicalMat);
+		let torus = new THREE.Mesh(torusGeom, cubeCameraMat);
 		let pos = getTorusPositionByIncrement(increment * (i));
 		let prevPos = getTorusPositionByIncrement(increment * (i - 1));
 		let lookAtVec = new THREE.Vector3();
@@ -330,8 +351,10 @@ function main(){
 		testCamera2.renderOntoRenderTarget(renderer, scene);
 		
 		
-		
-
+		torusArr.forEach(t => t.visible = false);
+		cubeCamera.position.copy(mainCamera.position);
+		cubeCamera.update(renderer, scene);
+		torusArr.forEach(t => t.visible = true);
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			mainCamera.aspect = canvas.clientWidth / canvas.clientHeight;
