@@ -1,5 +1,6 @@
 // https://stackoverflow.com/questions/42562056/how-to-use-rendering-result-of-scene-as-texture-in-threejs
 // https://threejs.org/examples/webgl_rtt.html
+// https://stemkoski.github.io/Three.js/Refraction.html
 import * as THREE from "https://cdn.skypack.dev/three@0.130.0/build/three.module.js";
 import {OrbitControls} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/controls/OrbitControls.js";
 import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/math/ImprovedNoise.js";
@@ -113,13 +114,14 @@ function main(){
 	});
 
 	const cubeCamera = new THREE.CubeCamera(near, far, cubeRenderTarget);
+	cube
 	scene.add(cubeCamera);
 	
 
 //GEOMETRIES
 
-	const torusNum = 100;
-	const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 40);
+	const torusNum = 10;
+	const torusGeom = new THREE.TorusGeometry(5, 5, 50, 40);
 	//const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 50);
 	const torusMat = new THREE.MeshNormalMaterial();
 	const textureLoader = new THREE.TextureLoader();
@@ -139,7 +141,7 @@ function main(){
 		color: 0xFFFFFF
 	});
 	
-	const cubeCameraMat = new THREE.MeshBasicMaterial({
+	const cubeCameraMat = new THREE.MeshPhongMaterial({
 		//color: 0xFFFFFF,
 		envMap: cubeRenderTarget.texture,
 		reflectivity: 1,
