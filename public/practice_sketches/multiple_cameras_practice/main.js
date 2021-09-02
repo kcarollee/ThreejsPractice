@@ -84,6 +84,8 @@ function main(){
 	let step = 0;
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 //CAMERA
 	const cameraArr = [];
@@ -114,15 +116,16 @@ function main(){
 	});
 
 	const cubeCamera = new THREE.CubeCamera(near, far, cubeRenderTarget);
-	cube
+	//cube
 	scene.add(cubeCamera);
 	
 
 //GEOMETRIES
 
-	const torusNum = 10;
-	const torusGeom = new THREE.TorusGeometry(5, 5, 50, 40);
-	//const torusGeom = new THREE.TorusGeometry(5, 0.5, 50, 50);
+	const torusNum = 100;
+	const torusGeom = new THREE.TorusGeometry(5, 0.5, 5, 4);
+	//const torusGeom = new THREE.SphereGeometry(20, 20, 20);
+	//const torusGeom = new THREE.TorusGeometry(5, 5, 50, 50);
 	const torusMat = new THREE.MeshNormalMaterial();
 	const textureLoader = new THREE.TextureLoader();
 	const diffuse = textureLoader.load('test.jpeg');
@@ -133,19 +136,19 @@ function main(){
 	diffuse.repeat.x = 10;
 	diffuse.repeat.y = 10;
 	
-	const physicalMat = new THREE.MeshStandardMaterial({
+	const standardMat = new THREE.MeshStandardMaterial({
 		roughness: 0.1,
 		metalness: 0.9,
-		map: diffuse,
+		//map: diffuse,
 		//envMap: diffuse,
 		color: 0xFFFFFF
 	});
 	
-	const cubeCameraMat = new THREE.MeshPhongMaterial({
+	const cubeCameraMat = new THREE.MeshBasicMaterial({
 		//color: 0xFFFFFF,
 		envMap: cubeRenderTarget.texture,
-		reflectivity: 1,
-		refractionRatio: 0.92
+		//reflectivity: 1,
+		refractionRatio: 1
 	})
 	
 	let torusArr = [];
@@ -164,11 +167,12 @@ function main(){
 	// init torus
 	for (let i = 0; i < torusNum; i++){
 		//let torus = new THREE.Mesh(torusGeom, torusMat);
-		//let torus = new THREE.Mesh(torusGeom, physicalMat);
+		//let torus = new THREE.Mesh(torusGeom, standardMat);
 		let torus = new THREE.Mesh(torusGeom, cubeCameraMat);
 		let pos = getTorusPositionByIncrement(increment * (i));
 		let prevPos = getTorusPositionByIncrement(increment * (i - 1));
 		let lookAtVec = new THREE.Vector3();
+		torus.castShadow = true;
 		lookAtVec.subVectors(prevPos, pos);
 		torus.lookAt(lookAtVec);
 		torus.position.copy(pos);
@@ -190,11 +194,11 @@ function main(){
 			torus.position.copy(pos);
 			torus.rotateOnAxis(zAxis, step * 0.01 + increment * i * 0.5);
 			let s = 1 + 0.25 * Math.sin(i + step * 0.025);
-			torus.scale.set(s, s, s);
+			//torus.scale.set(s, s, 5 * s);
 		}
 	}
 
-	const dim = 25;
+	const dim = 40;
 	const planeGeom = new THREE.PlaneGeometry(20, 20, 20);
 	const planeMat = new THREE.MeshBasicMaterial({
 		map: testCamera.getCameraViewTexture(),
@@ -218,7 +222,7 @@ function main(){
 	
 	const cubeMat = new THREE.MeshNormalMaterial();
 	
-	const cubeNum = 2500;
+	const cubeNum = 5000;
 	
 	const xAxis = new THREE.Vector3(1, 0, 0);
 	const yAxis = new THREE.Vector3(0, 1, 0);
@@ -260,7 +264,8 @@ function main(){
 		cubeArr.push(cube);
 	}
 	const cubeGeometries = BufferGeometryUtils.mergeBufferGeometries(cubeArr);
-	const cubesMesh = new THREE.Mesh(cubeGeometries, cubeMat);
+	const cubesMesh = new THREE.Mesh(cubeGeometries, standardMat);
+	cubesMesh.receiveShadow = true;
 	scene.add(cubesMesh);
 
 	scene.add(testCamera.getMesh());
@@ -272,15 +277,19 @@ function main(){
 	const light2 = new THREE.PointLight(0xffffff, 5, 0);
 	const light3 = new THREE.PointLight(0xffffff, 5, 0);
 	const light4 = new THREE.PointLight(0xffffff, 5, 0);
+	const light5 = new THREE.PointLight(0xffffff, 10, 0);
 	const lightDistFromCenter = 100;
 	light.position.set(0, 0, lightDistFromCenter);
 	light2.position.set(0, 0, -lightDistFromCenter);
 	light3.position.set(lightDistFromCenter, 0, 0);
 	light4.position.set(-lightDistFromCenter, 0, 0);
-	scene.add(light);
-	scene.add(light2);
-	scene.add(light3);
-	scene.add(light4);
+	light5.position.set(0, lightDistFromCenter, 0);
+	light5.castShadow = true;
+	//scene.add(light);
+	//scene.add(light2);
+	//scene.add(light3);
+	//scene.add(light4);
+	scene.add(light5);
 
 // POST PROCESSING
 	const renderPass = new RenderPass(scene, mainCamera);
@@ -296,7 +305,7 @@ function main(){
 	const controls = new function(){
 		let cameraIndex = 0;
 		this.debug = function(){
-
+			console.log(light5.position);
 		}
 
 		this.switchCamera = function(){
@@ -334,7 +343,7 @@ function main(){
 		step += 1;
 		
 		testCamera.updateCameraMeshRotation();
-		testCamera.updateCameraPosition(40 *  Math.cos(step * 0.01), 10, 40 *  Math.sin(step * 0.01));
+		testCamera.updateCameraPosition(60 *  Math.cos(step * 0.01), 60, 60 *  Math.sin(step * 0.01));
 		testCamera.updateCameraLookAt(0, 0, 0);
 
 		testCamera.renderOntoRenderTarget(renderer, scene);
@@ -342,8 +351,8 @@ function main(){
 
 		distortTorus();
 		testCamera2.updateCameraMeshRotation();
-		let newPos = getTorusPositionByIncrement(incrementForTorusCam * step);
-		let lookAtPos = getTorusPositionByIncrement(incrementForTorusCam * (step + 10));
+		let newPos = getTorusPositionByIncrement(incrementForTorusCam * step * 0.5);
+		let lookAtPos = getTorusPositionByIncrement(incrementForTorusCam * (step * 0.5 + 10));
 		/*
 		testCamera2.updateCameraPosition(30 *  Math.sin((step - 0.01) * 0.01), 5 * Math.sin((step * 5 - 0.01) * 0.01), 30 *  Math.cos((step - 0.01) * 0.01));
 		testCamera2.updateCameraLookAt(30 *  Math.sin(step * 0.01), 5 * Math.sin(step * 5 * 0.01), 30 *  Math.cos(step * 0.01));
@@ -351,12 +360,26 @@ function main(){
 		testCamera2.updateCameraPosition(newPos.x, newPos.y, newPos.z);
 		testCamera2.updateCameraLookAt(lookAtPos.x, lookAtPos.y, lookAtPos.z);
 		testCamera2.renderOntoRenderTarget(renderer, scene);
+		light5.position.copy(testCamera2.getCamera().position);
 		
 		
 		torusArr.forEach(t => t.visible = false);
-		cubeCamera.position.copy(mainCamera.position);
+		let cubeCameraPos = new THREE.Vector3();
+		cubeCameraPos.copy(mainCamera.position);
+		cubeCameraPos.multiplyScalar(0.25);
+		cubeCamera.position.copy(cubeCameraPos);
 		cubeCamera.update(renderer, scene);
 		torusArr.forEach(t => t.visible = true);
+		
+
+		/*
+		torusArr.forEach(function (t){
+			t.visible = false;
+			cubeCamera.position.copy(t.position);
+			cubeCamera.update(renderer, scene);
+			t.visible = true;
+		});
+		*/
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			mainCamera.aspect = canvas.clientWidth / canvas.clientHeight;
