@@ -83,7 +83,8 @@ RenderTargetCamera.camMaterial = new THREE.MeshBasicMaterial({color: 0xFF0000});
 function main(){
 	let step = 0;
 	const canvas = document.querySelector('#c');
-	const renderer = new THREE.WebGLRenderer({canvas});
+	const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
+
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -126,7 +127,11 @@ function main(){
 	const torusGeom = new THREE.TorusGeometry(5, 0.5, 5, 4);
 	//const torusGeom = new THREE.SphereGeometry(20, 20, 20);
 	//const torusGeom = new THREE.TorusGeometry(5, 5, 50, 50);
-	const torusMat = new THREE.MeshNormalMaterial();
+	//const torusMat = new THREE.MeshNormalMaterial();
+	const torusMat = new THREE.MeshPhongMaterial({
+		color: 0xFF7420,
+		emissive: 0xFF7420
+	});
 	const textureLoader = new THREE.TextureLoader();
 	const diffuse = textureLoader.load('test.jpeg');
 	
@@ -140,8 +145,8 @@ function main(){
 		roughness: 0.1,
 		metalness: 0.9,
 		//map: diffuse,
-		//envMap: diffuse,
-		color: 0xFFFFFF
+		envMap: cubeRenderTarget.texture,
+		//color: 0xFFFFFF
 	});
 	
 	const cubeCameraMat = new THREE.MeshBasicMaterial({
@@ -166,9 +171,9 @@ function main(){
 	let increment = Math.PI * 2.0 / torusNum;
 	// init torus
 	for (let i = 0; i < torusNum; i++){
-		//let torus = new THREE.Mesh(torusGeom, torusMat);
+		let torus = new THREE.Mesh(torusGeom, torusMat);
 		//let torus = new THREE.Mesh(torusGeom, standardMat);
-		let torus = new THREE.Mesh(torusGeom, cubeCameraMat);
+		//let torus = new THREE.Mesh(torusGeom, cubeCameraMat);
 		let pos = getTorusPositionByIncrement(increment * (i));
 		let prevPos = getTorusPositionByIncrement(increment * (i - 1));
 		let lookAtVec = new THREE.Vector3();
@@ -277,7 +282,7 @@ function main(){
 	const light2 = new THREE.PointLight(0xffffff, 5, 0);
 	const light3 = new THREE.PointLight(0xffffff, 5, 0);
 	const light4 = new THREE.PointLight(0xffffff, 5, 0);
-	const light5 = new THREE.PointLight(0xffffff, 10, 0);
+	const light5 = new THREE.PointLight(0xffffff, 7, 0);
 	const lightDistFromCenter = 100;
 	light.position.set(0, 0, lightDistFromCenter);
 	light2.position.set(0, 0, -lightDistFromCenter);
@@ -285,6 +290,8 @@ function main(){
 	light4.position.set(-lightDistFromCenter, 0, 0);
 	light5.position.set(0, lightDistFromCenter, 0);
 	light5.castShadow = true;
+	light5.shadow.mapSize.set(256, 256);
+	console.log(light5);
 	//scene.add(light);
 	//scene.add(light2);
 	//scene.add(light3);
@@ -363,6 +370,7 @@ function main(){
 		light5.position.copy(testCamera2.getCamera().position);
 		
 		
+		/*
 		torusArr.forEach(t => t.visible = false);
 		let cubeCameraPos = new THREE.Vector3();
 		cubeCameraPos.copy(mainCamera.position);
@@ -370,6 +378,16 @@ function main(){
 		cubeCamera.position.copy(cubeCameraPos);
 		cubeCamera.update(renderer, scene);
 		torusArr.forEach(t => t.visible = true);
+		*/
+
+		cubesMesh.visible = false;
+		let cubeCameraLookAt = new THREE.Vector3();
+		cubeCameraLookAt.subVectors(cubeCamera.position, mainCamera.position);
+		cubeCamera.position.set(0, 10, 0);
+		cubeCamera.lookAt(cubeCameraLookAt);
+		//cubeCamera.rotateY(Math.PI);
+		cubeCamera.update(renderer, scene);
+		cubesMesh.visible = true;
 		
 
 		/*
