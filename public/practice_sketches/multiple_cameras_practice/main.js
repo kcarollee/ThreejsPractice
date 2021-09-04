@@ -100,7 +100,8 @@ function main(){
 	let mainCameraCopy;
 	mainCamera.position.set(0, 0, 10);
 
-	const orbitControls = new OrbitControls(mainCamera, renderer.domElement);
+	let orbitControls = new OrbitControls(mainCamera, renderer.domElement);
+	orbitControls.enableDamping = true;
 	orbitControls.update();
 	const testCamera = new RenderTargetCamera(0, 0, -30, new THREE.Vector3(0, 0, 0));
 	const testCamera2 = new RenderTargetCamera(0, 0, -30, new THREE.Vector3(0, 0, 0));
@@ -134,18 +135,27 @@ function main(){
 	});
 	const textureLoader = new THREE.TextureLoader();
 	const diffuse = textureLoader.load('test.jpeg');
-	
+	const normal1 = textureLoader.load('marble.jpg');
 	diffuse.encoding = THREE.sRGBEncoding;
 	diffuse.wrapS = THREE.RepeatWrapping;
 	diffuse.wrapT = THREE.RepeatWrapping;
 	diffuse.repeat.x = 10;
 	diffuse.repeat.y = 10;
+
+	console.log(normal1);
+
+	normal1.encoding = THREE.sRGBEncoding;
+	normal1.wrapS = THREE.RepeatWrapping;
+	normal1.wrapT = THREE.RepeatWrapping;
+	//normal1.repeat.x = 10;
+	//normal1.repeat.y = 10;
 	
 	const standardMat = new THREE.MeshStandardMaterial({
 		roughness: 0.1,
 		metalness: 0.9,
 		//map: diffuse,
 		envMap: cubeRenderTarget.texture,
+		normalMap: normal1,
 		//color: 0xFFFFFF
 	});
 	
@@ -198,8 +208,9 @@ function main(){
 			
 			torus.position.copy(pos);
 			torus.rotateOnAxis(zAxis, step * 0.01 + increment * i * 0.5);
-			let s = 1 + 0.25 * Math.sin(i + step * 0.025);
-			//torus.scale.set(s, s, 5 * s);
+			//let dr = 0.5 + 0.5 * Math.sin(step * 0.25);
+			let s = 1 + 0.9 * Math.sin(i * 0.5 + step * 0.025);
+			torus.scale.set(s, s, 1);
 		}
 	}
 
@@ -261,7 +272,8 @@ function main(){
 		let ypos = 0;
 		let zpos = Math.random() * dim - dim * 0.5;
 		let scale = shapeFunc1(xpos, ypos, zpos, 2);
-		cube = new THREE.BoxGeometry(1, 1, 1);
+		//cube = new THREE.BoxGeometry(1, 1, 1);
+		cube = new THREE.CylinderGeometry(1, 1, 1, Math.floor(Math.random() * 2 + 4))
 		cube.translate(xpos, ypos, zpos);
 		cube.scale(Math.random() * 5, Math.random() * scale, Math.random() * 5);
 		cube.rotateY(Math.random() * Math.PI);
@@ -278,25 +290,19 @@ function main(){
 	
 //LIGHTS
 
-	const light = new THREE.PointLight(0xffffff, 5, 0);
-	const light2 = new THREE.PointLight(0xffffff, 5, 0);
-	const light3 = new THREE.PointLight(0xffffff, 5, 0);
-	const light4 = new THREE.PointLight(0xffffff, 5, 0);
-	const light5 = new THREE.PointLight(0xffffff, 7, 0);
+	
+	const globalPointLight = new THREE.PointLight(0xffffff, 7, 0);
 	const lightDistFromCenter = 100;
-	light.position.set(0, 0, lightDistFromCenter);
-	light2.position.set(0, 0, -lightDistFromCenter);
-	light3.position.set(lightDistFromCenter, 0, 0);
-	light4.position.set(-lightDistFromCenter, 0, 0);
-	light5.position.set(0, lightDistFromCenter, 0);
-	light5.castShadow = true;
-	light5.shadow.mapSize.set(256, 256);
-	console.log(light5);
+	
+	globalPointLight.position.set(0, lightDistFromCenter, 0);
+	globalPointLight.castShadow = true;
+	globalPointLight.shadow.mapSize.set(512, 512);
+	console.log(globalPointLight);
 	//scene.add(light);
 	//scene.add(light2);
 	//scene.add(light3);
 	//scene.add(light4);
-	scene.add(light5);
+	scene.add(globalPointLight);
 
 // POST PROCESSING
 	const renderPass = new RenderPass(scene, mainCamera);
@@ -312,7 +318,7 @@ function main(){
 	const controls = new function(){
 		let cameraIndex = 0;
 		this.debug = function(){
-			console.log(light5.position);
+			console.log(globalPointLight.position);
 		}
 
 		this.switchCamera = function(){
@@ -324,7 +330,9 @@ function main(){
 			if (cameraIndex == 0) {
 				mainCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 				mainCamera.position.set(0, 20, 100);
-				new OrbitControls(mainCamera, renderer.domElement);
+				orbitControls = new OrbitControls(mainCamera, renderer.domElement);
+				orbitControls.enableDamping = true;
+
 			}
 			
 			else {
@@ -348,7 +356,7 @@ function main(){
 	function render(time){
 		time *= 0.001;
 		step += 1;
-		
+		orbitControls.update();
 		testCamera.updateCameraMeshRotation();
 		testCamera.updateCameraPosition(60 *  Math.cos(step * 0.01), 60, 60 *  Math.sin(step * 0.01));
 		testCamera.updateCameraLookAt(0, 0, 0);
@@ -367,7 +375,7 @@ function main(){
 		testCamera2.updateCameraPosition(newPos.x, newPos.y, newPos.z);
 		testCamera2.updateCameraLookAt(lookAtPos.x, lookAtPos.y, lookAtPos.z);
 		testCamera2.renderOntoRenderTarget(renderer, scene);
-		light5.position.copy(testCamera2.getCamera().position);
+		globalPointLight.position.copy(testCamera2.getCamera().position);
 		
 		
 		/*
