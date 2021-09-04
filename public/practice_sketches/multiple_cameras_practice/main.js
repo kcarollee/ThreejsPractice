@@ -124,7 +124,7 @@ function main(){
 
 //GEOMETRIES
 
-	const torusNum = 100;
+	const torusNum = 150;
 	const torusGeom = new THREE.TorusGeometry(5, 0.5, 5, 4);
 	//const torusGeom = new THREE.SphereGeometry(20, 20, 20);
 	//const torusGeom = new THREE.TorusGeometry(5, 5, 50, 50);
@@ -156,7 +156,7 @@ function main(){
 		//map: diffuse,
 		envMap: cubeRenderTarget.texture,
 		normalMap: normal1,
-		//color: 0xFFFFFF
+		color: 0xFFFFFF
 	});
 	
 	const cubeCameraMat = new THREE.MeshBasicMaterial({
