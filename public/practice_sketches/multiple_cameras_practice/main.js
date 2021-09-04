@@ -143,13 +143,13 @@ function main(){
 	diffuse.repeat.y = 10;
 
 	console.log(normal1);
-
+	/*
 	normal1.encoding = THREE.sRGBEncoding;
 	normal1.wrapS = THREE.RepeatWrapping;
 	normal1.wrapT = THREE.RepeatWrapping;
-	//normal1.repeat.x = 10;
-	//normal1.repeat.y = 10;
-	
+	normal1.repeat.x = 4;
+	normal1.repeat.y = 4;
+	*/
 	const standardMat = new THREE.MeshStandardMaterial({
 		roughness: 0.1,
 		metalness: 0.9,
@@ -215,7 +215,7 @@ function main(){
 	}
 
 	const dim = 40;
-	const planeGeom = new THREE.PlaneGeometry(20, 20, 20);
+	const planeGeom = new THREE.PlaneGeometry(10, 10, 10);
 	const planeMat = new THREE.MeshBasicMaterial({
 		map: testCamera.getCameraViewTexture(),
 		side: THREE.DoubleSide
@@ -224,21 +224,35 @@ function main(){
 		map: testCamera2.getCameraViewTexture(),
 		side: THREE.DoubleSide
 	});
-	const plane = new THREE.Mesh(planeGeom, planeMat);
-	const plane2 = new THREE.Mesh(planeGeom, planeMat2);
+	
 
-	plane.position.set(-dim * 0.25, dim * 0.25, 0);
-	plane2.position.set(dim * 0.25, dim * 0.25, 0);
-	//plane.rotation.set(0, 0, 0);
-	scene.add(plane);
-	scene.add(plane2);
+	const planeNum = 20;
+	const planePlacementAngleDiv = Math.PI * 2.0 / planeNum;
+	const planePlacementRadius = 30;
+	for (let i = 0; i < planeNum; i++){
+		let p;
+		if (Math.random() < 0.5){
+			p = new THREE.Mesh(planeGeom, planeMat);
+		}
+		else p = new THREE.Mesh(planeGeom, planeMat2);
+		p.receiveShadow = true;
+		let rand = Math.random() * Math.PI * 2.0;
+
+		p.position.set(planePlacementRadius * Math.cos(planePlacementAngleDiv * i), 
+			Math.random() * 10 + 2, 
+			planePlacementRadius * Math.sin(planePlacementAngleDiv * i));
+		p.rotateY(Math.random() * Math.PI * 2.0);
+		p.rotateZ(Math.random() * Math.PI * 2.0);
+		
+		scene.add(p);
+	}
 
 	const bufferGeometryUtils = new BufferGeometryUtils();
 	const cubeArr = [];
 	
 	const cubeMat = new THREE.MeshNormalMaterial();
 	
-	const cubeNum = 5000;
+	const cubeNum = 3000;
 	
 	const xAxis = new THREE.Vector3(1, 0, 0);
 	const yAxis = new THREE.Vector3(0, 1, 0);
@@ -277,7 +291,12 @@ function main(){
 		cube.translate(xpos, ypos, zpos);
 		cube.scale(Math.random() * 5, Math.random() * scale, Math.random() * 5);
 		cube.rotateY(Math.random() * Math.PI);
-
+		if (i == 10) console.log(cube.attributes.position);
+		cube.attributes.position.array.forEach(function(p){
+			p = 0;
+		});
+		cube.attributes.position.needsUpdate = true;
+		if (i == 10) console.log(cube.attributes.position);
 		cubeArr.push(cube);
 	}
 	const cubeGeometries = BufferGeometryUtils.mergeBufferGeometries(cubeArr);
