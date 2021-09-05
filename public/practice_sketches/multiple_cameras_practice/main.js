@@ -129,7 +129,7 @@ function main(){
 	//const torusGeom = new THREE.SphereGeometry(20, 20, 20);
 	//const torusGeom = new THREE.TorusGeometry(5, 5, 50, 50);
 	//const torusMat = new THREE.MeshNormalMaterial();
-	const torusMat = new THREE.MeshPhongMaterial({
+	const torusMat = new THREE.MeshLambertMaterial({
 		color: 0xFF7420,
 		emissive: 0xFF7420
 	});
@@ -257,6 +257,8 @@ function main(){
 	const xAxis = new THREE.Vector3(1, 0, 0);
 	const yAxis = new THREE.Vector3(0, 1, 0);
 	const zAxis = new THREE.Vector3(0, 0, 1);
+
+
 
 	const shapeFunc1 = (x, y, z, steep) => (1000 / (10 + (Math.pow(x, steep) + Math.pow(y, steep) + Math.pow(z, steep))));
 	for (let i = 0; i < cubeNum; i++){
