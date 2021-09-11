@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r127/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/stats.js/r17/build/stats.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="utf-8" />
+
+  </head>
+  <script type="module" src="main.js"></script>
+  <body>
+    <canvas id="c"></canvas>
+    <script id="vertexShader" type="x-shader/x-vertex">
+      #ifdef GL_ES
+      precision highp float;
+      #endif
+      varying vec2 vUv;
+
+      void main() {
+
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    
+      }
+    </script>
+
+    <script id="fragmentShader" type="x-shader/x-fragment">
+      #ifdef GL_ES
+      precision highp float;
+      #endif
+
+      varying vec2 vUv;
+      uniform float sideTileNum;
+      uniform sampler2D mainTexture;
+      uniform sampler2D testTex;
+
+      uniform sampler2D texd[11];
+      uniform sampler2D tex0[11];
+      uniform sampler2D tex1[11];
+      uniform sampler2D tex2[11];
+      uniform sampler2D tex3[11];
+      uniform sampler2D tex4[11];
+      uniform sampler2D tex5[11];
+      uniform sampler2D tex6[11];
+      uniform sampler2D tex7[11];
+      uniform sampler2D tex8[11];
+      uniform sampler2D tex9[11];
+
+      //https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
+
+      float rand(vec2 co){
+        return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+      } 
+
+      void main(void) {
+
+        vec3 outCol = vec3(.0);
+
+        vec2 uv = vUv; // initial uv coords
+        vec2 uv2 = vUv; // modified uv to give that blocky feel 
+        
+        float divNum = sideTileNum;
+        float tileDim = 1.0 / divNum;
+        
+        uv2.x = float(floor(uv2.x * divNum)) * tileDim;
+        uv2.y = float(floor(uv2.y * divNum)) * tileDim;
+
+        vec3 mainTex = texture2D(mainTexture, uv2).rgb;
+        vec3 tileTex = texture2D(tex9[5], ((uv - uv2) * sideTileNum)).rgb;
+
+        float greyScale = mainTex.r;
+
+        if (greyScale < 0.09) tileTex = texture2D(texd[0], ((uv - uv2) * sideTileNum)).rgb;                  
+        else if (greyScale < 0.181) tileTex = texture2D(tex0[0], ((uv - uv2) * sideTileNum)).rgb;
+        else if (greyScale < 0.272) tileTex = texture2D(tex1[0], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (greyScale < 0.363) tileTex = texture2D(tex2[0], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (greyScale < 0.454) tileTex = texture2D(tex3[0], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (greyScale < 0.545) tileTex = texture2D(tex4[0], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (greyScale < 0.636) tileTex = texture2D(tex5[0], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (greyScale < 0.727) tileTex = texture2D(tex6[0], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (greyScale < 0.818) tileTex = texture2D(tex7[0], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (greyScale < 0.909) tileTex = texture2D(tex8[0], ((uv - uv2) * sideTileNum)).rgb;          
+        else  tileTex = texture2D(tex9[5], ((uv - uv2) * sideTileNum)).rgb;          
+        
+
+        outCol = mainTex;
+        if (mainTex.r < 0.2) outCol = tileTex;       
+        else outCol = vec3(1.0);
+        gl_FragColor = vec4(outCol, 1.0);
+      }
+    </script>
+  </body>
+</html>
