@@ -119,7 +119,7 @@ function main(){
 
 
 //GEOMETRIES
-	const planeGeom = new THREE.PlaneGeometry(20, 20, 10, 10);
+	const planeGeom = new THREE.PlaneGeometry(20, 20, 100, 100);
 	const shaderMaterial = new THREE.ShaderMaterial({
 		uniforms:{
 			mainTexture: {value: p5Texture},
@@ -156,7 +156,7 @@ function main(){
 	function render(time){
 		time *= 0.001;
 		step++;
-		if (step % 3 == 0)selectRandomTextures();
+		if (step == 1)selectRandomTextures();
 
 		// update shader uniforms
 		mainPlane.material.uniforms.time.value = step * 0.01;
