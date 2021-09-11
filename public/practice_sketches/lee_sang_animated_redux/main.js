@@ -6,20 +6,48 @@ function main(){
 
 		let width;
 		let height;
+		let font;
+		let textSize;
+		let mainText;
+		let mainTextPosx;
         sketch.setup = () => {
         	sketch.createCanvas(400, 400);
         	width = sketch.width;
         	height = sketch.height;
+
+        	textSize = height * 0.5;
+        	font = sketch.loadFont('assets/Hahmlet-ExtraBold.ttf', sketch.drawText);
+        	
+        	sketch.textSize(textSize);
+        	//sketch.textAlign(sketch.CENTER);
+
+        	mainText = "환자의 용태에 관한 문제";
+        	mainTextPosx = 0;
 		}
 		sketch.draw = () => {
 			if (p5Texture) p5Texture.needsUpdate = true;
-			sketch.background(255, 10);
+			sketch.background(255);
 
+			/*
+			sketch.push();
 			sketch.rectMode(sketch.CENTER);
 			sketch.translate(width * 0.5, height * 0.5);
 			sketch.rotate(sketch.frameCount * 0.01);
-			sketch.strokeWeight(5);
-			sketch.rect(0, 0, width * 0.25, height * 0.25);	
+			sketch.strokeWeight(10);
+			sketch.rect(0, 0, width * 0.5, height * 0.5);	
+			sketch.pop();
+			*/
+			
+			try{
+				let stringWidth = font.textBounds(mainText).w;
+				if (mainTextPosx < -stringWidth) mainTextPosx = width;
+			}catch{}
+			mainTextPosx -= 2;
+			sketch.text(mainText, mainTextPosx, height * 0.65);
+		}
+
+		sketch.drawText = (f) => {
+			sketch.textFont(f, textSize);
 		}
 
 		
@@ -34,7 +62,7 @@ function main(){
 	
 //CANVAS AND RENDERER
 	const canvas = document.querySelector('#c');
-	const renderer = new THREE.WebGLRenderer({canvas});
+	const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
 	let step = 0;
 //TEXTURES
 	const textureLoader = new THREE.TextureLoader();
@@ -43,6 +71,9 @@ function main(){
 	textureArr[10] : ARRAY OF 11 DOT TEXTURES
 	*/ 
 	const textureArr = [];
+	const selectedTextures = [];
+	selectedTextures[10] = 0;
+	console.log(selectedTextures);
 	let fileName;
 
 	// numbers
@@ -88,30 +119,24 @@ function main(){
 
 
 //GEOMETRIES
-	const planeGeom = new THREE.PlaneGeometry(20, 20);
+	const planeGeom = new THREE.PlaneGeometry(20, 20, 10, 10);
 	const shaderMaterial = new THREE.ShaderMaterial({
 		uniforms:{
 			mainTexture: {value: p5Texture},
 			testTex: {value: textureArr[1][2]},
-			tex0: {value: textureArr[0]},
-			tex1: {value: textureArr[1]},
-			tex2: {value: textureArr[2]},
-			tex3: {value: textureArr[3]},
-			tex4: {value: textureArr[4]},
-			tex5: {value: textureArr[5]},
-			tex6: {value: textureArr[6]},
-			tex7: {value: textureArr[7]},
-			tex8: {value: textureArr[8]},
-			tex9: {value: textureArr[9]},
-			texd: {value: textureArr[10]},
-			sideTileNum: {value: 100.0},
-			time: step * 0.01,
-			side: THREE.DoubleSide
+			selectedTextures: {value: selectedTextures},
+			
+			sideTileNum: {value: 60.0},
+			time: {value: step},
+			
 		},
 
 		vertexShader: document.getElementById('vertexShader').textContent,
 
-		fragmentShader: document.getElementById('fragmentShader').textContent
+		fragmentShader: document.getElementById('fragmentShader').textContent,
+
+		side: THREE.DoubleSide,
+		//wireframe: true
 	});
 
 	const mainPlane = new THREE.Mesh(planeGeom, shaderMaterial);
@@ -131,6 +156,10 @@ function main(){
 	function render(time){
 		time *= 0.001;
 		step++;
+		if (step % 3 == 0)selectRandomTextures();
+
+		// update shader uniforms
+		mainPlane.material.uniforms.time.value = step * 0.01;
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -150,6 +179,14 @@ function main(){
 			renderer.setSize(width, height, false);
 		}
 		return needResize;
+	}
+
+	function selectRandomTextures(){
+		let randomIndex;
+		for (let i = 0; i < 11; i++){
+			randomIndex = Math.floor(Math.random() * 11);
+			selectedTextures[i] = textureArr[i][randomIndex];
+		}
 	}
 	requestAnimationFrame(render);
 }
