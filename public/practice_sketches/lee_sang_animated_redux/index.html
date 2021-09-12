@@ -158,13 +158,16 @@
 
       varying vec2 vUv;
       uniform sampler2D titleTexture;
-
+      uniform float time;
       void main(void) {
         vec2 uv = vUv;
         vec3 tex = texture2D(titleTexture, uv).rgb;
         vec3 outCol = vec3(.0);
         outCol += tex;
-        if (outCol.r > 0.8) discard;
+
+        float threshold = time;
+        if (threshold > 0.9) threshold = 0.9;
+        if (outCol.r > threshold) discard;
         gl_FragColor = vec4(outCol, 1.0);
       }
     </script>

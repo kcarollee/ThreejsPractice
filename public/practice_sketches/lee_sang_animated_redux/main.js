@@ -60,10 +60,13 @@ function main(){
 	p5Texture.needsUpdate = true;
 	//p5Canvas.canvas.style.display = "none";
 	
-//CANVAS AND RENDERER
+//CANVAS AND RENDERER 
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
 	let step = 0;
+//RAYCASTER
+	const raycaster = new THREE.Raycaster();
+	const mouse = new THREE.Vector2();
 //TEXTURES
 	const textureLoader = new THREE.TextureLoader();
 	/*
@@ -113,8 +116,8 @@ function main(){
 	const near = 0.1;
 	const far = 1000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	camera.position.set(0, 0, 10);
 
-	camera.position.set(0, 0, 20);
 
 	const orbitControls = new OrbitControls(camera, renderer.domElement);
 	orbitControls.update();
@@ -149,8 +152,8 @@ function main(){
 	// material for the title pannel
 	const shaderMaterial2 = new THREE.ShaderMaterial({
 		uniforms:{
-			titleTexture: {value: titleTexture}
-			
+			titleTexture: {value: titleTexture},
+			time: {value: step},
 		},
 
 		vertexShader: document.getElementById('titleVertexShader').textContent,
@@ -162,11 +165,12 @@ function main(){
 	});
 
 	const mainPlane = new THREE.Mesh(planeGeom, shaderMaterial);
+	mainPlane.position.set(0, 0, -3);
 	scene.add(mainPlane);
 
 	const titlePlaneGeom = new THREE.PlaneGeometry(7, 20);
 	titlePlaneGeom.rotateX(Math.PI * 0.5);
-	titlePlaneGeom.translate(0, 5, 25);
+	titlePlaneGeom.translate(0, -5, 10);
 
 	titlePlaneGeom.scale(0.25, 0.25, 0.25);
 	
@@ -174,7 +178,11 @@ function main(){
 	const titleMesh = new THREE.Mesh(titlePlaneGeom, shaderMaterial2);
 
 	scene.add(titleMesh);
-	
+
+	// the scene is rotated, which means 
+	// y axis: points towards the back of the screen
+	// z axis: points towards the top of the screen
+	scene.rotateX(-Math.PI * 0.5);
 
 //GUI
 /*
@@ -191,10 +199,12 @@ function main(){
 	function render(time){
 		time *= 0.001;
 		step++;
+		updateRaycaster();
 		if (step == 1)selectRandomTextures();
 
 		// update shader uniforms
 		mainPlane.material.uniforms.time.value = step * 0.01;
+		titleMesh.material.uniforms.time.value = step * 0.01;
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -223,7 +233,24 @@ function main(){
 			selectedTextures[i] = textureArr[i][randomIndex];
 		}
 	}
+
+	function onMouseMove(event){
+		mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+		mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+	}
+
+	function updateRaycaster(){
+		raycaster.setFromCamera(mouse, camera);
+		const intersects = raycaster.intersectObjects(scene.children);
+		for (let i = 0; i < intersects.length; i++){
+			
+		
+		}
+		
+	}
 	requestAnimationFrame(render);
+
+	window.addEventListener('mousemove', onMouseMove, false);
 }
 
 window.onload = main;
