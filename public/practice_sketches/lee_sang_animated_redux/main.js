@@ -83,6 +83,8 @@ function main(){
 			if (j == 10) fileName = "img/n" + i.toString() + j.toString() + ".png";
 			else fileName = "img/n" + i.toString() + "0" + j.toString() + ".png";
 			let texture =  textureLoader.load(fileName);
+			//texture.magFilter = THREE.NearestFilter;
+			texture.minFilter = THREE.NearestFilter;
 			numTexArr.push(texture);
 		}
 		textureArr.push(numTexArr);
@@ -94,10 +96,14 @@ function main(){
 		if (i == 10) fileName = "img/d0" + i.toString() + ".png";
 		else fileName = "img/d00" + i.toString() + ".png";
 		let texture =  textureLoader.load(fileName);
+		//texture.magFilter = THREE.NearestFilter;
+		texture.minFilter = THREE.NearestFilter;
 		dotTexArr.push(texture);
 	}
 	textureArr.push(dotTexArr);
 
+	const backgroundTexture = textureLoader.load('img/backgroundTexture.png');
+	const titleTexture = textureLoader.load('img/title.png');
 	const debugTex = textureLoader.load('test.jpg');
 	
 
@@ -114,19 +120,20 @@ function main(){
 	orbitControls.update();
 
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xFFFFFF);
+	scene.background = backgroundTexture;
 	renderer.render(scene, camera);
 
 
 //GEOMETRIES
 	const planeGeom = new THREE.PlaneGeometry(20, 20, 100, 100);
+	//planeGeom.rotateX(-Math.PI * 0.9);
 	const shaderMaterial = new THREE.ShaderMaterial({
 		uniforms:{
 			mainTexture: {value: p5Texture},
 			testTex: {value: textureArr[1][2]},
 			selectedTextures: {value: selectedTextures},
 			
-			sideTileNum: {value: 60.0},
+			sideTileNum: {value: 50.0},
 			time: {value: step},
 			
 		},
@@ -139,10 +146,38 @@ function main(){
 		//wireframe: true
 	});
 
+	// material for the title pannel
+	const shaderMaterial2 = new THREE.ShaderMaterial({
+		uniforms:{
+			titleTexture: {value: titleTexture}
+			
+		},
+
+		vertexShader: document.getElementById('titleVertexShader').textContent,
+
+		fragmentShader: document.getElementById('titleFragmentShader').textContent,
+
+		side: THREE.DoubleSide,
+		//wireframe: true
+	});
+
 	const mainPlane = new THREE.Mesh(planeGeom, shaderMaterial);
 	scene.add(mainPlane);
 
+	const titlePlaneGeom = new THREE.PlaneGeometry(7, 20);
+	titlePlaneGeom.rotateX(Math.PI * 0.5);
+	titlePlaneGeom.translate(0, 5, 25);
+
+	titlePlaneGeom.scale(0.25, 0.25, 0.25);
+	
+
+	const titleMesh = new THREE.Mesh(titlePlaneGeom, shaderMaterial2);
+
+	scene.add(titleMesh);
+	
+
 //GUI
+/*
 	const gui = new dat.GUI();
 	const controls = new function(){
 		this.outputObj = function(){
@@ -150,7 +185,7 @@ function main(){
 		}
 	}
 	gui.add(controls, 'outputObj');
-
+*/
 
 
 	function render(time){

@@ -40,7 +40,8 @@
       void main() {
         vec3 newPos = position;
         vUv = uv;
-        newPos.z = 2.0 * noise(uv * 5.0 + time);
+        newPos.z = 3.0 * noise(uv * 5.0 + time);
+        
         gl_Position = projectionMatrix * modelViewMatrix * vec4( newPos, 1.0 );
     
       }
@@ -73,17 +74,17 @@
 
       vec3 tileTexBasedOnValue(float val, vec2 uv, vec2 uv2){
         vec3 tt;
-        if (val < 0.09) tt = texture2D(selectedTextures[0], ((uv - uv2) * sideTileNum)).rgb;                  
-        else if (val < 0.181) tt = texture2D(selectedTextures[1], ((uv - uv2) * sideTileNum)).rgb;
-        else if (val < 0.272) tt = texture2D(selectedTextures[2], ((uv - uv2) * sideTileNum)).rgb;          
-        else if (val < 0.363) tt = texture2D(selectedTextures[3], ((uv - uv2) * sideTileNum)).rgb;          
-        else if (val < 0.454) tt = texture2D(selectedTextures[4], ((uv - uv2) * sideTileNum)).rgb;          
-        else if (val < 0.545) tt = texture2D(selectedTextures[5], ((uv - uv2) * sideTileNum)).rgb;          
-        else if (val < 0.636) tt = texture2D(selectedTextures[6], ((uv - uv2) * sideTileNum)).rgb;          
-        else if (val < 0.727) tt = texture2D(selectedTextures[7], ((uv - uv2) * sideTileNum)).rgb;          
-        else if (val < 0.818) tt = texture2D(selectedTextures[8], ((uv - uv2) * sideTileNum)).rgb;          
-        else if (val < 0.909) tt = texture2D(selectedTextures[9], ((uv - uv2) * sideTileNum)).rgb;          
-        else  tt = texture2D(selectedTextures[10], ((uv - uv2) * sideTileNum)).rgb; 
+        if (val < 0.09) tt = texture2D(selectedTextures[10], ((uv - uv2) * sideTileNum)).rgb;                  
+        else if (val < 0.181) tt = texture2D(selectedTextures[0], ((uv - uv2) * sideTileNum)).rgb;
+        else if (val < 0.272) tt = texture2D(selectedTextures[1], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (val < 0.363) tt = texture2D(selectedTextures[2], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (val < 0.454) tt = texture2D(selectedTextures[3], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (val < 0.545) tt = texture2D(selectedTextures[4], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (val < 0.636) tt = texture2D(selectedTextures[5], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (val < 0.727) tt = texture2D(selectedTextures[6], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (val < 0.818) tt = texture2D(selectedTextures[7], ((uv - uv2) * sideTileNum)).rgb;          
+        else if (val < 0.909) tt = texture2D(selectedTextures[8], ((uv - uv2) * sideTileNum)).rgb;          
+        else  tt = texture2D(selectedTextures[9], ((uv - uv2) * sideTileNum)).rgb; 
 
         return tt;  
       }
@@ -127,6 +128,43 @@
         if (greyScale > 0.818) tileTex = tileTexBasedOnValue(noiseVal, uv, uv2);
         else tileTex += vec3(1.0, .0, .0);
         outCol = tileTex;
+        float outColGS = (outCol.x + outCol.y + outCol.z) / 3.0;
+        if (outColGS > 0.9) discard;
+        gl_FragColor = vec4(outCol, 1.0);
+      }
+    </script>
+    <script id="titleVertexShader" type="x-shader/x-vertex">
+      #ifdef GL_ES
+      precision highp float;
+      #endif
+      varying vec2 vUv;
+
+
+
+      void main() {
+        vec3 newPos = position;
+        vUv = uv;
+        
+        
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( newPos, 1.0 );
+    
+      }
+    </script>
+
+    <script id="titleFragmentShader" type="x-shader/x-fragment">
+      #ifdef GL_ES
+      precision highp float;
+      #endif
+
+      varying vec2 vUv;
+      uniform sampler2D titleTexture;
+
+      void main(void) {
+        vec2 uv = vUv;
+        vec3 tex = texture2D(titleTexture, uv).rgb;
+        vec3 outCol = vec3(.0);
+        outCol += tex;
+        if (outCol.r > 0.8) discard;
         gl_FragColor = vec4(outCol, 1.0);
       }
     </script>
