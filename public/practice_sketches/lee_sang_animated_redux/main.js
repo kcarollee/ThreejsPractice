@@ -12,6 +12,7 @@ function main(){
 		let mainTextPosx;
         sketch.setup = () => {
         	sketch.createCanvas(400, 400);
+        	
         	width = sketch.width;
         	height = sketch.height;
 
@@ -200,7 +201,7 @@ function main(){
 		time *= 0.001;
 		step++;
 		updateRaycaster();
-		if (step == 1)selectRandomTextures();
+		if (step % 3 == 0)selectRandomTextures();
 
 		// update shader uniforms
 		mainPlane.material.uniforms.time.value = step * 0.01;
@@ -249,8 +250,13 @@ function main(){
 		
 	}
 	requestAnimationFrame(render);
-
-	window.addEventListener('mousemove', onMouseMove, false);
+	/*
+	window.addEventListener('click', event =>{
+		console.log("HEY");
+		canvas.webkitRequestFullscreen();
+	});
+	*/
+	//window.addEventListener('mousemove', onMouseMove, false);
 }
 
 window.onload = main;

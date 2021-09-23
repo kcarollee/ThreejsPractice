@@ -18,12 +18,15 @@ function main(){
 	scene.background = new THREE.Color(0xCCCCCC);
 	renderer.render(scene, camera);
 
+//CUSTOM CURVE
+
+
 //GEOMETRIES
 
-	const sphereGeom = new THREE.SphereGeometry(5, 32, 32);
+	const initialGeom = new THREE.BoxGeometry(5, 5, 5);
 	const morphToGeom = new THREE.PlaneGeometry(10, 10, 2, 2);
-	sphereGeom.morphAttributes.position = [];
-	const initialSpherePosAttribute = sphereGeom.attributes.position;
+	initialGeom.morphAttributes.position = [];
+	const initialSpherePosAttribute = initialGeom.attributes.position;
 	const morphToPosAttribute = morphToGeom.attributes.position;
 	const morphToVerticesNum = morphToPosAttribute.length / 3;
 	console.log(morphToVerticesNum);
@@ -68,14 +71,14 @@ function main(){
 		sphereMorphPositions.push(rx, ry, rz);
 	}
 
-	sphereGeom.morphAttributes.position[0] = new THREE.Float32BufferAttribute(sphereMorphPositions, 3);
+	initialGeom.morphAttributes.position[0] = new THREE.Float32BufferAttribute(sphereMorphPositions, 3);
 
 	const normalMat = new THREE.MeshNormalMaterial({
 		morphTargets: true,
 		wireframe: true
 	});
 
-	const sphereMesh = new THREE.Mesh(sphereGeom, normalMat);
+	const sphereMesh = new THREE.Mesh(initialGeom, normalMat);
 	scene.add(sphereMesh);
 	
 //GUI
