@@ -16,7 +16,7 @@ function main(){
 	orbitControls.update();
 
 	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0xCCCCCC);
+	scene.background = new THREE.Color(0x000000);
 	renderer.render(scene, camera);
 //GEOMETRIES
 	const tubeDim = 5;
@@ -56,57 +56,134 @@ function main(){
 	const tubeEntranceMat = new THREE.MeshBasicMaterial({color: 0x0000FF});
 	const tubeEntranceMesh = new THREE.Mesh(tubeEntranceGeom, tubeEntranceMat);
 
-
+	// this is the mesh group to use for the PortalTube class
 	const tubeGroup = new THREE.Group();
 	tubeGroup.add(tubeBodyMesh);
 	tubeGroup.add(tubeEntranceMesh);
-	scene.add(tubeGroup);
 
-	const tubeGroup2 = tubeGroup.clone();
-	tubeGroup2.position.set(10, 0, 0);
-	scene.add(tubeGroup2);
-	class PortalBox {
-		constructor(){
-			this.geom = portalTotalGeom;
 
+	
+	
+
+	class PortalTube {
+		constructor(posx, posy, posz, rotx, roty, rotz){
+			this.meshGroup = tubeGroup.clone();
+
+			
+			this.initialPos = new THREE.Vector3(posx, posy, posz);
+			this.initialRotation = new THREE.Vector3(rotx, roty, rotz);
+			
+			this.meshGroup.translateX(this.initialPos.x);
+			this.meshGroup.translateY(this.initialPos.y);
+			this.meshGroup.translateZ(this.initialPos.z);
+			this.meshGroup.rotateX(this.initialRotation.x);
+			this.meshGroup.rotateY(this.initialRotation.y);
+			this.meshGroup.rotateZ(this.initialRotation.z);
+			
+			this.bodyPosition = this.meshGroup.children[0].position;
+			this.entrancePosition = this.meshGroup.children[1].position;
+
+
+			// must be called whenever rotations or translations occur
+			this.updateChildrenMatrices();
+			this.curveHelperPosition = new THREE.Vector3();
+			// must be called to update curve helper's position appropriate to whatever transformations
+			this.updateCurveHelperPosition();
+			
+			
+			console.log(this.bodyPosition);
+			console.log(this.entrancePosition);
+			console.log(this.curveHelperPosition);
+
+			
+		}
+
+		addToScene(){
+			scene.add(this.meshGroup);
+		}
+
+		updateChildrenMatrices(){
+			this.meshGroup.updateMatrix();
+			let meshGroupMatrix = this.meshGroup.matrix;
+
+			// the problem with the code below is that 
+			// the transformation is repeated again 
+			// when the only thing we need are the transformed
+			// positions of body and entrance positions/
+			
+			this.meshGroup.children.forEach(function(c){
+				c.applyMatrix4(meshGroupMatrix);
+			})
+				
+		}
+
+		updateCurveHelperPosition(){
+			this.curveHelperPosition.subVectors(this.entrancePosition, this.bodyPosition);
+			this.curveHelperPosition.normalize();
+			this.curveHelperPosition.multiplyScalar(PortalTube.curveHelperCoef);
+			this.curveHelperPosition.add(this.entrancePosition);
+		}
+
+		getBodyPosition(){
+			return this.bodyPosition;
+		}
+
+		getCurveHelperPosition(){
+			return this.curveHelperPosition;
+		}
+
+		getEntrancePosition(){
+			return this.entrancePosition;
 		}
 	}
+	PortalTube.curveHelperCoef = 2;
 
+	const testTube1 = new PortalTube(2, 2, 0, Math.PI * 0.25, 0, -0.2);
+	const testTube2 = new PortalTube(-2, -2, 0, -Math.PI * 0.25, 0, -0.2);
 
+	testTube1.addToScene();
+	testTube2.addToScene();
 
 
 
 	class VineCylinder{
-		constructor(){
-			this.curvePointsArr = [];
-			this.curve = new THREE.CatmullRomCurve3([]);
-			this.vineGeometry;
-			this.vineMesh;
-			this.beginPoint = new THREE.Vector3();
-			this.endPoint = new THREE.Vector3();
-			this.vectorIncrement = new THREE.Vector3();
+		constructor(p0, p1, p2, p3){
+			
+			this.curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3]);
+			this.curvePointsNum = 50;
+			this.curvePointsArr = this.curve.getPoints(this.curvePointsNum);
 
+			//console.log(this.curvePointsArr);
+
+
+			this.subArrayIndex = 1;
+			this.subArray = this.curvePointsArr.slice(this.subArrayIndex);
+
+			this.curveGeom = new THREE.BufferGeometry().setFromPoints(this.subArray);
+			this.curveLine = new THREE.Line(this.curveGeom, VineCylinder.vineMaterial);
 		}
 
-		setBeginPoint(point){
-			this.beginPoint.copy(point);
-		}
-
-		setEndPoint(point){
-			this.endPoint.copy(point);
-		}
-
+		
 		generatePoints(){
 
 		}
 
 		updateCurve(){
-
+			t
 		}
 	}
 	VineCylinder.vineMaterial = new THREE.MeshBasicMaterial({
-		color: 0xFF0000
+		color: 0xFFFFFF
 	});
+
+	const testVine = new VineCylinder(
+		testTube1.getBodyPosition(), 
+		testTube1.getCurveHelperPosition(),
+		testTube2.getBodyPosition(),
+		testTube2.getCurveHelperPosition()	
+	);
+
+
 
 
 	
