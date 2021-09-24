@@ -1,8 +1,9 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
+import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/math/ImprovedNoise.js";
 function main(){
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
-
+	const perlin = new ImprovedNoise();
 //CAMERA
 	const fov = 75;
 	const aspect = 2; // display aspect of the canvas
@@ -80,9 +81,16 @@ function main(){
 			this.meshGroup.rotateY(this.initialRotation.y);
 			this.meshGroup.rotateZ(this.initialRotation.z);
 			
+			/*
 			this.bodyPosition = this.meshGroup.children[0].position;
 			this.entrancePosition = this.meshGroup.children[1].position;
+			*/
 
+			this.bodyPosition = new THREE.Vector3();
+			this.entrancePosition = new THREE.Vector3();
+
+			this.bodyPosition.copy(PortalTube.defaultBodyPosition);
+			this.entrancePosition.copy(PortalTube.defaultEntrancePosition);
 
 			// must be called whenever rotations or translations occur
 			this.updateChildrenMatrices();
@@ -94,6 +102,10 @@ function main(){
 			console.log(this.bodyPosition);
 			console.log(this.entrancePosition);
 			console.log(this.curveHelperPosition);
+
+			let dc0 = PortalTube.debugCube.clone();
+			dc0.position.copy(this.curveHelperPosition);
+			scene.add(dc0);
 
 			
 		}
@@ -111,9 +123,14 @@ function main(){
 			// when the only thing we need are the transformed
 			// positions of body and entrance positions/
 			
+			/*
 			this.meshGroup.children.forEach(function(c){
 				c.applyMatrix4(meshGroupMatrix);
 			})
+			*/
+
+			this.bodyPosition.applyMatrix4(meshGroupMatrix);
+			this.entrancePosition.applyMatrix4(meshGroupMatrix);
 				
 		}
 
@@ -136,10 +153,15 @@ function main(){
 			return this.entrancePosition;
 		}
 	}
-	PortalTube.curveHelperCoef = 2;
 
-	const testTube1 = new PortalTube(2, 2, 0, Math.PI * 0.25, 0, -0.2);
-	const testTube2 = new PortalTube(-2, -2, 0, -Math.PI * 0.25, 0, -0.2);
+
+	PortalTube.curveHelperCoef = 10;
+	PortalTube.debugCube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshBasicMaterial());
+	PortalTube.defaultEntrancePosition = new THREE.Vector3(0, 0, 0);
+	PortalTube.defaultBodyPosition = new THREE.Vector3(0, 0, -bodyExtrudeSettings.depth);
+	
+	const testTube1 = new PortalTube(8, 2, 0, Math.PI * 0.25, 0, 0);
+	const testTube2 = new PortalTube(-8, -2, 0, Math.PI * -0.25, 0, 0);
 
 	testTube1.addToScene();
 	testTube2.addToScene();
@@ -148,17 +170,18 @@ function main(){
 
 	class VineCylinder{
 		constructor(p0, p1, p2, p3){
+			this.randomOffset = Math.random();
 			
 			this.curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3]);
-			this.curvePointsNum = 50;
+			this.curvePointsNum = 250;
 			this.curvePointsArr = this.curve.getPoints(this.curvePointsNum);
-
+			this.addNoiseToCurve();
 			//console.log(this.curvePointsArr);
 
 
 			this.subArrayIndex = 1;
-			this.subArray = this.curvePointsArr.slice(this.subArrayIndex);
-
+			this.subArray = this.curvePointsArr.slice(0, this.subArrayIndex);
+			//console.log(this.subArray);
 			this.curveGeom = new THREE.BufferGeometry().setFromPoints(this.subArray);
 			this.curveLine = new THREE.Line(this.curveGeom, VineCylinder.vineMaterial);
 		}
@@ -168,21 +191,58 @@ function main(){
 
 		}
 
+		addNoiseToCurve(){
+			let r = this.randomOffset;
+			let nc = VineCylinder.noiseCoef;
+			let nh = VineCylinder.noiseHeight;
+			this.curvePointsArr.forEach(function(p){
+				//let n = perlin.noise(p.x * nc + r, p.y * nc + r, p.z * nc + r) ;
+				let nx = perlin.noise(p.x * nc + r, p.y * nc + r, p.z * nc + r) * nh;
+				let ny = perlin.noise(p.z * nc + r, p.x * nc + r, p.y * nc + r) * nh;
+				let nz = perlin.noise(p.y * nc + r, p.z * nc + r, p.x * nc + r) * nh;
+				p.add(new THREE.Vector3(nx, ny, nz));
+			});
+		}
+
 		updateCurve(){
-			t
+			this.subArrayIndex++;
+			if (this.subArrayIndex < this.curvePointsNum){
+				this.subArray = this.curvePointsArr.slice(0, this.subArrayIndex);
+				this.curveLine.geometry.setFromPoints(this.subArray);
+				this.curveLine.geometry.attributes.position.needsUpdate = true;
+			}
+		}
+
+		addToScene(){
+			scene.add(this.curveLine);
 		}
 	}
+	
 	VineCylinder.vineMaterial = new THREE.MeshBasicMaterial({
 		color: 0xFFFFFF
 	});
 
-	const testVine = new VineCylinder(
-		testTube1.getBodyPosition(), 
-		testTube1.getCurveHelperPosition(),
-		testTube2.getBodyPosition(),
-		testTube2.getCurveHelperPosition()	
-	);
+	VineCylinder.noiseHeight = 3;
+	VineCylinder.noiseCoef = 0.25;
 
+
+	const testVineArr = [];
+	const testVineNum = 20;
+	for (let i = 0; i < testVineNum; i++){
+		let testVine = new VineCylinder(
+			testTube1.getBodyPosition(), 
+			testTube1.getCurveHelperPosition(),		
+			testTube2.getCurveHelperPosition(),	
+			testTube2.getBodyPosition()
+		);
+		testVineArr.push(testVine);
+	}
+
+	
+
+	
+
+	testVineArr.forEach(v => v.addToScene());
 
 
 
@@ -196,11 +256,13 @@ function main(){
 	}
 	gui.add(controls, 'outputObj');
 
-
+	function animate(){
+		testVineArr.forEach(v => v.updateCurve());
+	}
 
 	function render(time){
 		time *= 0.001;
-		
+		animate();
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
