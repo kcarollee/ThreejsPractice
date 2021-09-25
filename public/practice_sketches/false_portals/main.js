@@ -1,9 +1,11 @@
 import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/math/ImprovedNoise.js";
+//import {CopyShader} from "https://cdn.skypack.dev/three@0.124.0/examples/js/shaders/CopyShader.js"
 function main(){
 	const canvas = document.querySelector('#c');
-	const renderer = new THREE.WebGLRenderer({canvas});
+	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
 	const perlin = new ImprovedNoise();
+	let step = 0;
 //CAMERA
 	const fov = 75;
 	const aspect = 2; // display aspect of the canvas
@@ -19,6 +21,11 @@ function main(){
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0x000000);
 	renderer.render(scene, camera);
+
+//LIGHTS
+	const pointLight = new THREE.PointLight(0xFFFFFF, 10, 1000);
+	pointLight.position.copy(camera.position);
+	scene.add(pointLight);
 //GEOMETRIES
 	const tubeDim = 5;
 	const tubeShape = new THREE.Shape();
@@ -98,20 +105,31 @@ function main(){
 			// must be called to update curve helper's position appropriate to whatever transformations
 			this.updateCurveHelperPosition();
 			
-			
+			/*
 			console.log(this.bodyPosition);
 			console.log(this.entrancePosition);
 			console.log(this.curveHelperPosition);
+			*/
 
 			let dc0 = PortalTube.debugCube.clone();
 			dc0.position.copy(this.curveHelperPosition);
 			scene.add(dc0);
 
-			
+			this.scaleFactor = 0;
+			this.step = 0;
 		}
 
 		addToScene(){
 			scene.add(this.meshGroup);
+		}
+
+		animate(){
+			this.step++;
+			if (this.scaleFactor < 1.0){
+				this.scaleFactor += 0.1;
+				this.meshGroup.scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
+				this.meshGroup.rotateZ(this.scaleFactor);
+			}
 		}
 
 		updateChildrenMatrices(){
@@ -158,14 +176,16 @@ function main(){
 	PortalTube.curveHelperCoef = 10;
 	PortalTube.debugCube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshBasicMaterial());
 	PortalTube.defaultEntrancePosition = new THREE.Vector3(0, 0, 0);
-	PortalTube.defaultBodyPosition = new THREE.Vector3(0, 0, -bodyExtrudeSettings.depth);
+	PortalTube.defaultBodyPosition = new THREE.Vector3(0, 0, -bodyExtrudeSettings.depth * 0.75);
 	
-	const testTube1 = new PortalTube(8, 2, 0, Math.PI * 0.25, 0, 0);
-	const testTube2 = new PortalTube(-8, -2, 0, Math.PI * -0.25, 0, 0);
+	const testTube1 = new PortalTube(8, 3, 0, Math.PI * 0.15, 0, 0);
+	const testTube2 = new PortalTube(-8, -3, 0, Math.PI * -0.15, 0, 0);
 
 	testTube1.addToScene();
 	testTube2.addToScene();
 
+	const portalTubeArr = [];
+	portalTubeArr.push(testTube1, testTube2);
 
 
 	class VineCylinder{
@@ -173,18 +193,43 @@ function main(){
 			this.randomOffset = Math.random();
 			
 			this.curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3]);
-			this.curvePointsNum = 250;
+			this.curvePointsNum = 500;
 			this.curvePointsArr = this.curve.getPoints(this.curvePointsNum);
 			this.addNoiseToCurve();
 			//console.log(this.curvePointsArr);
 
+			//this.partialCurve = new THREE.CatmullRomCurve3();
+
+
 
 			this.subArrayIndex = 1;
 			this.subArray = this.curvePointsArr.slice(0, this.subArrayIndex);
+			this.subArrayCopy = Array.from(this.subArray);
 			//console.log(this.subArray);
 			this.curveGeom = new THREE.BufferGeometry().setFromPoints(this.subArray);
 			this.curveLine = new THREE.Line(this.curveGeom, VineCylinder.vineMaterial);
+
+			this.bufferGeomVerts = new Float32Array();
+
+			
+			this.walkerMeshArr = [];
+			this.walkerNum = 10;
+
+			for (let i = 0; i < this.walkerNum; i++){
+				let walkerMat = new THREE.MeshPhysicalMaterial({color: 0x00FF00 * Math.random()})
+				let walkerMesh = new THREE.Mesh(VineCylinder.walkerGeom, walkerMat);
+				walkerMesh.walkerMeshIndex = Math.floor(Math.random() * this.curvePointsArr.length);
+				walkerMesh.position.copy(this.curvePointsArr[walkerMesh.walkerMeshIndex]);
+				walkerMesh.visible = false;
+				this.walkerMeshArr.push(walkerMesh);
+			}
+
+
+			
 		}
+
+
+
 
 		
 		generatePoints(){
@@ -204,17 +249,60 @@ function main(){
 			});
 		}
 
+		indexBasedPerlin(i, px, py, pz, r, nc, nh){
+			let nx = perlin.noise(px * nc + r + i, py * nc + r + i, pz * nc + r + i) * nh;
+			let ny = perlin.noise(pz * nc + r + i, px * nc + r + i, py * nc + r + i) * nh;
+			let nz = perlin.noise(py * nc + r + i, pz * nc + r + i, px * nc + r + i) * nh;
+
+			return [nx, ny, nz];
+		}
+
 		updateCurve(){
 			this.subArrayIndex++;
+			//this.addNoiseToSubArray();
 			if (this.subArrayIndex < this.curvePointsNum){
 				this.subArray = this.curvePointsArr.slice(0, this.subArrayIndex);
-				this.curveLine.geometry.setFromPoints(this.subArray);
-				this.curveLine.geometry.attributes.position.needsUpdate = true;
 			}
+			/*
+			this.curveLine.geometry.setFromPoints(this.subArray);
+			this.curveLine.geometry.attributes.position.needsUpdate = true;
+			*/
+
+			
+			let cpArr = this.curvePointsArr;
+			let cpArrLength = this.curvePointsArr.length;
+
+			this.walkerMeshArr.forEach(function(w){
+				w.walkerMeshIndex %= cpArrLength;
+				if (w.walkerMeshIndex == 1) w.visible = true;
+				w.position.copy(cpArr[w.walkerMeshIndex++ % cpArrLength]);
+				
+				w.lookAt(cpArr[w.walkerMeshIndex % cpArrLength]);
+			});
+
+		}
+
+		addNoiseToSubArray(){
+			let r = this.randomOffset;
+			let nc = VineCylinder.noiseCoef;
+			let nh = VineCylinder.noiseHeight;
+			let pFunc = this.indexBasedPerlin;
+			this.subArray.forEach(function(p, i){
+				
+				let nArr = pFunc(i + step * 0.01, p.x, p.y, p.z, r, nc, nh);
+				p.x += nArr[0];
+				p.y += nArr[1];
+				p.z += nArr[2];
+
+
+				
+				
+			});
 		}
 
 		addToScene(){
 			scene.add(this.curveLine);
+			this.walkerMeshArr.forEach(w => scene.add(w));
 		}
 	}
 	
@@ -222,12 +310,15 @@ function main(){
 		color: 0xFFFFFF
 	});
 
-	VineCylinder.noiseHeight = 3;
-	VineCylinder.noiseCoef = 0.25;
+	VineCylinder.noiseHeight = 2;
+	VineCylinder.noiseCoef = 0.15;
+
+	VineCylinder.walkerGeom = new THREE.BoxGeometry(0.1, 0.1, 2.5);
+	
 
 
 	const testVineArr = [];
-	const testVineNum = 20;
+	const testVineNum = 100;
 	for (let i = 0; i < testVineNum; i++){
 		let testVine = new VineCylinder(
 			testTube1.getBodyPosition(), 
@@ -244,6 +335,19 @@ function main(){
 
 	testVineArr.forEach(v => v.addToScene());
 
+//POST-PROCESSING
+	
+	//resizeRenderToDisplaySize(renderer); // not calling this function prior to the passes yields low-res frames
+	const renderPass = new THREE.RenderPass(scene, camera);
+	const effectCopy = new THREE.ShaderPass(THREE.CopyShader);
+	effectCopy.renderToScreen = true;
+	const shaderPass = new THREE.ShaderPass(THREE.CustomShader);
+	shaderPass.enabled = true;
+
+	const composer = new THREE.EffectComposer(renderer);
+	composer.addPass(renderPass);
+	composer.addPass(shaderPass);
+	composer.addPass(effectCopy);
 
 
 	
@@ -253,23 +357,69 @@ function main(){
 		this.outputObj = function(){
 			scene.children.forEach(c => console.log(c));
 		}
+
+		this.enableShaderPass = true;
+
+		this.addPortalTube = function(){
+			const tube = new PortalTube(0,0, 0, Math.PI * -0.25, 0, 0);
+			
+			tube.addToScene();
+			portalTubeArr.push(tube);
+			let addNum = 100;
+			for (let i = 0; i < addNum; i++){
+				let testVine;
+				if (Math.random() > 0.5){
+					testVine = new VineCylinder(
+						tube.getBodyPosition(), 
+						tube.getCurveHelperPosition(),		
+						testTube1.getCurveHelperPosition(),	
+						testTube1.getBodyPosition()
+					);
+				}
+				else{
+					testVine = new VineCylinder(
+						tube.getBodyPosition(), 
+						tube.getCurveHelperPosition(),		
+						testTube2.getCurveHelperPosition(),	
+						testTube2.getBodyPosition()
+					);
+				}
+				testVine.addToScene();
+				testVineArr.push(testVine);
+			}
+
+		}
+
+		this.addVines = function(){
+
+		}
 	}
 	gui.add(controls, 'outputObj');
-
+	gui.add(controls, 'enableShaderPass').onChange(c => shaderPass.enabled = controls.enableShaderPass);
+	gui.add(controls, 'addPortalTube');
 	function animate(){
 		testVineArr.forEach(v => v.updateCurve());
+		portalTubeArr.forEach(function(t){
+			t.animate();
+		})
 	}
 
+	const clock = new THREE.Clock();
 	function render(time){
 		time *= 0.001;
+		step++;
 		animate();
+		
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
 		}
+		
 		renderer.render(scene, camera);
 		requestAnimationFrame(render);
+
+		//composer.render(clock.getDelta());
 	}
 
 	function resizeRenderToDisplaySize(renderer){
@@ -283,6 +433,8 @@ function main(){
 		}
 		return needResize;
 	}
+
+	window.addEventListener('resize', resizeRenderToDisplaySize);
 	requestAnimationFrame(render);
 }
 
