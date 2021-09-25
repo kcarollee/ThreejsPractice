@@ -4,16 +4,17 @@ import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/
 function main(){
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
+
 	const perlin = new ImprovedNoise();
 	let step = 0;
 //CAMERA
-	const fov = 75;
+	const fov = 45;
 	const aspect = 2; // display aspect of the canvas
 	const near = 0.1;
 	const far = 1000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
-	camera.position.set(0, 0, 20);
+	camera.position.set(0, 0, 50);
 
 	const orbitControls = new OrbitControls(camera, renderer.domElement);
 	orbitControls.update();
@@ -23,11 +24,11 @@ function main(){
 	renderer.render(scene, camera);
 
 //LIGHTS
-	const pointLight = new THREE.PointLight(0xFFFFFF, 10, 1000);
+	const pointLight = new THREE.PointLight(0xFFFFFF, 5, 1000);
 	pointLight.position.copy(camera.position);
 	scene.add(pointLight);
 //GEOMETRIES
-	const tubeDim = 5;
+	const tubeDim = 10;
 	const tubeShape = new THREE.Shape();
 	tubeShape.moveTo(-tubeDim * 0.5, -tubeDim * 0.5);
 	tubeShape.lineTo(tubeDim * 0.5, -tubeDim * 0.5);
@@ -117,6 +118,7 @@ function main(){
 
 			this.scaleFactor = 0;
 			this.step = 0;
+			this.randomOffset = Math.random() * 10;
 		}
 
 		addToScene(){
@@ -128,8 +130,10 @@ function main(){
 			if (this.scaleFactor < 1.0){
 				this.scaleFactor += 0.1;
 				this.meshGroup.scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
-				this.meshGroup.rotateZ(this.scaleFactor);
+				
 			}
+			this.meshGroup.rotateZ(0.05 + 0.025 * Math.sin((this.step + this.randomOffset) * 0.1 ));
+			this.meshGroup.updateMatrix();
 		}
 
 		updateChildrenMatrices(){
@@ -173,13 +177,13 @@ function main(){
 	}
 
 
-	PortalTube.curveHelperCoef = 10;
+	PortalTube.curveHelperCoef = 3;
 	PortalTube.debugCube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshBasicMaterial());
 	PortalTube.defaultEntrancePosition = new THREE.Vector3(0, 0, 0);
 	PortalTube.defaultBodyPosition = new THREE.Vector3(0, 0, -bodyExtrudeSettings.depth * 0.75);
 	
-	const testTube1 = new PortalTube(8, 3, 0, Math.PI * 0.15, 0, 0);
-	const testTube2 = new PortalTube(-8, -3, 0, Math.PI * -0.15, 0, 0);
+	const testTube1 = new PortalTube(0, 12, 0, Math.PI * 0.15, 0, 0);
+	const testTube2 = new PortalTube(0, -12, 0, Math.PI * -0.15, 0, 0);
 
 	testTube1.addToScene();
 	testTube2.addToScene();
@@ -193,7 +197,7 @@ function main(){
 			this.randomOffset = Math.random();
 			
 			this.curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3]);
-			this.curvePointsNum = 500;
+			this.curvePointsNum = 1000;
 			this.curvePointsArr = this.curve.getPoints(this.curvePointsNum);
 			this.addNoiseToCurve();
 			//console.log(this.curvePointsArr);
@@ -216,7 +220,7 @@ function main(){
 			this.walkerNum = 10;
 
 			for (let i = 0; i < this.walkerNum; i++){
-				let walkerMat = new THREE.MeshPhysicalMaterial({color: 0x00FF00 * Math.random()})
+				let walkerMat = new THREE.MeshStandardMaterial({color: 0x00FF00 * Math.random()})
 				let walkerMesh = new THREE.Mesh(VineCylinder.walkerGeom, walkerMat);
 				walkerMesh.walkerMeshIndex = Math.floor(Math.random() * this.curvePointsArr.length);
 				walkerMesh.position.copy(this.curvePointsArr[walkerMesh.walkerMeshIndex]);
@@ -310,10 +314,10 @@ function main(){
 		color: 0xFFFFFF
 	});
 
-	VineCylinder.noiseHeight = 2;
+	VineCylinder.noiseHeight = 6;
 	VineCylinder.noiseCoef = 0.15;
 
-	VineCylinder.walkerGeom = new THREE.BoxGeometry(0.1, 0.1, 2.5);
+	VineCylinder.walkerGeom = new THREE.BoxGeometry(0.25, 0.25, 2.5);
 	
 
 
@@ -342,9 +346,11 @@ function main(){
 	const effectCopy = new THREE.ShaderPass(THREE.CopyShader);
 	effectCopy.renderToScreen = true;
 	const shaderPass = new THREE.ShaderPass(THREE.CustomShader);
+
 	shaderPass.enabled = true;
 
 	const composer = new THREE.EffectComposer(renderer);
+	composer.setSize(window.innerWidth, window.innerHeight);
 	composer.addPass(renderPass);
 	composer.addPass(shaderPass);
 	composer.addPass(effectCopy);
@@ -361,11 +367,11 @@ function main(){
 		this.enableShaderPass = true;
 
 		this.addPortalTube = function(){
-			const tube = new PortalTube(0,0, 0, Math.PI * -0.25, 0, 0);
+			const tube = new PortalTube(0,0, 20, Math.PI , 0, 0);
 			
 			tube.addToScene();
 			portalTubeArr.push(tube);
-			let addNum = 100;
+			let addNum = 200;
 			for (let i = 0; i < addNum; i++){
 				let testVine;
 				if (Math.random() > 0.5){
@@ -416,14 +422,14 @@ function main(){
 			camera.updateProjectionMatrix();
 		}
 		
-		renderer.render(scene, camera);
+		//renderer.render(scene, camera);
 		requestAnimationFrame(render);
 
-		//composer.render(clock.getDelta());
+		composer.render(clock.getDelta());
 	}
 
 	function resizeRenderToDisplaySize(renderer){
-		const canvas = renderer.domElement;
+		let canvas = renderer.domElement;
 		const pixelRatio = window.devicePixelRatio;
 		const width = canvas.clientWidth * pixelRatio | 0; // or 0
 		const height = canvas.clientHeight * pixelRatio | 0; // 0
@@ -431,6 +437,8 @@ function main(){
 		if (needResize){
 			renderer.setSize(width, height, false);
 		}
+
+		composer.setSize(window.innerWidth, window.innerHeight);
 		return needResize;
 	}
 
