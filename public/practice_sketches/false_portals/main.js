@@ -16,6 +16,7 @@ function main(){
 	camera.position.set(0, 0, 50);
 
 	const orbitControls = new OrbitControls(camera, renderer.domElement);
+	orbitControls.enableDamping = true;
 	orbitControls.update();
 
 	const scene = new THREE.Scene();
@@ -23,8 +24,8 @@ function main(){
 	renderer.render(scene, camera);
 
 //LIGHTS
-	const pointLight = new THREE.PointLight(0xFFFFFF, 5, 1000);
-	const pointLight2 = new THREE.PointLight(0xFFFFFF, 5, 1000);
+	const pointLight = new THREE.PointLight(0xFFFFFF, 1, 1000);
+	const pointLight2 = new THREE.PointLight(0xFFFFFF, 1, 1000);
 	pointLight.position.copy(camera.position);
 	scene.add(pointLight);
 //TEXTURES
@@ -76,11 +77,16 @@ function main(){
 	const tubeEntranceMat = new THREE.MeshBasicMaterial({color: 0x0000FF});
 	const tubeEntranceMesh = new THREE.Mesh(tubeEntranceGeom, tubeEntranceMat);
 
+	const tubeFloorMesh = new THREE.Mesh(
+		new THREE.PlaneGeometry(tubeDim, tubeDim),
+		new THREE.MeshBasicMaterial({color: 0xFF0000, side: THREE.DoubleSide})
+	);
+	tubeFloorMesh.position.set(0, 0, -bodyExtrudeSettings.depth);
 	// this is the mesh group to use for the PortalTube class
 	const tubeGroup = new THREE.Group();
 	tubeGroup.add(tubeBodyMesh);
 	tubeGroup.add(tubeEntranceMesh);
-
+	tubeGroup.add(tubeFloorMesh);
 
 	
 	
@@ -248,7 +254,7 @@ function main(){
 
 			for (let i = 0; i < this.walkerNum; i++){
 				let walkerMat = new THREE.MeshStandardMaterial({
-					color: 0x00FF00 * Math.random(),
+					color:new THREE.Color(0, Math.random(), 0),
 					metalness: .0,
 					//wireframe: true
 					//refractionRatio: 0.99,
@@ -257,12 +263,15 @@ function main(){
 				let walkerMesh = new THREE.Mesh(VineCylinder.walkerGeom, walkerMat);
 				walkerMesh.walkerMeshIndex = Math.floor(Math.random() * this.curvePointsArr.length);
 				walkerMesh.position.copy(this.curvePointsArr[walkerMesh.walkerMeshIndex]);
-				walkerMesh.visible = false;
+				//walkerMesh.visible = true;
+				walkerMesh.scale.set(0, 0, 0);
 				this.walkerMeshArr.push(walkerMesh);
 			}
 
 			this.startingPortal;
 			this.addNoiseIndex = 0;
+
+			this.globalVisibility = true;
 		}
 
 		setStartingPortal(portal){
@@ -354,10 +363,10 @@ function main(){
 			if (this.startingPortal.portalOpened == true){
 				let cpArr = this.curvePointsArr;
 				let cpArrLength = this.curvePointsArr.length;
-
+				let visible = this.globalVisibility;
 				this.walkerMeshArr.forEach(function(w){
 					w.walkerMeshIndex %= cpArrLength;
-					if (w.walkerMeshIndex == 1) w.visible = true;
+					if (w.walkerMeshIndex == 1 && visible) w.scale.set(1, 1, 1);
 					w.position.copy(cpArr[w.walkerMeshIndex++ % cpArrLength]);
 					
 					w.lookAt(cpArr[w.walkerMeshIndex % cpArrLength]);
@@ -534,6 +543,7 @@ function main(){
 	gui.add(controls, 'addPortalTube');
 	gui.add(controls, 'debug');
 	function animate(){
+		orbitControls.update();
 		pointLight.position.copy(camera.position);
 		testVineArr.forEach(v => v.updateCurve());
 		portalTubeArr.forEach(function(t){
@@ -557,9 +567,15 @@ function main(){
 		//???
 
 
-		portalTubeArr[0].meshGroup.children[0].visible = false;
-		portalTubeArr[1].meshGroup.children[0].visible = false;
-		//testVineArr.forEach(v => v.disableWalkerVisibility());
+		
+		portalTubeArr.forEach(function(p){
+			p.meshGroup.children[0].visible = false;
+			p.meshGroup.children[2].visible = false;
+		})
+		testVineArr.forEach(function(v){
+			v.globalVisibility = false;
+			v.disableWalkerVisibility();
+		});
 		renderer.setRenderTarget(renderTarget);
 		renderer.clear();
 		renderer.render(scene, camera);
@@ -567,9 +583,15 @@ function main(){
 		
 		requestAnimationFrame(render);
 
-		portalTubeArr[0].meshGroup.children[0].visible = true;
-		portalTubeArr[1].meshGroup.children[0].visible = true;
-		//testVineArr.forEach(v => v.enableWalkerVisibility());
+		portalTubeArr.forEach(function(p){
+			p.meshGroup.children[0].visible = true;
+			p.meshGroup.children[2].visible = true;
+		})
+		testVineArr.forEach(function(v){
+			v.globalVisibility = true;
+			v.enableWalkerVisibility();
+		});
+
 		composer.render(clock.getDelta());
 	}
 

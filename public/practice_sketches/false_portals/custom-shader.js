@@ -48,20 +48,20 @@ THREE.CustomShader = {
 
         vec3 bloom(){
             float bloomStrength = 10.0;
-            float bloomIntensity = 0.01;
-
+            float bloomIntensity = 20.0;
+            float d = 20.0;
             vec3 sum = vec3(.0);
 
             for (float i = 1.0; i < 10000.0; i++){
                 if (i > bloomStrength) break;
-                sum += texture2D(tDiffuse, pc(vec2(i, .0))).rgb / (bloomIntensity * i);
-                sum += texture2D(tDiffuse, pc(vec2(-i, .0))).rgb / (bloomIntensity * i);
-                sum += texture2D(tDiffuse, pc(vec2(.0, i))).rgb / (bloomIntensity * i);
-                sum += texture2D(tDiffuse, pc(vec2(.0, -i))).rgb / (bloomIntensity * i);
-                sum += texture2D(tDiffuse, pc(vec2(i, -i))).rgb / (bloomIntensity * i);
-                sum += texture2D(tDiffuse, pc(vec2(-i, i))).rgb / (bloomIntensity * i);
-                sum += texture2D(tDiffuse, pc(vec2(i, i))).rgb / (bloomIntensity * i);
-                sum += texture2D(tDiffuse, pc(vec2(-i, -i))).rgb / (bloomIntensity * i);
+                sum += texture2D(renderTarget, pc(vec2(i * d, .0))).rgb / pow(bloomIntensity, i);
+                sum += texture2D(renderTarget, pc(vec2(-i * d, .0))).rgb / pow(bloomIntensity, i);
+                sum += texture2D(renderTarget, pc(vec2(.0, i * d))).rgb / pow(bloomIntensity, i);
+                sum += texture2D(renderTarget, pc(vec2(.0, -i * d))).rgb / pow(bloomIntensity, i);
+                sum += texture2D(renderTarget, pc(vec2(i * d, -i * d))).rgb / pow(bloomIntensity, i);
+                sum += texture2D(renderTarget, pc(vec2(-i * d, i * d))).rgb / pow(bloomIntensity, i);
+                sum += texture2D(renderTarget, pc(vec2(i * d, i * d))).rgb / pow(bloomIntensity, i);
+                sum += texture2D(renderTarget, pc(vec2(-i * d, -i * d))).rgb / pow(bloomIntensity, i);
             }
             return sum;
         }
@@ -101,15 +101,23 @@ THREE.CustomShader = {
 
             vec2 uvo = vUv; // original uv coords
             vec3 outCol = vec3(.0);
-            vec3 os = texture2D(tDiffuse, uvo).rgb; //  riginal scene
+            vec3 os = texture2D(tDiffuse, uvo).rgb; //  original scene
             vec3 rts = texture2D(renderTarget, uvo).rgb; // render target scene
-
+            vec3 rtsg = vec3(rts.b);
+            vec3 blm = bloom();
+            vec3 blmg = vec3(blm.b);
+            
+            vec3 portalBloom = rts + blm;
+            portalBloom = vec3(portalBloom.b);
+            
             outCol = os;
-            if (outCol.r == 1.0 && outCol.g == .0) outCol = vec3(.0);
+            if (os.r == 1.0 && os.g == .0 && os.b == .0) outCol = rts;
+            if (outCol.b == 1.0) outCol = vec3(1.0);
+            if (outCol.r == outCol.g) outCol += blmg;
 
-            //outCol += bluebloom();
-
-            outCol = rts;
+            if (outCol.g > .0 && outCol.r != outCol.g){
+                outCol = vec3(1.0, sin(outCol.g), 1.0 - cos(outCol.g));
+            }
             gl_FragColor = vec4( outCol , 1.0 );
 
         }
