@@ -3,8 +3,8 @@ THREE.CustomShader = {
     uniforms: {
 
         "tDiffuse": {type: "t", value: null},
-        "resolution": {value: [window.innerWidth, window.innerHeight]}
-
+        "resolution": {value: [window.innerWidth, window.innerHeight]},
+        "renderTarget": {type: "t", value: null}
 
     },
 
@@ -34,6 +34,7 @@ THREE.CustomShader = {
         // pass in the image/texture we'll be modifying
         uniform sampler2D tDiffuse;
         uniform vec2 resolution;
+        uniform sampler2D renderTarget;
         // used to determine the correct texel we're working on
         varying vec2 vUv;
         //https://gist.github.com/companje/29408948f1e8be54dd5733a74ca49bb9
@@ -99,15 +100,16 @@ THREE.CustomShader = {
         
 
             vec2 uvo = vUv; // original uv coords
-            vec3 outCol = texture2D(tDiffuse, uvo).rgb;
+            vec3 outCol = vec3(.0);
+            vec3 os = texture2D(tDiffuse, uvo).rgb; //  riginal scene
+            vec3 rts = texture2D(renderTarget, uvo).rgb; // render target scene
 
-            if (outCol.r == 1.0 && outCol.g == .0) discard;
+            outCol = os;
+            if (outCol.r == 1.0 && outCol.g == .0) outCol = vec3(.0);
 
             //outCol += bluebloom();
 
-            if (outCol.r == .0 && outCol.g == .0 && outCol.b == 1.0) {
-                outCol = vec3(tan(uvo.x * 100.0 * uvo.y * 100.0));
-            }
+            outCol = rts;
             gl_FragColor = vec4( outCol , 1.0 );
 
         }
