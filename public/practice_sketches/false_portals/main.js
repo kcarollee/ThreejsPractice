@@ -34,7 +34,7 @@ function main(){
 	texture.wrapS = THREE.RepeatWrapping;
 	texture.wrapS = THREE.RepeatWrapping;
 	texture.repeat.set(10, 10);
-	texture.mapping = THREE.EquirectangularRefractionMapping;
+	texture.mapping = THREE.UVMapping;
 //RENDER TARGETS
 	const renderTarget = new THREE.WebGLRenderTarget(window.innderWidth, window.innerHeight);
 	
@@ -138,6 +138,12 @@ function main(){
 			this.randomOffset = Math.random() * 10;
 
 			this.portalOpened = false;
+
+			this.connectedVineArr = [];
+		}
+
+		addToVineArr(vine){
+			this.connectedVineArr.push(vine);
 		}
 
 		addToScene(){
@@ -250,7 +256,7 @@ function main(){
 			
 			
 			this.walkerMeshArr = [];
-			this.walkerNum = 20;
+			this.walkerNum = 10;
 
 			for (let i = 0; i < this.walkerNum; i++){
 				let walkerMat = new THREE.MeshStandardMaterial({
@@ -258,10 +264,11 @@ function main(){
 					metalness: .0,
 					//wireframe: true
 					//refractionRatio: 0.99,
-					//envMap: texture
+					envMap: texture
 				})
 				let walkerMesh = new THREE.Mesh(VineCylinder.walkerGeom, walkerMat);
 				walkerMesh.walkerMeshIndex = Math.floor(Math.random() * this.curvePointsArr.length);
+				if (i % 2 == 0) walkerMesh.material.wireframe = true;
 				walkerMesh.position.copy(this.curvePointsArr[walkerMesh.walkerMeshIndex]);
 				//walkerMesh.visible = true;
 				walkerMesh.scale.set(0, 0, 0);
@@ -270,7 +277,7 @@ function main(){
 
 			this.startingPortal;
 			this.addNoiseIndex = 0;
-
+			this.scale = 1;
 			this.globalVisibility = true;
 		}
 
@@ -364,9 +371,10 @@ function main(){
 				let cpArr = this.curvePointsArr;
 				let cpArrLength = this.curvePointsArr.length;
 				let visible = this.globalVisibility;
+				let scale = this.scale;
 				this.walkerMeshArr.forEach(function(w){
 					w.walkerMeshIndex %= cpArrLength;
-					if (w.walkerMeshIndex == 1 && visible) w.scale.set(1, 1, 1);
+					if (w.walkerMeshIndex == 1 && visible) w.scale.set(scale, scale, scale);
 					w.position.copy(cpArr[w.walkerMeshIndex++ % cpArrLength]);
 					
 					w.lookAt(cpArr[w.walkerMeshIndex % cpArrLength]);
@@ -427,6 +435,8 @@ function main(){
 				testTube2.getBodyPosition()
 			);
 
+			testTube1.addToVineArr(testVine);
+
 			testVine.setStartingPortal(testTube1);
 		}
 
@@ -437,6 +447,7 @@ function main(){
 				testTube1.getCurveHelperPosition(),	
 				testTube1.getBodyPosition()
 			);
+			testTube2.addToVineArr(testVine);
 			testVine.setStartingPortal(testTube2);
 		}
 
@@ -491,7 +502,31 @@ function main(){
 */
 //GUI
 	const gui = new dat.GUI();
+	//const testTube1 = new PortalTube(0, 12, 0, Math.PI * 0.15, 0, 0);
+	const preconfiguredTubeSettingsArr = [
+	{
+		px: 0,
+		py: 0,
+		pz: 20,
+		rx: Math.PI,
+		ry: 0,
+		rz: 0
+	},
+	{
+		px: 20,
+		py: 0,
+		pz: 10,
+		rx: 0,
+		ry: Math.PI * -0.5,
+		rz:0
+	}
+
+	
+	];
+
+	
 	const controls = new function(){
+		this.tubeConfigIndex = 0;
 		this.outputObj = function(){
 			scene.children.forEach(c => console.log(c));
 		}
@@ -499,36 +534,39 @@ function main(){
 		this.enableShaderPass = true;
 
 		this.addPortalTube = function(){
-			const tube = new PortalTube(0,0, 20, Math.PI , 0, 0);
-			
-			tube.addToScene();
-			portalTubeArr.push(tube);
-			let addNum = 100;
-			for (let i = 0; i < addNum; i++){
-				let testVine;
-				if (Math.random() > 0.5){
-					testVine = new VineCylinder(
-						tube.getBodyPosition(), 
-						tube.getCurveHelperPosition(),		
-						testTube1.getCurveHelperPosition(),	
-						testTube1.getBodyPosition()
-					);
-
-
+			if (this.tubeConfigIndex < preconfiguredTubeSettingsArr.length){
+				const config = preconfiguredTubeSettingsArr[this.tubeConfigIndex];
+				const tube = new PortalTube(config.px, config.py, config.pz, config.rx, config.ry, config.rz);
+				
+				tube.addToScene();
+				portalTubeArr.push(tube);
+				let addNum = 50;
+				for (let i = 0; i < addNum; i++){
+					let testVine;
+					if (Math.random() > 0.5){
+						testVine = new VineCylinder(
+							tube.getBodyPosition(), 
+							tube.getCurveHelperPosition(),		
+							testTube1.getCurveHelperPosition(),	
+							testTube1.getBodyPosition()
+						);
+	
+	
+						}
+						else{
+							testVine = new VineCylinder(
+								tube.getBodyPosition(), 
+								tube.getCurveHelperPosition(),		
+								testTube2.getCurveHelperPosition(),	
+								testTube2.getBodyPosition()
+							);
+						}
+					testVine.setStartingPortal(tube);
+					testVine.addToScene();
+					testVineArr.push(testVine);
 				}
-				else{
-					testVine = new VineCylinder(
-						tube.getBodyPosition(), 
-						tube.getCurveHelperPosition(),		
-						testTube2.getCurveHelperPosition(),	
-						testTube2.getBodyPosition()
-					);
-				}
-				testVine.setStartingPortal(tube);
-				testVine.addToScene();
-				testVineArr.push(testVine);
+				this.tubeConfigIndex++;
 			}
-
 		}
 
 		this.addNoiseToCurve = false;
