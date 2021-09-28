@@ -63,6 +63,7 @@ function main(){
 		bevelEnabled: false
 	}
 
+	
 	const entranceExtrudeSettings = {
 		steps: 2,
 		depth: 1,
