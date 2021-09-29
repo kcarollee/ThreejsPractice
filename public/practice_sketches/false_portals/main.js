@@ -141,6 +141,7 @@ function main(){
 			this.portalOpened = false;
 
 			this.connectedVineArr = [];
+			
 		}
 
 		addToVineArr(vine){
