@@ -47,7 +47,7 @@ THREE.CustomShader = {
         }
 
         vec3 bloom(){
-            float bloomStrength = 10.0;
+            float bloomStrength = 1.0;
             float bloomIntensity = 20.0;
             float d = 20.0;
             vec3 sum = vec3(.0);

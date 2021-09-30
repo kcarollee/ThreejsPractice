@@ -211,14 +211,9 @@ function main(){
 	PortalTube.defaultEntrancePosition = new THREE.Vector3(0, 0, 0);
 	PortalTube.defaultBodyPosition = new THREE.Vector3(0, 0, -bodyExtrudeSettings.depth * 0.75);
 	
-	const testTube1 = new PortalTube(0, 12, 0, Math.PI * 0.15, 0, 0);
-	const testTube2 = new PortalTube(0, -12, 0, Math.PI * -0.15, 0, 0);
+	
 
-	testTube1.addToScene();
-	testTube2.addToScene();
-
-	const portalTubeArr = [];
-	portalTubeArr.push(testTube1, testTube2);
+	
 
 
 	class VineCylinder{
@@ -226,7 +221,7 @@ function main(){
 			this.randomOffset = Math.random();
 			
 			this.curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3]);
-			this.curvePointsNum = 300;
+			this.curvePointsNum = 150;
 			this.curvePointsArr = this.curve.getPoints(this.curvePointsNum);
 
 			this.curvePointsArrOriginal = [];
@@ -261,16 +256,16 @@ function main(){
 			this.walkerNum = 10;
 
 			for (let i = 0; i < this.walkerNum; i++){
-				let walkerMat = new THREE.MeshStandardMaterial({
+				let walkerMat = new THREE.MeshLambertMaterial({
 					color:new THREE.Color(0, Math.random(), 0),
-					metalness: .0,
+					//metalness: .0,
 					//wireframe: true
 					//refractionRatio: 0.99,
-					envMap: texture
+					//envMap: texture
 				})
 				let walkerMesh = new THREE.Mesh(VineCylinder.walkerGeom, walkerMat);
 				walkerMesh.walkerMeshIndex = Math.floor(Math.random() * this.curvePointsArr.length);
-				if (i % 2 == 0) walkerMesh.material.wireframe = true;
+				//if (i % 2 == 0) walkerMesh.material.wireframe = true;
 				walkerMesh.position.copy(this.curvePointsArr[walkerMesh.walkerMeshIndex]);
 				//walkerMesh.visible = true;
 				walkerMesh.scale.set(0, 0, 0);
@@ -419,42 +414,12 @@ function main(){
 	VineCylinder.walkerGeom = new THREE.BoxGeometry(0.5, 0.5, 2);
 	VineCylinder.addNoise = false;
 
+	const portalTubeArr = [];
+	//portalTubeArr.push(testTube1, testTube2);
 
 	const testVineArr = [];
 	const testVineNum = 50;
-	for (let i = 0; i < testVineNum; i++){
-		
-
-		let testVine;
-
-		
-
-		if (Math.random() < 0.5){
-			testVine = new VineCylinder(
-				testTube1.getBodyPosition(), 
-				testTube1.getCurveHelperPosition(),		
-				testTube2.getCurveHelperPosition(),	
-				testTube2.getBodyPosition()
-			);
-
-			testTube1.addToVineArr(testVine);
-
-			testVine.setStartingPortal(testTube1);
-		}
-
-		else{
-			testVine = new VineCylinder(
-				testTube2.getBodyPosition(), 
-				testTube2.getCurveHelperPosition(),		
-				testTube1.getCurveHelperPosition(),	
-				testTube1.getBodyPosition()
-			);
-			testTube2.addToVineArr(testVine);
-			testVine.setStartingPortal(testTube2);
-		}
-
-		testVineArr.push(testVine);
-	}
+	
 
 	
 
@@ -504,8 +469,24 @@ function main(){
 */
 //GUI
 	const gui = new dat.GUI();
-	//const testTube1 = new PortalTube(0, 12, 0, Math.PI * 0.15, 0, 0);
+	
 	const preconfiguredTubeSettingsArr = [
+	{
+		px: 0,
+		py: 12,
+		pz: 0,
+		rx: Math.PI * 0.15,
+		ry: 0,
+		rz: 0
+	},
+	{
+		px: 0,
+		py: -12,
+		pz: 0,
+		rx: Math.PI * -0.15,
+		ry: 0,
+		rz: 0
+	},
 	{
 		px: 0,
 		py: 0,
@@ -526,7 +507,23 @@ function main(){
 	
 	];
 
-	
+	function chooseRandomTwoPortalTubesIndex(){
+		let length = portalTubeArr.length;
+		let arr = [];
+		let randTwo = [];
+		for (let i = 0; i < length; i++){
+			arr.push(i);
+		}
+		
+		let rn = Math.floor(Math.random() * length);
+		randTwo.push(arr[rn]);
+		arr.splice(rn, 1);
+		
+		rn = Math.floor(Math.random() * (length - 1));
+		randTwo.push(arr[rn]);
+
+		return randTwo;
+	}
 	const controls = new function(){
 		this.tubeConfigIndex = 0;
 		this.outputObj = function(){
@@ -542,30 +539,41 @@ function main(){
 				
 				tube.addToScene();
 				portalTubeArr.push(tube);
-				let addNum = 50;
-				for (let i = 0; i < addNum; i++){
-					let testVine;
-					if (Math.random() > 0.5){
-						testVine = new VineCylinder(
-							tube.getBodyPosition(), 
-							tube.getCurveHelperPosition(),		
-							testTube1.getCurveHelperPosition(),	
-							testTube1.getBodyPosition()
-						);
-	
-	
+				let addNum = 100;
+
+				// add Vines only if there are more than 1 tubes
+				if (portalTubeArr.length > 1){
+					let latestPortal = portalTubeArr[portalTubeArr.length - 1];
+
+					for (let i = 0; i < addNum; i++){
+						let testVine;
+						let otherPortalIndex = Math.floor(Math.random() * (portalTubeArr.length - 1));
+						//console.log(otherPortalIndex);
+						let otherPortal = portalTubeArr[otherPortalIndex];
+						
+						if (i % 2 == 0){
+							testVine = new VineCylinder(
+								otherPortal.getBodyPosition(), 
+								otherPortal.getCurveHelperPosition(),		
+								latestPortal.getCurveHelperPosition(),	
+								latestPortal.getBodyPosition()
+							);
+							testVine.setStartingPortal(otherPortal);
 						}
+
 						else{
 							testVine = new VineCylinder(
-								tube.getBodyPosition(), 
-								tube.getCurveHelperPosition(),		
-								testTube2.getCurveHelperPosition(),	
-								testTube2.getBodyPosition()
+								latestPortal.getBodyPosition(), 
+								latestPortal.getCurveHelperPosition(),		
+								otherPortal.getCurveHelperPosition(),	
+								otherPortal.getBodyPosition()
 							);
+							testVine.setStartingPortal(latestPortal);
 						}
-					testVine.setStartingPortal(tube);
-					testVine.addToScene();
-					testVineArr.push(testVine);
+						
+						testVine.addToScene();
+						testVineArr.push(testVine);
+					}
 				}
 				this.tubeConfigIndex++;
 			}
