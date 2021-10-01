@@ -155,7 +155,7 @@ function main(){
 		animate(){
 			this.step++;
 			if (this.scaleFactor < 1.0){
-				this.scaleFactor += 0.01;
+				this.scaleFactor += 0.1;
 				this.meshGroup.scale.set(this.scaleFactor, this.scaleFactor, this.scaleFactor);
 				
 			}
@@ -221,7 +221,7 @@ function main(){
 			this.randomOffset = Math.random();
 			
 			this.curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3]);
-			this.curvePointsNum = 150;
+			this.curvePointsNum = 300;
 			this.curvePointsArr = this.curve.getPoints(this.curvePointsNum);
 
 			this.curvePointsArrOriginal = [];
@@ -246,24 +246,22 @@ function main(){
 			this.subArrayCopy = Array.from(this.subArray);
 			//console.log(this.subArray);
 			
-			this.curveGeom = new THREE.BufferGeometry().setFromPoints(this.subArray);
+			
+			this.curveGeom = new THREE.BufferGeometry().setFromPoints(this.curvePointsArr);
 			this.curveLine = new THREE.Line(this.curveGeom, VineCylinder.vineMaterial);
+			this.curveLine.frustumCulled = false;
+			
 
 			this.bufferGeomVerts = new Float32Array();
 			
 			
 			this.walkerMeshArr = [];
-			this.walkerNum = 10;
+			this.walkerNum = 20;
 
 			for (let i = 0; i < this.walkerNum; i++){
-				let walkerMat = new THREE.MeshLambertMaterial({
-					color:new THREE.Color(0, Math.random(), 0),
-					//metalness: .0,
-					//wireframe: true
-					//refractionRatio: 0.99,
-					//envMap: texture
-				})
-				let walkerMesh = new THREE.Mesh(VineCylinder.walkerGeom, walkerMat);
+				
+				let walkerMesh = VineCylinder.walkerMesh.clone();
+				walkerMesh.material = new THREE.MeshStandardMaterial({color: new THREE.Color(0, Math.random(), 0)});
 				walkerMesh.walkerMeshIndex = Math.floor(Math.random() * this.curvePointsArr.length);
 				//if (i % 2 == 0) walkerMesh.material.wireframe = true;
 				walkerMesh.position.copy(this.curvePointsArr[walkerMesh.walkerMeshIndex]);
@@ -276,6 +274,8 @@ function main(){
 			this.addNoiseIndex = 0;
 			this.scale = 1;
 			this.globalVisibility = true;
+
+
 		}
 
 		setStartingPortal(portal){
@@ -292,6 +292,14 @@ function main(){
 
 		disableWalkerVisibility(){
 			this.walkerMeshArr.forEach(v => v.visible = false);
+		}
+
+		disableLineVisibility(){
+			this.curveLine.visible = false;
+		}
+
+		enableLineVisibility(){
+			this.curveLine.visible = true;
 		}
 
 		addNoiseToCurve(){
@@ -343,17 +351,22 @@ function main(){
 		}
 
 		updateCurve(){
-			/*
-			this.subArrayIndex++;
+			
+			
+			
 			//this.addNoiseToSubArray();
 			if (this.subArrayIndex < this.curvePointsNum){
-				this.subArray = this.curvePointsArr.slice(0, this.subArrayIndex);
+				//this.subArray = this.curvePointsArr.slice(0, this.subArrayIndex);
+				//this.curveLine.geometry.setFromPoints(this.curvePointsArr.slice(0, this.subArrayIndex));
+				//this.curveLine.geometry.attributes.position.needsUpdate = true;
+				this.curveLine.geometry.setDrawRange(0, this.subArrayIndex);
+				this.subArrayIndex++;
 			}
-			*/
-			/*
-			this.curveLine.geometry.setFromPoints(this.subArray);
-			this.curveLine.geometry.attributes.position.needsUpdate = true;
-			*/
+
+			
+			
+			
+			
 
 			if (VineCylinder.addNoise){
 				
@@ -369,6 +382,7 @@ function main(){
 				let cpArrLength = this.curvePointsArr.length;
 				let visible = this.globalVisibility;
 				let scale = this.scale;
+				this.curveLine.material.opacity += 0.001;
 				this.walkerMeshArr.forEach(function(w){
 					w.walkerMeshIndex %= cpArrLength;
 					if (w.walkerMeshIndex == 1 && visible) w.scale.set(scale, scale, scale);
@@ -404,15 +418,22 @@ function main(){
 		}
 	}
 	
-	VineCylinder.vineMaterial = new THREE.MeshBasicMaterial({
-		color: 0xFFFFFF
+	VineCylinder.vineMaterial = new THREE.LineBasicMaterial({
+		color: 0x0000FF,
+		linewidth: 10,
+		transparent: true,
+		opacity: 0
 	});
+
+
 
 	VineCylinder.noiseHeight = 6;
 	VineCylinder.noiseCoef = 0.15;
 
 	VineCylinder.walkerGeom = new THREE.BoxGeometry(0.5, 0.5, 2);
-	VineCylinder.addNoise = false;
+	VineCylinder.walkerMat = new THREE.MeshPhysicalMaterial();
+	VineCylinder.walkerMesh = new THREE.Mesh(VineCylinder.walkerGeom, VineCylinder.walkerMat);
+	VineCylinder.addNoise = true;
 
 	const portalTubeArr = [];
 	//portalTubeArr.push(testTube1, testTube2);
@@ -539,7 +560,7 @@ function main(){
 				
 				tube.addToScene();
 				portalTubeArr.push(tube);
-				let addNum = 100;
+				let addNum = 50;
 
 				// add Vines only if there are more than 1 tubes
 				if (portalTubeArr.length > 1){
@@ -579,8 +600,8 @@ function main(){
 			}
 		}
 
-		this.addNoiseToCurve = false;
-
+		this.addNoiseToCurve = true;
+		this.showLinesThroughPortal = false;
 		this.debug = function(){
 			console.log(portalTubeArr);
 		}
@@ -588,6 +609,7 @@ function main(){
 	gui.add(controls, 'outputObj');
 	gui.add(controls, 'enableShaderPass').onChange(c => shaderPass.enabled = controls.enableShaderPass);
 	gui.add(controls, 'addNoiseToCurve').onChange(c => VineCylinder.addNoise = controls.addNoiseToCurve);
+	gui.add(controls, 'showLinesThroughPortal', false);
 	gui.add(controls, 'addPortalTube');
 	gui.add(controls, 'debug');
 	function animate(){
@@ -623,6 +645,7 @@ function main(){
 		testVineArr.forEach(function(v){
 			v.globalVisibility = false;
 			v.disableWalkerVisibility();
+			if (!controls.showLinesThroughPortal) v.disableLineVisibility();
 		});
 		renderer.setRenderTarget(renderTarget);
 		renderer.clear();
@@ -638,6 +661,7 @@ function main(){
 		testVineArr.forEach(function(v){
 			v.globalVisibility = true;
 			v.enableWalkerVisibility();
+			if (!controls.showLinesThroughPortal) v.enableLineVisibility();
 		});
 
 		composer.render(clock.getDelta());

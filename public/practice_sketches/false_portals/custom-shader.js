@@ -39,6 +39,23 @@ THREE.CustomShader = {
         varying vec2 vUv;
         //https://gist.github.com/companje/29408948f1e8be54dd5733a74ca49bb9
         
+
+        float rand(float n){return fract(sin(n) * 43758.5453123);}
+float rand(vec2 n) { 
+    return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+}
+
+float noise(float p){
+    float fl = floor(p);
+  float fc = fract(p);
+    return mix(rand(fl), rand(fl + 1.0), fc);
+}
+    
+float noise(vec2 n) {
+    const vec2 d = vec2(0.0, 1.0);
+  vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
+    return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
+}
         vec2 pc(vec2 d){
             vec2 uv = (gl_FragCoord.xy - d) / resolution.xy;
             //uv.y = 1.0 - uv.y;
@@ -47,21 +64,22 @@ THREE.CustomShader = {
         }
 
         vec3 bloom(){
-            float bloomStrength = 1.0;
+            float bloomStrength = 10.0;
             float bloomIntensity = 20.0;
-            float d = 20.0;
+            float d = 2.0;
+            float bloomCoef = 1.0;
             vec3 sum = vec3(.0);
 
             for (float i = 1.0; i < 10000.0; i++){
                 if (i > bloomStrength) break;
-                sum += texture2D(renderTarget, pc(vec2(i * d, .0))).rgb / pow(bloomIntensity, i);
-                sum += texture2D(renderTarget, pc(vec2(-i * d, .0))).rgb / pow(bloomIntensity, i);
-                sum += texture2D(renderTarget, pc(vec2(.0, i * d))).rgb / pow(bloomIntensity, i);
-                sum += texture2D(renderTarget, pc(vec2(.0, -i * d))).rgb / pow(bloomIntensity, i);
-                sum += texture2D(renderTarget, pc(vec2(i * d, -i * d))).rgb / pow(bloomIntensity, i);
-                sum += texture2D(renderTarget, pc(vec2(-i * d, i * d))).rgb / pow(bloomIntensity, i);
-                sum += texture2D(renderTarget, pc(vec2(i * d, i * d))).rgb / pow(bloomIntensity, i);
-                sum += texture2D(renderTarget, pc(vec2(-i * d, -i * d))).rgb / pow(bloomIntensity, i);
+                sum += texture2D(renderTarget, pc(vec2(i * d, .0))).rgb / (bloomIntensity * i * bloomCoef);
+                sum += texture2D(renderTarget, pc(vec2(-i * d, .0))).rgb / (bloomIntensity * i * bloomCoef);
+                sum += texture2D(renderTarget, pc(vec2(.0, i * d))).rgb / (bloomIntensity * i * bloomCoef);
+                sum += texture2D(renderTarget, pc(vec2(.0, -i * d))).rgb / (bloomIntensity * i * bloomCoef);
+                sum += texture2D(renderTarget, pc(vec2(i * d, -i * d))).rgb / (bloomIntensity * i * bloomCoef);
+                sum += texture2D(renderTarget, pc(vec2(-i * d, i * d))).rgb / (bloomIntensity * i * bloomCoef);
+                sum += texture2D(renderTarget, pc(vec2(i * d, i * d))).rgb / (bloomIntensity * i * bloomCoef);
+                sum += texture2D(renderTarget, pc(vec2(-i * d, -i * d))).rgb / (bloomIntensity * i * bloomCoef);
             }
             return sum;
         }
@@ -111,13 +129,20 @@ THREE.CustomShader = {
             portalBloom = vec3(portalBloom.b);
             
             outCol = os;
-            if (os.r == 1.0 && os.g == .0 && os.b == .0) outCol = rts;
+            if (os.r == 1.0 && os.g == .0 && os.b == .0) {
+                outCol = rts;
+            }
             if (outCol.b == 1.0) outCol = vec3(1.0);
-            if (outCol.r == outCol.g) outCol += blmg;
+            if (outCol.r == outCol.g) {
+               outCol += blmg;
+            }
 
             if (outCol.g > .0 && outCol.r != outCol.g){
                 outCol = vec3(1.0, sin(outCol.g), 1.0 - cos(outCol.g));
             }
+            //outCol = rts;
+
+            //if (outCol.r <0.15 && outCol.g <0.15 && outCol.b <0.15) outCol = vec3(0.25);
             gl_FragColor = vec4( outCol , 1.0 );
 
         }
