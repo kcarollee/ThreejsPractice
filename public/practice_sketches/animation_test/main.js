@@ -1,3 +1,5 @@
+import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
+import {GLTFLoader} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/loaders/GLTFLoader.js";
 function main(){
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
@@ -17,7 +19,6 @@ function main(){
 
 
 // SOME OF THE CONCEPTS TO THINK ABOUT:
-// 1. using a geometry as some sort of a path other geometries move along on
 
 //GEOMETRIES
 	
