@@ -73,7 +73,7 @@ function main(){
 
 
 	
-	const hilbertInstruction = generateInstruction("X", hilbertRuleString, 1);
+	const hilbertInstruction = generateInstruction("X", hilbertRuleString, 4);
 	console.log(hilbertInstruction);
 
 
@@ -83,8 +83,9 @@ function main(){
 		if (hilbertInstruction[i] == "F"){
 			let tempVec = new THREE.Vector3();
 			let tempVec2 = new THREE.Vector3();
-			tempVec.copy(angleOffset);
-			tempVec.normalize();
+			tempVec.set(Math.sin(angleOffset.x), Math.sin(angleOffset.y), Math.sin(angleOffset.z));
+			//tempVec.normalize();
+			console.log(tempVec);
 			initialPos.add(tempVec);
 			tempVec2.copy(initialPos);
 			testLinePoints.push(tempVec2);
