@@ -3,7 +3,7 @@ import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/example
 function main(){
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
-
+	let step = 0;
 //CAMERA
 	const fov = 75;
 	const aspect = 2; // display aspect of the canvas
@@ -12,7 +12,7 @@ function main(){
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 	const orbitControls = new OrbitControls(camera, renderer.domElement);
 	orbitControls.update();
-	camera.position.set(0, 0, 20);
+	camera.position.set(0, 0, 10);
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xCCCCCC);
@@ -23,7 +23,11 @@ function main(){
 	const operands = ["X", "F"];
 	const incAngle = Math.PI * 0.5;
 	const angleOffset = new THREE.Vector3(0, 0, 0); 
+	const euler = new THREE.Euler();
+	const dirVec = new THREE.Vector3(1, 0, 0);
+
 	const hilbertRuleString = "^<XF^<XFX-F^>>XFX&F+>>XFX-F>X->";
+
 	const testRule = "X+F";
 
 	function generateNextInstruction(curStr, ruleStr){
@@ -49,10 +53,10 @@ function main(){
 	function oprateOnAngleVec(angleVec, operator){
 		switch(operator){
 			case "<":
-				angleVec.x += incAngle;
+				angleVec.z -= incAngle;
 				break;
 			case ">":
-				angleVec.x -= incAngle;
+				angleVec.z += incAngle;
 				break;
 			case "^":
 				angleVec.y += incAngle;
@@ -61,19 +65,26 @@ function main(){
 				angleVec.y -= incAngle;
 				break;
 			case "-":
-				angleVec.z += incAngle;
+				angleVec.x -= incAngle;
 				break;
 			case "+":
-				angleVec.z -= incAngle;
+				angleVec.x += incAngle;
 				break;
 			default:
+				
 				break;
 		}
+		euler.set(angleVec.x, angleVec.y, angleVec.z);
+		/*
+		let t = new THREE.Vector3(1, 0, 0);
+		t.applyEuler(euler);
+		dirVec.applyEuler(euler);
+		*/
 	}
 
 
 	
-	const hilbertInstruction = generateInstruction("X", hilbertRuleString, 4);
+	const hilbertInstruction = generateInstruction("X", hilbertRuleString, 1);
 	console.log(hilbertInstruction);
 
 
@@ -83,12 +94,21 @@ function main(){
 		if (hilbertInstruction[i] == "F"){
 			let tempVec = new THREE.Vector3();
 			let tempVec2 = new THREE.Vector3();
+			/*
 			tempVec.set(Math.sin(angleOffset.x), Math.sin(angleOffset.y), Math.sin(angleOffset.z));
 			//tempVec.normalize();
-			console.log(tempVec);
+			
 			initialPos.add(tempVec);
 			tempVec2.copy(initialPos);
+			*/
+			dirVec.applyEuler(euler);
+			console.log(dirVec);
+			initialPos.add(dirVec);	
+			tempVec2.copy(initialPos);
 			testLinePoints.push(tempVec2);
+			angleOffset.set(0, 0, 0);
+
+		
 		}
 		else {
 			oprateOnAngleVec(angleOffset, hilbertInstruction[i]);
@@ -102,6 +122,7 @@ function main(){
 //GEOMETRIES
 	const lineGeom = new THREE.BufferGeometry().setFromPoints(testLinePoints);
 	const line = new THREE.Line(lineGeom, new THREE.MeshBasicMaterial({color: 0x000000}));
+	
 	scene.add(line);
 //TEXTURES
 
