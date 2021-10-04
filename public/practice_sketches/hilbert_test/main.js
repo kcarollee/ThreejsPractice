@@ -26,6 +26,15 @@ function main(){
 	const euler = new THREE.Euler();
 	const dirVec = new THREE.Vector3(1, 0, 0);
 
+
+	let angleX = 0;
+	let angleY = 0;
+	let angleZ = 0;
+
+	const axisX = new THREE.Vector3(1, 0, 0);
+	const axisY = new THREE.Vector3(0, 1, 0);
+	const axisZ = new THREE.Vector3(0, 0, 1);
+
 	const hilbertRuleString = "^<XF^<XFX-F^>>XFX&F+>>XFX-F>X->";
 
 	const testRule = "X+F";
@@ -50,36 +59,39 @@ function main(){
 		return tempStr;
 	}
 
-	function oprateOnAngleVec(angleVec, operator){
+	function oprateOnAngleVec(operator){
 		switch(operator){
 			case "<":
-				angleVec.z -= incAngle;
+
+				dirVec.applyAxisAngle(axisY, -incAngle);
 				break;
 			case ">":
-				angleVec.z += incAngle;
+
+				dirVec.applyAxisAngle(axisY, incAngle);
 				break;
 			case "^":
-				angleVec.y += incAngle;
+
+				dirVec.applyAxisAngle(axisX, incAngle);
 				break;
 			case "&":
-				angleVec.y -= incAngle;
+
+				dirVec.applyAxisAngle(axisX, -incAngle);
 				break;
 			case "-":
-				angleVec.x -= incAngle;
+
+				dirVec.applyAxisAngle(axisZ, -incAngle);
 				break;
 			case "+":
-				angleVec.x += incAngle;
+
+				dirVec.applyAxisAngle(axisZ, incAngle);
 				break;
 			default:
 				
 				break;
 		}
-		euler.set(angleVec.x, angleVec.y, angleVec.z);
-		/*
-		let t = new THREE.Vector3(1, 0, 0);
-		t.applyEuler(euler);
-		dirVec.applyEuler(euler);
-		*/
+
+		console.log(dirVec);
+		
 	}
 
 
@@ -101,17 +113,16 @@ function main(){
 			initialPos.add(tempVec);
 			tempVec2.copy(initialPos);
 			*/
-			dirVec.applyEuler(euler);
-			console.log(dirVec);
+			dirVec.normalize();
 			initialPos.add(dirVec);	
 			tempVec2.copy(initialPos);
 			testLinePoints.push(tempVec2);
-			angleOffset.set(0, 0, 0);
+			
 
 		
 		}
 		else {
-			oprateOnAngleVec(angleOffset, hilbertInstruction[i]);
+			oprateOnAngleVec(hilbertInstruction[i]);
 			
 		}
 	}
@@ -122,7 +133,7 @@ function main(){
 //GEOMETRIES
 	const lineGeom = new THREE.BufferGeometry().setFromPoints(testLinePoints);
 	const line = new THREE.Line(lineGeom, new THREE.MeshBasicMaterial({color: 0x000000}));
-	
+	line.geometry.setDrawRange(0, 0);
 	scene.add(line);
 //TEXTURES
 
@@ -143,7 +154,8 @@ function main(){
 
 	function render(time){
 		time *= 0.001;
-		
+		step++;
+		line.geometry.setDrawRange(0, step * 5);
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
