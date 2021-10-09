@@ -147,7 +147,7 @@ Surface minWithColor(Surface obj1, Surface obj2) {
 }
 
 
-float GetDistanceFromScene(vec3 p){
+Surface GetDistanceFromScene(vec3 p){
   float final = 100000.0;
   float r = 1.0;
 
@@ -188,11 +188,12 @@ float GetDistanceFromScene(vec3 p){
 }
 
 // ray march
-float RayMarch(vec3 rayOrig, vec3 rayDir){
+Surface RayMarch(vec3 rayOrig, vec3 rayDir){
   float dist = 0.0;
+  Surface co; // closest object
   for (int i = 0; i < MAX_STEPS; i++){
     vec3 p = rayOrig + dist * rayDir; // new starting point
-    float distScene = GetDistanceFromScene(p);
+    co = GetDistanceFromScene(p);
     dist += distScene;
     if (distScene < SURFACE_DIST || dist > MAX_DIST) break;
   }
