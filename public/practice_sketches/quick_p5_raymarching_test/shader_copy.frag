@@ -139,6 +139,18 @@ float sdNoiseBox( vec3 p, vec3 b )
   return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
 }
 
+Surface sdNoiseBoxSurface( vec3 p, vec3 b, vec3 col)
+{
+  float n1 = map(noise(p + time * 0.01), .0, 1.0, -1.0, 1.0);
+  n1 *= 0.2;
+  b.x += n1;
+  
+  vec3 q = abs(p) - b;
+  
+  float d = length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+  return Surface(d, col);
+}
+
 //https://www.shadertoy.com/view/fdlGWX
 
 Surface minWithColor(Surface obj1, Surface obj2) {
@@ -146,11 +158,17 @@ Surface minWithColor(Surface obj1, Surface obj2) {
   return obj1;
 }
 
+Surface smoothUnionWithColor( Surface d1, Surface d2, float k, vec3 col) {
+    float h = clamp( 0.5 + 0.5*(d2.sd-d1.sd)/k, 0.0, 1.0 );
+    float d = mix( d2.sd, d1.sd, h ) - k*h*(1.0-h); 
+    return Surface(d, col);
+}
+
 
 Surface GetDistanceFromScene(vec3 p){
   float final = 100000.0;
   float r = 1.0;
-
+  Surface scene = Surface(9999999.0, vec3(.0));
   vec3 pcopy = p;
 
 
@@ -163,7 +181,9 @@ Surface GetDistanceFromScene(vec3 p){
   vec3 dim = vec3(1.0 + 0.5 * sin(time * 0.01));
 
   float b = sdBoxFrame(p, dim, 0.1);
-  final = opUnion(final, b);
+  Surface sbf = sdBoxFrameSurface(p, dim, 0.1, vec3(1.0));
+  scene = minWithColor(scene, sbf);
+  //final = opUnion(final, b);
 
   //float m = mix(s1, b1, sin(time * 0.01) * 0.5 + 0.5);
 
@@ -174,17 +194,20 @@ Surface GetDistanceFromScene(vec3 p){
   p = rotateY(-time * 0.01) * p;
   
   
-  float s1 = NoiseSphere(p, vec3(.0, .0, .0), r);
+ 
   float b1 = sdNoiseBox(p, vec3(0.5, 10.0, 0.5));
+  Surface snb = sdNoiseBoxSurface(p, vec3(0.5, 10.0, 0.5), vec3(.0));
+  scene = minWithColor(scene, snb);
+
+  //final = opSmoothUnion(final, b1, 0.9);
+  
+  
 
   
 
-  final = opSmoothUnion(final, b1, 0.9);
   
-  float subNum = 20.0;
 
-  
-  return final;
+  return scene;
 }
 
 // ray march
@@ -194,10 +217,11 @@ Surface RayMarch(vec3 rayOrig, vec3 rayDir){
   for (int i = 0; i < MAX_STEPS; i++){
     vec3 p = rayOrig + dist * rayDir; // new starting point
     co = GetDistanceFromScene(p);
-    dist += distScene;
-    if (distScene < SURFACE_DIST || dist > MAX_DIST) break;
+    dist += co.sd;
+    if (co.sd < SURFACE_DIST || dist > MAX_DIST) break;
   }
-  return dist;
+  co.sd = dist;
+  return co;
 }
 
 
@@ -214,9 +238,9 @@ vec3 Normal(vec3 p){
   return normalize(norm);
 }
 
-vec3 DiffuseLight(vec3 p, vec3 rayDir, float d){
+vec3 DiffuseLight(vec3 p, vec3 rayDir, Surface co){
   
-  //if (d > MAX_DIST ) return vec3(.0, 1.0, .0);
+  //if (co.sd > MAX_DIST ) return vec3(.0, 1.0, .0);
 
   vec3 normal = Normal(p);
   
@@ -228,8 +252,8 @@ vec3 DiffuseLight(vec3 p, vec3 rayDir, float d){
   
   float difLight = clamp(dot(normal, lightDir), .0, 1.0) / clamp(pow(d, 0.001), 0.75, MAX_DIST); // clamp the value between 0 and 1
 
-  float refVal = RayMarch(p + normal * SURFACE_DIST, normal);
-  if (refVal > MAX_DIST) refVal = .0;
+  //float refVal = RayMarch(p + normal * SURFACE_DIST, normal);
+  //if (refVal > MAX_DIST) refVal = .0;
 
   
   //float shadowVal = RayMarch(p + normal * SURFACE_DIST, lightDir);
@@ -239,11 +263,11 @@ vec3 DiffuseLight(vec3 p, vec3 rayDir, float d){
   
   vec3 specLight = vec3(0.0);
 
-  vec3 refSurface = vec3(refVal);
+  //vec3 refSurface = vec3(refVal);
 
 
 
-  return (lightCol * difLight + specLight + refSurface);
+  return (co.col * difLight + specLight);
 
 }
 
@@ -260,9 +284,9 @@ void main(){
   vec3 rayOrigin = vec3(0, 0, -7);
   vec3 rayDir = normalize(vec3(uv.x, uv.y, 1.0));
 
-  float d = RayMarch(rayOrigin, rayDir);
+  Surface d = RayMarch(rayOrigin, rayDir);
 
-  vec3 p = rayOrigin + rayDir * d;
+  vec3 p = rayOrigin + rayDir * d.sd;
   vec3 light = DiffuseLight(p, rayDir, d);
 
   outCol = vec3(light);
