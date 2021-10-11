@@ -158,6 +158,15 @@ Surface smoothUnionWithColor( Surface d1, Surface d2, float k) {
     return Surface(d, col);
 }
 
+Surface sdXPlaneSurface(vec3 p, vec3 pos, vec3 col){
+  float n = map(noise(p * 0.1 + time * 0.1), .0, 1.0, -1.0, 1.0);
+  p.x += n * 10.0;
+
+  float d = length(p.x - pos.x);
+
+  return Surface(d, col);
+}
+
 
 Surface GetDistanceFromScene(vec3 p){
   
@@ -234,6 +243,8 @@ Surface GetDistanceFromScene(vec3 p){
   scene = smoothUnionWithColor(scene, snb, 3.0);
 
 
+
+
   return scene;
 }
 
@@ -268,7 +279,7 @@ vec3 Normal(vec3 p){
 vec3 DiffuseLight(vec3 p, vec3 rayDir, Surface co){
   
   if (co.sd > MAX_DIST ) {
-    return vec3(.0);
+    return vec3(1.0, .0, .0);
   }
 
   vec3 normal = Normal(p);
@@ -293,7 +304,7 @@ vec3 DiffuseLight(vec3 p, vec3 rayDir, Surface co){
   vec3 viewDir = normalize(-rayDir);
   vec3 halfDir = normalize(lightDir + viewDir);
   float specAngle = max(dot(halfDir, normal), 0.0);
-  float specular = pow(specAngle, 32.0);
+  float specular = pow(specAngle, 16.0);
   vec3 specLight = vec3(1.0);
 
   vec3 refSurface = vec3(refVal.sd);
@@ -307,7 +318,15 @@ vec3 DiffuseLight(vec3 p, vec3 rayDir, Surface co){
 
 void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
-  
+  vec2 uvc = uv;
+  float gap = 0.25 + 0.25 * sin(time * 0.01);
+  if (uv.x > -gap && uv.x < gap && uv.y > -gap && uv.y < gap){
+    //uv *= 0.5;
+  }
+
+  float tickCount = floor(time * 100.0);
+  float tickMod = floor(mod(tickCount, 4.0));
+
   vec2 st = gl_FragCoord.xy / resolution.xy * 10.0;
   vec3 outCol = vec3(0.0);
 
@@ -323,6 +342,11 @@ void main(){
   vec3 light = DiffuseLight(p, rayDir, d);
 
   outCol = vec3(light);
+
+  if (uvc.x > -gap && uvc.x < gap && uvc.y > -gap && uvc.y < gap){
+    outCol.r = 1.0 - outCol.r;
+  }
+
 
 
   //if (mod(floor((uv.y + time) * 100.0), 2.0) == .0) outCol.r *= .0 ;
