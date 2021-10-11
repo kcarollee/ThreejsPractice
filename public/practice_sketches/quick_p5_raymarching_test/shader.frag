@@ -127,13 +127,20 @@ Surface sdBoxFrameSurface( vec3 p, vec3 b, float e, vec3 col)
 
 Surface sdNoiseBoxSurface( vec3 p, vec3 b, vec3 col)
 {
-  float n1 = map(noise(p + time * 0.01), .0, 1.0, -1.0, 1.0);
+  float n1 = map(noise(p * 2.0 + time * 0.05), .0, 1.0, -1.0, 1.0);
   n1 *= 0.2;
-  b.x += n1;
+  b.xz += n1;
   
   vec3 q = abs(p) - b;
   
   float d = length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+  return Surface(d, col);
+}
+
+Surface sdOctahedronSurface( vec3 p, float s, vec3 col)
+{
+  p = abs(p);
+  float d = (p.x+p.y+p.z-s)*0.57735027;
   return Surface(d, col);
 }
 
@@ -189,6 +196,9 @@ Surface GetDistanceFromScene(vec3 p){
     //vec3 dim = vec3(mod(time * 0.025 + i, 5.0));
     vec3 dim = vec3(2.0 + 2.0 * sin(time * 0.025 + i));
     Surface sbf = sdBoxFrameSurface(p, dim, 0.1, vec3(1.0));
+    
+
+    
     scene = minWithColor(scene, sbf);
   }
   
@@ -200,9 +210,28 @@ Surface GetDistanceFromScene(vec3 p){
   p.y -= modgap * 0.5;
  
  */
-  p = rotateY(-time * 0.01) * p; 
-  Surface snb = sdNoiseBoxSurface(p, vec3(0.5, 10.0, 0.5), vec3(1.0, .0, .0));
-  scene = smoothUnionWithColor(scene, snb, 2.0);
+
+  float fallLength = 30.0;
+  float tickCount = floor(time * 0.05 / fallLength);
+  float tick = mod(time * 0.05, fallLength);
+
+
+  p = rotateZ(tickCount) * p; 
+  p = rotateY(-time * 0.02) * p; 
+
+  float r = 0.5 + 0.5 * sin(tickCount + 10.0);
+  float g = 0.5 + 0.5 * cos(tickCount + 10.0);
+  float b = 0.5 + 0.5 * tan(tickCount + 10.0);
+
+ 
+  
+  p.y += map(tick, .0, fallLength, -fallLength, fallLength);
+  
+  
+  
+  float sideDim = 1.0;
+  Surface snb = sdNoiseBoxSurface(p, vec3(sideDim, fallLength * 0.5, sideDim), vec3(r,g,b));
+  scene = smoothUnionWithColor(scene, snb, 3.0);
 
 
   return scene;
@@ -238,7 +267,9 @@ vec3 Normal(vec3 p){
 
 vec3 DiffuseLight(vec3 p, vec3 rayDir, Surface co){
   
-  if (co.sd > MAX_DIST ) return vec3(.0);
+  if (co.sd > MAX_DIST ) {
+    return vec3(.0);
+  }
 
   vec3 normal = Normal(p);
   
@@ -259,27 +290,31 @@ vec3 DiffuseLight(vec3 p, vec3 rayDir, Surface co){
     
   //if (difLight < .001) return vec3(2.0 * sin(ns * 10.0))/ clamp(pow(d, 2.0), 1.5, MAX_DIST);
   
-  vec3 specLight = vec3(0.0);
+  vec3 viewDir = normalize(-rayDir);
+  vec3 halfDir = normalize(lightDir + viewDir);
+  float specAngle = max(dot(halfDir, normal), 0.0);
+  float specular = pow(specAngle, 32.0);
+  vec3 specLight = vec3(1.0);
 
   vec3 refSurface = vec3(refVal.sd);
 
-  float refIntensity = 0.2;
+  float refIntensity = 1.0;
 
-  return (co.col * difLight + specLight + refSurface * refIntensity);
+  return (co.col * difLight + specLight * specular + refSurface * refIntensity);
 
 }
 
 
 void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5 * resolution.xy) / resolution.y;
-
+  
   vec2 st = gl_FragCoord.xy / resolution.xy * 10.0;
   vec3 outCol = vec3(0.0);
 
   vec3 color = vec3(1.0, .0, .0);
 
   // camera
-  vec3 rayOrigin = vec3(0, 0, -15);
+  vec3 rayOrigin = vec3(0, 0, -20);
   vec3 rayDir = normalize(vec3(uv.x, uv.y, 1.0));
 
   Surface d = RayMarch(rayOrigin, rayDir);
@@ -290,6 +325,6 @@ void main(){
   outCol = vec3(light);
 
 
-  
+  //if (mod(floor((uv.y + time) * 100.0), 2.0) == .0) outCol.r *= .0 ;
   gl_FragColor = vec4(outCol, 1.0);
 }
