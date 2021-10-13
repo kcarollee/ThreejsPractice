@@ -1,21 +1,30 @@
+// based on https://tympanus.net/codrops/2020/01/07/playing-with-texture-projection-in-three-js/
+import {OrbitControls} from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
+
 function main(){
 	const canvas = document.querySelector('#c');
 	const renderer = new THREE.WebGLRenderer({canvas});
 
 //CAMERA
+
 	const fov = 75;
 	const aspect = 2; // display aspect of the canvas
 	const near = 0.1;
 	const far = 1000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-
+	const orbitControls = new OrbitControls(camera, renderer.domElement);
+	orbitControls.update();
+	
 	camera.position.set(0, 0, 20);
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(0xCCCCCC);
 	renderer.render(scene, camera);
 
-	
+//GEOMETRIES
+
+	const boxGeom = new THREE.BoxGeometry(3, 3, 3);
+	const shaderMat = new THREE.ShaderMaterial
 //GUI
 	const gui = new dat.GUI();
 	const controls = new function(){
