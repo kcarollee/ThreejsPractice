@@ -5,7 +5,7 @@ import {BufferGeometryUtils} from 'https://cdn.skypack.dev/three@0.130.0/example
 import {ImprovedNoise} from "https://cdn.skypack.dev/three@0.130.0/examples/jsm/math/ImprovedNoise.js";
 function main(){
 	const canvas = document.querySelector('#c');
-	const renderer = new THREE.WebGLRenderer({canvas});
+	const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
 	const perlin = new ImprovedNoise();
 	let step = 0;
 //CAMERA
@@ -32,6 +32,7 @@ function main(){
 	
 
 	const scene = new THREE.Scene();
+	scene.add(camera);
 	scene.background = new THREE.Color(0xCCCCCC);
 	renderer.render(scene, camera);
 //PROJECTED MATERIAL
@@ -89,26 +90,75 @@ function main(){
         			varying vec4 vWorldPosition;
         			varying vec4 vTexCoords;
 
+        			float map(float value, float min1, float max1, float min2, float max2) {
+ 					 return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
+					}
+        			float rand(float n){return fract(sin(n) * 43758.5453123);}
+        			float rand(vec2 n) { 
+						return fract(sin(dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+					}
+					float noise(float p){
+						float fl = floor(p);
+					  float fc = fract(p);
+						return mix(rand(fl), rand(fl + 1.0), fc);
+					}
+	
+					float noise(vec2 n) {
+						const vec2 d = vec2(0.0, 1.0);
+					  vec2 b = floor(n), f = smoothstep(vec2(0.0), vec2(1.0), fract(n));
+						return mix(mix(rand(b), rand(b + d.yx), f.x), mix(rand(b + d.xy), rand(b + d.yy), f.x), f.y);
+					}
+
         			void main(){
-        				float gap = 5.0;
+        				float gap = 2.0;
         				vec2 uv = ((vTexCoords.xy) / vTexCoords.w) * 0.5 + 0.5;
-        				vec2 uvMod = ((vTexCoords.xy + gap + gap * sin(time * 0.01)) / vTexCoords.w) * 0.5 + 0.5;
-        				//uv = uvMod;
-          				vec4 outColor = texture2D(tex, uv);
+        				//vec2 uvMod = ((vTexCoords.xy  * (gap + (gap - 1.0)  * sin(time * 0.01))) / vTexCoords.w) * 0.5 + 0.5;
+        				//vec2 uvMod = ((vec2(vTexCoords.x, vTexCoords.y + gap  * sin(time * 0.01))) / vTexCoords.w) * 0.5 + 0.5;
+        				float n = map(noise(vTexCoords.xy * 0.5 + time * 0.01), .0, 1.0, .0, 1.0);
+        				vec2 uvMod = ((vTexCoords.xy + 10.0 * n) / vTexCoords.w) * 0.5 + 0.5;
+        				
+        				
+        				uvMod = mix(uv, uvMod, 0.5 + 0.5 * sin(time * 0.01));
+        				
+        				vec3 outCol = vec3(.0);
+          				vec4 texMod = texture2D(tex, uvMod);
+          				vec4 texOrig = texture2D(tex, uv);
+
+          				vec3 texModCol = texMod.rgb;
+          				texModCol.r = sin(texModCol.r * 10.0);
+          				outCol.rgb += texModCol;
+          				
+          				outCol.rgb += texOrig.rgb * 0.5;
 
           				// this makes sure we don't render also the back of the object
           				vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
           				float dotProduct = dot(vNormal, projectorDirection);
           				if (dotProduct < 0.0) {
-            				outColor = vec4(color, 1.0);
+            				outCol = color;
           				}
 
-          				gl_FragColor = outColor;
+          				vec2 uvd = abs(uv - uvMod);
+          				float th = 0.001;
+          				//if (uvd.x < th && uvd.y < th) outCol =color;
+
+          				gl_FragColor = vec4(outCol, 1.0);
         			}
+
 				`
 			});
 
 			//this.isProjectedMaterial = true;
+		}
+
+		updateCameraMatirxUniforms(camera){
+			
+			this.uniforms.viewMatrixCamera.value = camera.matrixWorldInverse.clone();
+			this.uniforms.projectionMatrixCamera.value = camera.projectionMatrix.clone();
+			this.uniforms.modelMatrixCamera.value = camera.matrixWorld.clone();
+
+			this.uniforms.projPosition.value = camera.position.clone();
+
+			this.uniforms.viewMatrixCamera
 		}
 	}
 
@@ -117,8 +167,11 @@ function main(){
 	const tex = textureLoader.load('test.jpg');
 
 	const renderTarget = new THREE.WebGLRenderTarget(window.innderWidth, window.innerHeight);
-	renderTarget.wrapS = THREE.RepeatWrapping;
-	renderTarget.wrapT = THREE.RepeatWrapping;
+	const renderTarget2 = new THREE.WebGLRenderTarget(window.innderWidth, window.innerHeight);
+	renderTarget2.texture.wrapS = THREE.RepeatWrapping;
+	renderTarget2.texture.wrapT = THREE.RepeatWrapping;
+
+	scene.background = new THREE.Color(0x000000);
 //GEOMETRIES
 	
 	
@@ -139,24 +192,31 @@ function main(){
 	const boxGeometries = BufferGeometryUtils.mergeBufferGeometries(boxArr);
 	const modelMat = new THREE.MeshLambertMaterial({color: 0xFCFCFA});
 	
-	const projectedMat = new ProjectedMaterial(camera, tex);
+	const projectedMat = new ProjectedMaterial(camera, renderTarget.texture, new THREE.Color(0x0000FF));
 
 	const modelMesh = new THREE.Mesh(boxGeometries, projectedMat);
 
 	scene.add(modelMesh);
 
-	const planeGeom = new THREE.PlaneGeometry(30, 30);
-	const planeMat = new THREE.MeshBasicMaterial({color:0xFF0000});
+	const planeGeom = new THREE.PlaneGeometry(30, 30, 10, 10);
+	// translations must be done to the geometry, and not the mesh. 
+	planeGeom.rotateX(-Math.PI * 0.4);
+	planeGeom.translate(0, -5, 0);
+	
+	
+	const planeMat = new THREE.MeshBasicMaterial({color:0x000000, side: THREE.DoubleSide});
 	const planeMesh = new THREE.Mesh(planeGeom, projectedMat);
 
-	//planeMesh.position.set(0, -2, 0);
-	planeMesh.rotateX(-Math.PI * 0.25);
+	
 	scene.add(planeMesh);
 
 //LIGHTS
 	const pointLight = new THREE.PointLight();
+	const pointLight2 = new THREE.PointLight();
 	pointLight.position.set(0, 0, 10);
+	pointLight2.position.set(0, 0, -30);
 	scene.add(pointLight);
+	scene.add(pointLight2);
 //GUI
 	const gui = new dat.GUI();
 
@@ -170,14 +230,25 @@ function main(){
 	gui.add(controls, 'outputObj');
 	gui.add(controls, 'enableProjection', false);
 
-
+	console.log(orbitControls);
 	function render(time){
 		projectedMat.uniforms.time.value = step;
 		time *= 0.001;
 		step++;
+		
+		
+		//camera.position.set(20 * Math.sin(step * 0.01), 2, 20 * Math.cos(step * 0.01));
+		//camera.lookAt(0, 0, 0);
+		orbitControls.update();
+		projectedMat.updateCameraMatirxUniforms(camera);
+
+
+
+		//modelMesh.geometry.rotateY(0.001);
 		if (controls.enableProjection){
-			planeMesh.material = planeMat;
+			planeMesh.material = modelMat;
 			modelMesh.material = modelMat;
+
 			renderer.setRenderTarget(renderTarget);
 			renderer.clear();
 			renderer.render(scene, camera);
@@ -190,7 +261,7 @@ function main(){
 		}
 
 		else {
-			planeMesh.material = planeMat;
+			planeMesh.material = modelMat;
 			modelMesh.material = modelMat;
 
 			renderer.setRenderTarget(null);
@@ -200,7 +271,7 @@ function main(){
 
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
-			//camera.aspect = canvas.clientWidth / canvas.clientHeight;
+			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
 		}
 		//renderer.render(scene, camera);
@@ -216,6 +287,7 @@ function main(){
 		if (needResize){
 			renderer.setSize(width, height, false);
 			renderTarget.setSize(width, height);
+			renderTarget2.setSize(width, height);
 		}
 		return needResize;
 	}
