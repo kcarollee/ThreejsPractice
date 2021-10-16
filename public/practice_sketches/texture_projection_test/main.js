@@ -72,6 +72,7 @@ function main(){
           			varying vec4 vWorldPosition;
           			varying vec3 vNormal;
           			varying vec4 vTexCoords;
+          			varying float dist;
 
           			void main(){
           				vNormal = mat3(savedModelMatrix) * normal;
@@ -119,7 +120,7 @@ function main(){
         				
         				
         				uvMod = mix(uv, uvMod, 0.5 + 0.5 * sin(time * 0.01));
-        				
+        				uvMod = uv;
         				vec3 outCol = vec3(.0);
           				vec4 texMod = texture2D(tex, uvMod);
           				vec4 texOrig = texture2D(tex, uv);
@@ -129,6 +130,8 @@ function main(){
           				outCol.rgb += texModCol;
           				
           				outCol.rgb += texOrig.rgb * 0.5;
+
+          				outCol += color;
 
           				// this makes sure we don't render also the back of the object
           				vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
@@ -192,20 +195,25 @@ function main(){
 	const boxGeometries = BufferGeometryUtils.mergeBufferGeometries(boxArr);
 	const modelMat = new THREE.MeshLambertMaterial({color: 0xFCFCFA});
 	
-	const projectedMat = new ProjectedMaterial(camera, renderTarget.texture, new THREE.Color(0x0000FF));
+	const projectedMat = new ProjectedMaterial(camera, renderTarget.texture, new THREE.Color(0x000000));
 
 	const modelMesh = new THREE.Mesh(boxGeometries, projectedMat);
 
 	scene.add(modelMesh);
 
+	const sphereGeom = new THREE.SphereGeometry(2, 20, 20);
+	const sphereMesh = new THREE.Mesh(sphereGeom, projectedMat);
+	scene.add(sphereMesh);
+
 	const planeGeom = new THREE.PlaneGeometry(30, 30, 10, 10);
+	const projectedMat2 = new ProjectedMaterial(camera, renderTarget.texture, new THREE.Color(0x111111));
 	// translations must be done to the geometry, and not the mesh. 
 	planeGeom.rotateX(-Math.PI * 0.4);
 	planeGeom.translate(0, -5, 0);
 	
 	
 	const planeMat = new THREE.MeshBasicMaterial({color:0x000000, side: THREE.DoubleSide});
-	const planeMesh = new THREE.Mesh(planeGeom, projectedMat);
+	const planeMesh = new THREE.Mesh(planeGeom, projectedMat2);
 
 	
 	scene.add(planeMesh);
@@ -233,6 +241,7 @@ function main(){
 	console.log(orbitControls);
 	function render(time){
 		projectedMat.uniforms.time.value = step;
+		projectedMat2.uniforms.time.value = step;
 		time *= 0.001;
 		step++;
 		
@@ -241,29 +250,35 @@ function main(){
 		//camera.lookAt(0, 0, 0);
 		orbitControls.update();
 		projectedMat.updateCameraMatirxUniforms(camera);
+		projectedMat2.updateCameraMatirxUniforms(camera);
 
 
 
-		//modelMesh.geometry.rotateY(0.001);
+		modelMesh.geometry.rotateY(0.003);
+		modelMesh.geometry.rotateZ(0.003);
 		if (controls.enableProjection){
-			planeMesh.material = modelMat;
+			planeMesh.material = planeMat;
 			modelMesh.material = modelMat;
-
+			sphereMesh.material = modelMat;
 			renderer.setRenderTarget(renderTarget);
 			renderer.clear();
 			renderer.render(scene, camera);
 
-			planeMesh.material = projectedMat;
+			//projectedMat.uniforms.color.value = new THREE.Color(0xFF0000);
+			planeMesh.material = projectedMat2;
+
+			//projectedMat.uniforms.color.value = new THREE.Color(0x0000FF);
 			modelMesh.material = projectedMat;
+			sphereMesh.material = projectedMat;
 			renderer.setRenderTarget(null);
 			renderer.clear();
 			renderer.render(scene, camera);
 		}
 
 		else {
-			planeMesh.material = modelMat;
+			planeMesh.material = planeMat;
 			modelMesh.material = modelMat;
-
+			sphereMesh.material = modelMat;
 			renderer.setRenderTarget(null);
 			renderer.clear();
 			renderer.render(scene, camera);
