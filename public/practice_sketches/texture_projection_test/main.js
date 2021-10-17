@@ -35,31 +35,6 @@ function main(){
 	scene.add(camera);
 	scene.background = new THREE.Color(0xCCCCCC);
 	renderer.render(scene, camera);
-
-//TEXTURES
-	const textureLoader = new THREE.TextureLoader();
-	const tex = textureLoader.load('test.jpg');
-	const video = document.getElementById('video');
-	video.play();
-
-	video.addEventListener('play', function(){
-		this.currentTime = 3;
-	})
-	const texVid = new THREE.VideoTexture(video);
-
-	// this renderTarget renders ONLY the models with Lambert material
-	const renderTarget = new THREE.WebGLRenderTarget(window.innderWidth, window.innerHeight);
-	//renderTarget.texture.wrapS = THREE.RepeatWrapping;
-	//renderTarget.texture.wrapT = THREE.RepeatWrapping;
-
-
-	// the renderTarget(s) below render the original scene with various different materials
-	const renderTargetMid1 = new THREE.WebGLRenderTarget(window.innderWidth, window.innerHeight);
-	
-
-	scene.background = new THREE.Color(0x000000);
-
-
 //PROJECTED MATERIAL
 	class ProjectedMaterial extends THREE.ShaderMaterial{
 		constructor(camera, texture, color = 0xffffff){
@@ -80,7 +55,6 @@ function main(){
 				uniforms:{
 					color: {value: new THREE.Color(color)},
 					tex: {value: texture},
-					midTex1: {value: renderTargetMid1.texture},
 					viewMatrixCamera: {type: 'm4', value: viewMatrixCamera},
 					projectionMatrixCamera: {type: 'm4', value: projectionMatrixCamera},
 					modelMatrixCamera: {type: 'mat4', value: modelMatrixCamera},
@@ -110,7 +84,6 @@ function main(){
 				fragmentShader: `
 					uniform vec3 color;
         			uniform sampler2D tex;
-        			uniform sampler2D midTex1;
         			uniform vec3 projPosition;
         			uniform float time;
 
@@ -140,9 +113,8 @@ function main(){
         			void main(){
         				float gap = 2.0;
         				vec2 uv = ((vTexCoords.xy) / vTexCoords.w) * 0.5 + 0.5;
-        				vec2 uvMod2 = ((vTexCoords.xy  * (gap + (gap - 1.0)  * sin(time * 0.01))) / vTexCoords.w) * 0.5 + 0.5;
-        				//vec2 uvMod2 = ((vec2(vTexCoords.x, vTexCoords.y + gap  * sin(time * 0.01))) / vTexCoords.w) * 0.5 + 0.5;
-        				
+        				//vec2 uvMod = ((vTexCoords.xy  * (gap + (gap - 1.0)  * sin(time * 0.01))) / vTexCoords.w) * 0.5 + 0.5;
+        				//vec2 uvMod = ((vec2(vTexCoords.x, vTexCoords.y + gap  * sin(time * 0.01))) / vTexCoords.w) * 0.5 + 0.5;
         				float n = map(noise(vTexCoords.xy * 0.5 + time * 0.01), .0, 1.0, .0, 1.0);
         				vec2 uvMod = ((vTexCoords.xy + 10.0 * n) / vTexCoords.w) * 0.5 + 0.5;
         				
@@ -152,14 +124,11 @@ function main(){
         				vec3 outCol = vec3(.0);
           				vec4 texMod = texture2D(tex, uvMod);
           				vec4 texOrig = texture2D(tex, uv);
-          				
-          				vec4 midTex1Orig = texture2D(midTex1, uv);
-          				vec4 midTex1Mod = texture2D(midTex1, uvMod2);
 
           				vec3 texModCol = texMod.rgb;
           				texModCol.r = sin(texModCol.r * 10.0);
           				outCol.rgb += texModCol;
-          				outCol.rgb += midTex1Mod.rgb;
+          				
           				outCol.rgb += texOrig.rgb * 0.5;
 
           				outCol += color;
@@ -196,19 +165,30 @@ function main(){
 		}
 	}
 
+//TEXTURES
+	const textureLoader = new THREE.TextureLoader();
+	const tex = textureLoader.load('test.jpg');
+	const video = document.getElementById('video');
+	video.play();
 
+	video.addEventListener('play', function(){
+		this.currentTime = 3;
+	})
+	const texVid = new THREE.VideoTexture(video);
+
+	const renderTarget = new THREE.WebGLRenderTarget(window.innderWidth, window.innerHeight);
+	//renderTarget.texture.wrapS = THREE.RepeatWrapping;
+	//renderTarget.texture.wrapT = THREE.RepeatWrapping;
+
+	scene.background = new THREE.Color(0x000000);
 //GEOMETRIES
 	
 	
-	const boxNum = 4;
+	const boxNum = 4000;
 	const boxArr = [];
 	for (let i = 0; i < boxNum; i++){
 		let randomDim = Math.random(0, 2);
 		let boxGeom = new THREE.BoxGeometry(randomDim, randomDim, randomDim);
-		boxGeom.attributes.uv.array.forEach(function(c, i){
-			
-		});
-		console.log(boxGeom);
 		let x = Math.sin(i) * 10.0;
 		let y = Math.cos(i) * 10.0;
 		let z = perlin.noise(x * 2.0, y * 2.0, 0);
@@ -220,7 +200,6 @@ function main(){
 	}
 	const boxGeometries = BufferGeometryUtils.mergeBufferGeometries(boxArr);
 	const modelMat = new THREE.MeshLambertMaterial({color: 0xFCFCFA});
-	const modelMat2 = new THREE.MeshBasicMaterial({color: 0x00FF00, map: texVid});
 	
 	const projectedMat = new ProjectedMaterial(camera, renderTarget.texture, new THREE.Color(0x000000));
 
@@ -239,8 +218,6 @@ function main(){
 	planeGeom.translate(0, -5, 0);
 	
 	
-	const projectedMatVid = new ProjectedMaterial(camera, texVid, new THREE.Color(0x111111));
-
 	const planeMat = new THREE.MeshBasicMaterial({color:0x000000, side: THREE.DoubleSide});
 	const planeMesh = new THREE.Mesh(planeGeom, projectedMat2);
 
@@ -287,31 +264,18 @@ function main(){
 		modelMesh.geometry.rotateY(0.003);
 		modelMesh.geometry.rotateZ(0.003);
 		if (controls.enableProjection){
-			// RENDERING THE INITIAL MODELS
 			planeMesh.material = planeMat;
 			modelMesh.material = modelMat;
 			sphereMesh.material = modelMat;
-			
 			renderer.setRenderTarget(renderTarget);
 			renderer.clear();
 			renderer.render(scene, camera);
 
-
-			// RENDERING MIDDLE TEXTURES
-			planeMesh.material = planeMat;
-			modelMesh.material = modelMat2;
-			sphereMesh.material = modelMat2;
 			
-			renderer.setRenderTarget(renderTargetMid1);
-			renderer.clear();
-			renderer.render(scene, camera);
-
-
-			// FINAL RENDER
 			planeMesh.material = projectedMat2;
+
 			modelMesh.material = projectedMat;
 			sphereMesh.material = projectedMat;
-			
 			renderer.setRenderTarget(null);
 			renderer.clear();
 			renderer.render(scene, camera);
@@ -344,7 +308,6 @@ function main(){
 		if (needResize){
 			renderer.setSize(width, height, false);
 			renderTarget.setSize(width, height);
-			renderTargetMid1.setSize(width, height);
 			
 		}
 		return needResize;
