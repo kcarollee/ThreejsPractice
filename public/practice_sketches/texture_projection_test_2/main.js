@@ -15,6 +15,10 @@ function main(){
 	const near = 0.1;
 	const far = 1000;
 	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	const camera2 = new THREE.PerspectiveCamera(fov * 0.5, aspect, 1, 20);
+	camera2.position.set(10, 10, 20);
+	camera2.lookAt(0, 0, 0);
+	const helper = new THREE.CameraHelper(camera2);
 	const orthoWidth = 10;
 	const orthoHeight = 10;
 	const cameraOrtho = new THREE.OrthographicCamera(
@@ -33,6 +37,7 @@ function main(){
 
 	const scene = new THREE.Scene();
 	scene.add(camera);
+	scene.add(helper);
 	scene.background = new THREE.Color(0xCCCCCC);
 	renderer.render(scene, camera);
 //PROJECTED MATERIAL
@@ -113,6 +118,7 @@ function main(){
         			void main(){
         				float gap = 2.0;
         				vec2 uv = ((vTexCoords.xy) / vTexCoords.w) * 0.5 + 0.5;
+
         				//vec2 uvMod = ((vTexCoords.xy  * (gap + (gap - 1.0)  * sin(time * 0.01))) / vTexCoords.w) * 0.5 + 0.5;
         				//vec2 uvMod = ((vec2(vTexCoords.x, vTexCoords.y + gap  * sin(time * 0.01))) / vTexCoords.w) * 0.5 + 0.5;
         				float n = map(noise(vTexCoords.xy * 0.5 + time * 0.01), .0, 1.0, .0, 1.0);
@@ -120,7 +126,7 @@ function main(){
         				
         				
         				uvMod = mix(uv, uvMod, 0.5 + 0.5 * sin(time * 0.01));
-        				//uvMod = uv;
+        				uvMod = uv;
         				vec3 outCol = vec3(.0);
           				vec4 texMod = texture2D(tex, uvMod);
           				vec4 texOrig = texture2D(tex, uv);
@@ -133,6 +139,8 @@ function main(){
 
           				outCol += color;
 
+          				if (uv.x > 1.0 || uv.x < .0 || uv.y > 1.0 || uv.y < .0) outCol = vec3(.0);
+        				
           				// this makes sure we don't render also the back of the object
           				vec3 projectorDirection = normalize(projPosition - vWorldPosition.xyz);
           				float dotProduct = dot(vNormal, projectorDirection);
@@ -168,6 +176,8 @@ function main(){
 //TEXTURES
 	const textureLoader = new THREE.TextureLoader();
 	const tex = textureLoader.load('test.jpg');
+	tex.wrapS = THREE.RepeatWrapping;
+	tex.wrapT = THREE.RepeatWrapping;
 	const video = document.getElementById('video');
 	video.play();
 
@@ -201,7 +211,7 @@ function main(){
 	const boxGeometries = BufferGeometryUtils.mergeBufferGeometries(boxArr);
 	const modelMat = new THREE.MeshLambertMaterial({color: 0xFCFCFA});
 	
-	const projectedMat = new ProjectedMaterial(camera, renderTarget.texture, new THREE.Color(0x000000));
+	const projectedMat = new ProjectedMaterial(camera2, tex, new THREE.Color(0x000000));
 
 	const modelMesh = new THREE.Mesh(boxGeometries, projectedMat);
 
@@ -212,7 +222,7 @@ function main(){
 	scene.add(sphereMesh);
 
 	const planeGeom = new THREE.PlaneGeometry(30, 30, 1, 1);
-	const projectedMat2 = new ProjectedMaterial(camera, renderTarget.texture, new THREE.Color(0x111111));
+	const projectedMat2 = new ProjectedMaterial(camera2, tex, new THREE.Color(0x111111));
 	// translations must be done to the geometry, and not the mesh. 
 	planeGeom.rotateX(-Math.PI * 0.4);
 	planeGeom.translate(0, -5, 0);
@@ -255,14 +265,16 @@ function main(){
 		
 		//camera.position.set(20 * Math.sin(step * 0.01), 2, 20 * Math.cos(step * 0.01));
 		//camera.lookAt(0, 0, 0);
+		camera2.position.set(10 * Math.sin(step * 0.01), 10 * Math.cos(step * 0.01), 20);
+		camera2.lookAt(0, 0, 0);
 		orbitControls.update();
-		projectedMat.updateCameraMatirxUniforms(camera);
-		projectedMat2.updateCameraMatirxUniforms(camera);
+		projectedMat.updateCameraMatirxUniforms(camera2);
+		projectedMat2.updateCameraMatirxUniforms(camera2);
 
 
 
-		modelMesh.geometry.rotateY(0.003);
-		modelMesh.geometry.rotateZ(0.003);
+		//modelMesh.geometry.rotateY(0.003);
+		//modelMesh.geometry.rotateZ(0.003);
 		if (controls.enableProjection){
 			planeMesh.material = planeMat;
 			modelMesh.material = modelMat;
