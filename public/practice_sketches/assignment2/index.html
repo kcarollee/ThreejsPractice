@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/stats.js/r17/build/stats.min.js"></script>
+    
+    <meta charset="utf-8" />
+
+  </head>
+  <script type="module" src="main.js"></script>
+  <body>
+    <canvas id="c" style="width: 85%; height: 85%;"></canvas>
+    <br>
+    <input type="range" id="lat" value="0" min="-90" max="90">
+    <label for="lat">Latitude</label>
+    <br>
+    <input type="range" id="long" min="0" max="360" value="0">
+    <label for="long">Longitude</label>
+  </body>
+</html>

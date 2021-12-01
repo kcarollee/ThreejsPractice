@@ -378,7 +378,7 @@ function main(){
 		time *= 0.001;
 		step += 1;
 		orbitControls.update();
-		testCamera.updateCameraMeshRotation();
+		//testCamera.updateCameraMeshRotation();
 		testCamera.updateCameraPosition(60 *  Math.cos(step * 0.01), 60, 60 *  Math.sin(step * 0.01));
 		testCamera.updateCameraLookAt(0, 0, 0);
 
@@ -386,7 +386,7 @@ function main(){
 
 
 		distortTorus();
-		testCamera2.updateCameraMeshRotation();
+		//testCamera2.updateCameraMeshRotation();
 		let newPos = getTorusPositionByIncrement(incrementForTorusCam * step * 0.5);
 		let lookAtPos = getTorusPositionByIncrement(incrementForTorusCam * (step * 0.5 + 10));
 		/*
