@@ -78,7 +78,7 @@ function draw(){
   flowShader.setUniform('tex0', captureCur);
   flowShader.setUniform('tex1', capturePrev);
   flowShader.setUniform('backbuffer', pgFlowFeedback);
-  flowShader.setUniform('offset', 1.0);
+  flowShader.setUniform('offset', 3.0);
   flowShader.setUniform('time', frameCount * 0.01);
   pgFlow.rect(0, 0, 10, 10);
     

@@ -28,7 +28,7 @@ void main(){
   uv.x += n1 * displacementStrength;
   uv.y += n2 * displacementStrength;
   //////////////
-
+  
   vec3 leaves = texture2D(leavesTex, uv).rgb;
   vec3 branches = texture2D(branchTex, uv).rgb;
   
@@ -43,7 +43,7 @@ void main(){
   else if (b > .0) outCol += branches;
   */
   
-  outCol += leaves + branches + flow;
+  outCol += leaves + branches + flow * 0.25;
   //else outCol += flow;
   //flow = vec3(sin(flow.r * 100.0)) * 0.25;
   //outCol += leaves + flow + branches;
