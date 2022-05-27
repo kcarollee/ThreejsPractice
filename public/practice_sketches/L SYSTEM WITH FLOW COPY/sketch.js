@@ -1,5 +1,7 @@
-let leafShader, leafShader2, flowShader, combineShader;
+let leafShader,  flowShader, combineShader, leavesBackbufferShader;
 let pgBranch, pgLeafTexture, pgLeafIdleTexture, pgLeaves, pgFlow, pgFlowFeedback;
+
+let pgLeavesAdditive, pgLeavesPrev;
 let pgLeafTextureArr = [];
 let pgLeafTextureArrFilled = false;
 let pgLeafTextureNum = 50;
@@ -7,19 +9,22 @@ let captureCur, capturePrev;
 let loadCount = 0;
 let leafTexVideo;
 
+let MAX_BOID_LEAVES_NUM = 50;
+let boidLeavesArr = [];
+let wokenBoidLeavesArr = [];
+
 let idleLeafTex;
 function preload(){
   // 움직이는 나뭇잎의 텍스쳐를 그려줄 셰이더
   leafShader = loadShader('shaders/leafShader.vert', 'shaders/leafShader.frag');
-  // 움직이지 않는 나뭇잎을 그려줄 셰이더
-  leafShader2 = loadShader('shaders/leafShader2.vert', 'shaders/leafShader2.frag');
+
   // optical flow 셰이더
   flowShader = loadShader('shaders/flowShader.vert', 'shaders/flowShader.frag');
   // pgBranch, pgLeaves, pgFlow를 합칠 셰이더
   combineShader = loadShader('shaders/combineShader.vert', 'shaders/combineShader.frag');
+  leavesBackbufferShader = loadShader('shaders/leavesBackbufferShader.vert', 'shaders/leavesBackbufferShader.frag');
 
-  // 움직이지 않는 나뭇잎 텍스쳐로 쓸 이미지
-  idleLeafTex = loadImage('assets/eyeIdle.png');
+
 }
 
 let testTree;
@@ -27,35 +32,29 @@ let testTree;
 function setup(){
   createCanvas(800, 800, WEBGL);
   // 가지들을 그릴 WEBGL 캔버스
-  pgBranch = createGraphics(800, 800, WEBGL);
+  //pgBranch = createGraphics(800, 800, WEBGL);
   
   // 나뭇잎 텍스쳐를 그릴  WEBGL 캔버스
   pgLeafTexture = createGraphics(200, 200, WEBGL);
-  pgLeafIdleTexture = createGraphics(200, 200, WEBGL);
   
+  pgLeavesAdditive = createGraphics(800, 800, WEBGL);
   // 나뭇잎들을 그릴 WEBGL 캔버스
   pgLeaves = createGraphics(800, 800, WEBGL);
   pgLeaves.rectMode(pgLeaves.CENTER);
   pgLeaves.noStroke();
+  pgLeavesPrev = createGraphics(800, 800);
 
-  // 나뭇잎 텍스쳐로 쓸 비디오
-  leafTexVideo = createVideo('assets/eye.mp4');
-  leafTexVideo.autoplay();
-  leafTexVideo.loop();
-  leafTexVideo.hide();
-  leafTexVideo.volume(0);
+  
   // optical flow 텍스쳐를 위한 WEBGL 캔버스
   pgFlow = createGraphics(800, 800, WEBGL);
 
-  // 테스트용 LSystemTree()
-  testTree = new LSystemTree();
-  testTree.generateFinalRule();
-  testTree.generateLeaves();
+ 
   
   imageMode(CENTER);
 
   // 현재 웹캠 프레임
   captureCur = createCapture(VIDEO);
+  captureCur.hide();
   captureCur.size(800, 800);
   // 전 웹캠 프레임을 저장할 캔버스. 
   // capturePrev = captureCur.get()방식을 사용하면 스케치가 30초 정도 지나 WEBGL CONTEXT LOST 에러가 나서 튕긴다. 
@@ -63,37 +62,24 @@ function setup(){
   // feedback loop을 위해  pgFlow의 전 프레임을 저장할 캔버스
   pgFlowFeedback = createGraphics(800, 800);
   
-  
+  for (let i = 0; i < MAX_BOID_LEAVES_NUM; i++){
+    let tempLeaf = new Leaf(random(-1, 1), random(-1, 1), random(30, 60));
+    boidLeavesArr.push(tempLeaf);
+  }
   
 }
 
 function draw(){
 
-  // BRANCHES
-  // pgBranch에서 background()를 콜하지 않는다
-  // 매 프레임마다 가지를 그리는 것은 매우 비효율적이기 때문에 
-  // 한번만 렌더한다. displayBranches()함수내의 this.singleRun 플래그가 한번만 렌더되게 한다. 
-  pgBranch.stroke(255, 0, 0);
-  testTree.displayBranches(pgBranch);
-  generateNewTree();
-  
   
   // leafShader는 나뭇잎 텍스쳐를 그려준다. 
   pgLeafTexture.shader(leafShader);
   leafShader.setUniform('resolution', [pgLeafTexture.width, pgLeafTexture.height]);
   leafShader.setUniform('time', frameCount * 0.01);
-  leafShader.setUniform('texture', leafTexVideo);
   pgLeafTexture.quad(-1, -1, 1, -1, 1, 1, -1, 1);
 
   
-  // leafShader2는 idle 상태의 나뭇잎 텍스쳐를 그려준다. 
-  // p5에서는 두개 이상의 WEBGL Context가 하나의 셰이더를 공유를 못하는 것 같다. 
-  pgLeafIdleTexture.shader(leafShader2);
-  leafShader2.setUniform('resolution', [pgLeafIdleTexture.width, pgLeafIdleTexture.height]);
-  leafShader2.setUniform('time', frameCount * 0.01);
-  leafShader2.setUniform('texture', idleLeafTex);
-  pgLeafIdleTexture.quad(-1, -1, 1, -1, 1, 1, -1, 1);
-  
+ 
   // pgLeafTexture.loadPixels();
   // loadCount가 어느 정도 지나야 pgLeafTextureArr에 빈 프레임이 안들어간다. 
   if (loadCount > 10){
@@ -138,28 +124,69 @@ function draw(){
   // LEAVES
 
   pgLeaves.background(0);
-  pgLeaves.stroke(255);
+  
   pgFlow.loadPixels();
-  loadCount < 40 ? loadCount++ : testTree.updateLeaves(pgFlow);
-  //testTree.updateLeaves(pgFlow);
-  testTree.displayLeaves(pgLeaves, pgLeafTextureArr);
 
+  if (loadCount < 40) loadCount++;
+  else {
+    let leavesArrPtr = boidLeavesArr;
+    boidLeavesArr.forEach(function(leaf){
+      leaf.updateBasedOnTexture(pgFlow);
+      // kill leaves based on lifespan
+      if (leaf.lifecount > Leaf.lifespan){
+        let leafIndex = leavesArrPtr.indexOf(leaf);
+        leavesArrPtr.splice(leafIndex, 1);
+      }
+    });
+
+    if (boidLeavesArr.length < MAX_BOID_LEAVES_NUM){
+      let fillNum = MAX_BOID_LEAVES_NUM - boidLeavesArr.length;
+      for (let i = 0; i < fillNum; i++){
+        let tempLeaf = new Leaf(random(-1, 1), random(-1, 1), random(30, 60));
+          boidLeavesArr.push(tempLeaf);
+      }
+    }
+  }
+  //testTree.updateLeaves(pgFlow);
+  //testTree.displayLeaves(pgLeaves, pgLeafTextureArr);
+  boidLeavesArr.forEach(function(leaf){
+    leaf.simulateFlock(boidLeavesArr);
+    leaf.updateBasedOnFlocking();
+    leaf.display(pgLeaves, pgLeafTextureArr);
+    
+  });
+
+  pgLeavesAdditive.shader(leavesBackbufferShader);
+  leavesBackbufferShader.setUniform('currentBuffer', pgLeaves);
+  leavesBackbufferShader.setUniform('backbuffer', pgLeavesPrev);
+  pgLeavesAdditive.rect(0, 0, 10, 10);
+
+  
   
   // COMBINE EVERYTHING
   shader(combineShader);
   combineShader.setUniform('resolution', [width, height]);
-  combineShader.setUniform('leavesTex', pgLeaves);
-  combineShader.setUniform('branchTex', pgBranch);
+  combineShader.setUniform('leavesTex', pgLeavesAdditive);
+
+
   combineShader.setUniform('flowTex', pgFlow);
   combineShader.setUniform('time', frameCount * 0.01);
   quad(-1, -1, 1, -1, 1, 1, -1, 1);
 
-  
+  pgLeavesPrev.image(pgLeavesAdditive, 0, 0);
+ 
 }
 
-function generateNewTree(){
-  if (testTree.leavesArr.length < testTree.initialLeavesNum * 0.25){
-    pgBranch.clear();
-    testTree.reset();
+function keyPressed(){
+  switch(key){
+    case 1:
+      Leaf.boidMovementMode++;
+      Leaf.boidMovementMode %= 2;
+      break;
   }
 }
+
+
+
+
+

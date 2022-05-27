@@ -10,6 +10,8 @@ uniform sampler2D backbuffer;
 uniform float offset;
 uniform float time;
 
+varying vec2 vTexCoord;
+
 // noise algorithm from: https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
 float mod289(float x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
 vec4 mod289(vec4 x){return x - floor(x * (1.0 / 289.0)) * 289.0;}
@@ -74,7 +76,8 @@ vec3 get(float x, float y){
   
   //y = 1.0 - y; // uncomment to move smoke upwards
   //x = 10.0 * cos(time * 10.0) - y;
-  vec2 uv = (gl_FragCoord.xy + vec2(x,y)) / resolution;
+  //vec2 uv = (gl_FragCoord.xy + vec2(x,y)) / resolution;
+  vec2 uv = vTexCoord + (vec2(x, y) / resolution);
   float n1 = noise(vec3(uv * 10.0, time));
   float n2 = noise(vec3(uv * 10.0, time + 14.0));
   n1 = map(n1, .0, 1.0, -1.0, 1.0);
@@ -98,7 +101,7 @@ vec3 diffuseFour(float f, float d){
 
 void main(){
   vec3 outCol = vec3(.0);
-  vec2 uv = gl_FragCoord.xy / resolution;
+  vec2 uv = vTexCoord;
   vec2 ouv = uv;
   uv.x = 1.0 - uv.x;
   uv.y = 1.0 - uv.y;

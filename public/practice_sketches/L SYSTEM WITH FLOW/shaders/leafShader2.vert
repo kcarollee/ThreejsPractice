@@ -9,5 +9,3 @@ void main() {
   outPos.xy = outPos.xy * 2.0 - 1.0; 
   gl_Position = outPos;
 }
-
-
