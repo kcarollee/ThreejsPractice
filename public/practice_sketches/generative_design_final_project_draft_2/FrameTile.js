@@ -12,6 +12,7 @@ class FrameTile{
       this.sizex = sizex;
       this.sizey = sizey;
       this.frameSource = null;
+      this.provokedFrameSource = null;
       this.frameSourceSize = null;
       this.frameIndex = 0;
   
@@ -52,8 +53,8 @@ class FrameTile{
     
     setAdjacentTileRightBottom(tile){ this.rightBottomTile = tile; this.neighboringTilesArr.push(this.rightBottomTile); }
     setAdjacentTileRightTop(tile){ this.rightTopTile = tile; this.neighboringTilesArr.push(this.rightTopTile); }
-    setAdjacentTileLeftBottom(tile){ this.leftBottomTile = tile; this.neighboringTilesArr.push(this.rightBottomTile); }
-    setAdjacentTileLeftTop(tile){ this.leftTopTile = tile; this.neighboringTilesArr.push(this.rightTopTile); }
+    setAdjacentTileLeftBottom(tile){ this.leftBottomTile = tile; this.neighboringTilesArr.push(this.leftBottomTile); }
+    setAdjacentTileLeftTop(tile){ this.leftTopTile = tile; this.neighboringTilesArr.push(this.leftTopTile); }
     
   
     setMovementMode(newMode){
@@ -118,7 +119,8 @@ class FrameTile{
   
     }
   
-    updatePosition(){
+    updatePosition(movementFunc){
+      /*
       switch(this.movementMode){
         case 0:
           this.updatePositionRotational();
@@ -130,12 +132,18 @@ class FrameTile{
           this.updatePositionVertical();
           break;
       }
+      */
+      movementFunc(this);
     }
     
     // frameSource: an array of frames from a video
     setFrameSource(newFrameSource){
       this.frameSource = newFrameSource;
       this.frameSourceSize = this.frameSource.length;
+    }
+
+    setProvokedFrameSource(provokedFrameSource){
+      this.provokedFrameSource = provokedFrameSource;
     }
 
     provokedMovement(){
@@ -155,6 +163,7 @@ class FrameTile{
             this.provokedCount = 0;
             this.provoked = false;
             this.provokeFlag = false;
+            
           }
         }
     }
@@ -173,8 +182,16 @@ class FrameTile{
           this.sizex * 1.001 * this.sizeFactor, this.sizey * 1.001 * this.sizeFactor);
       }
       let imgRef = this.frameSource[this.frameIndex];
-      image(imgRef, this.posVec.x, this.posVec.y, 
-        this.sizex * 0.95 * this.sizeFactor, this.sizey * 0.95 * this.sizeFactor);
+      
+      if (!this.provoked){
+        image(imgRef, this.posVec.x, this.posVec.y, 
+          this.sizex * 0.95 * this.sizeFactor, this.sizey * 0.95 * this.sizeFactor);
+      }
+      else {
+        let provokedFrameIndex = int(map(this.provokedCount, 0, PI, 0, this.provokedFrameSource.length - 1));
+        image(this.provokedFrameSource[provokedFrameIndex], this.posVec.x, this.posVec.y, 
+          this.sizex * 0.95 * this.sizeFactor, this.sizey * 0.95 * this.sizeFactor);
+      }
     }
   
     mouseIsInTile(){
