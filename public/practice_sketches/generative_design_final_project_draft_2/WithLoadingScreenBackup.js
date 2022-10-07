@@ -26,9 +26,12 @@ let provokedFrameArr4 = []; // RED EYE
 
 let groupArr = []; // mainly used to determine correct mouse clicks
 
+let customFont;
+let fontSize;
 
+let titleText;
 
-let testTileGroup, testTileGroup1, horiTileGroup1, horiTileGroup2, bgTileGroup;
+let testTileGroup, testTileGroup1, testTileGroup2, testTileGroup3, testTileGroup4;
 
 
 // F#min7
@@ -107,13 +110,6 @@ function loadImageElement(filename, imageArr, index) {
     }
   }
 }
-let customFont;
-let fontSize;
-let titleText;
-
-function preload(){
-  customFont = loadFont("assets/fonts/time_font_fixed_2.ttf");
-}
 
 function loadImages(){
   // ROTATIONAL FRAMES
@@ -167,10 +163,10 @@ function createFrameGroups(){
   let BGSizew = min(height, width) * 0.5;
   let BGSizeh = min(height, width) * 0.5;
   let BGStartingPos = getStartingPos(BGRowNum, BGColNum, BGSizew, BGSizeh, windowWidth * 0.5, windowHeight * 0.5);
-  bgTileGroup = new FrameTileGroup(BGRowNum, BGColNum, BGSizew, BGSizeh,
+  testTileGroup4 = new FrameTileGroup(BGRowNum, BGColNum, BGSizew, BGSizeh,
      BGStartingPos[0], BGStartingPos[1], rotationalFrameArr4, provokedFrameArr4, 0);
 
-  bgTileGroup.setNoteArrays(bassNoteGroup1, melodyNoteGroup1);
+  testTileGroup4.setNoteArrays(bassNoteGroup1, melodyNoteGroup1);
 
   
 
@@ -185,36 +181,89 @@ function createFrameGroups(){
   testTileGroup1.setNoteArrays(bassNoteGroup2, melodyNoteGroup2);
 
   let HGRowNum = 3;
-  let HGColNum = 48;
+  let HGColNum = 36;
   let HGSizew = 50;
   let HGSizeh = 50;
-  let HGStartingPos = getStartingPos(HGRowNum, HGColNum, HGSizew, HGSizeh, windowWidth * 0.5, windowHeight * 0.75);
-  horiTileGroup1 = new FrameTileGroup(HGRowNum, HGColNum, HGSizew, HGSizeh,
+  let HGStartingPos = getStartingPos(HGRowNum, HGColNum, HGSizew, HGSizeh, windowWidth * 0.5, windowHeight * 0.5);
+  testTileGroup2 = new FrameTileGroup(HGRowNum, HGColNum, HGSizew, HGSizeh,
      HGStartingPos[0], HGStartingPos[1], rotationalFrameArr3, provokedFrameArr3, 0);
 
-  horiTileGroup1.setNoteArrays(bassNoteGroup3, melodyNoteGroup3);
+  testTileGroup2.setNoteArrays(bassNoteGroup3, melodyNoteGroup3);
 
   let CGRowNum = 20;
   let CGColNum = 4;
   let CGSizew = 100;
   let CGSizeh = 100;
-  let CGStartingPos = getStartingPos(CGRowNum, CGColNum, CGSizew, CGSizeh, windowWidth * 0.5, windowHeight * 0.55);
+  let CGStartingPos = getStartingPos(CGRowNum, CGColNum, CGSizew, CGSizeh, windowWidth * 0.5, windowHeight * 0.5);
   testTileGroup = new FrameTileGroup(CGRowNum, CGColNum, CGSizew, CGSizeh, 
     CGStartingPos[0], CGStartingPos[1], rotationalFrameArr1, provokedFrameArr1, 0);
 
   testTileGroup.setNoteArrays(bassNoteGroup4, melodyNoteGroup4);
 
-  let VGRowNum = 3;
-  let VGColNum = 48;
+  let VGRowNum = 2;
+  let VGColNum = 72;
   let VGSizew = 50;
   let VGSizeh = 50;
-  let VGStartingPos = getStartingPos(VGRowNum, VGColNum, VGSizew, VGSizeh, windowWidth * 0.5, windowHeight * 0.25);
-  horiTileGroup2 = new FrameTileGroup(VGRowNum, VGColNum, VGSizew, VGSizeh,
+  let VGStartingPos = getStartingPos(VGRowNum, VGColNum, VGSizew, VGSizeh, windowWidth * 0.5, windowHeight * 0.5);
+  testTileGroup3 = new FrameTileGroup(VGRowNum, VGColNum, VGSizew, VGSizeh,
      VGStartingPos[0], VGStartingPos[1], rotationalFrameArr2, provokedFrameArr2, 0);
 
-  horiTileGroup2.setNoteArrays(bassNoteGroup5, melodyNoteGroup5);
-  groupArr.push(bgTileGroup, testTileGroup1, horiTileGroup1, testTileGroup, horiTileGroup2);
+  testTileGroup3.setNoteArrays(bassNoteGroup5, melodyNoteGroup5);
+  groupArr.push(testTileGroup4, testTileGroup1, testTileGroup2, testTileGroup, testTileGroup3);
 }
+
+
+
+
+/*
+function preload(){
+
+  // ROTATIONAL FRAMES
+  for (let i = 0; i < 117; i++){
+    let temp = loadImage('assets/vidSourceTest/rotationalSources/rs1/rs (' + (i + 1) + ').jpg'); 
+    rotationalFrameArr1.push(temp);
+  }
+
+  for (let i = 0; i < 130; i++){
+    let temp = loadImage('assets/vidSourceTest/rotationalSources/rs2/rs (' + (i + 1) + ').jpg'); 
+    rotationalFrameArr2.push(temp);
+  }
+
+  for (let i = 0; i < 110; i++){
+    let temp = loadImage('assets/vidSourceTest/rotationalSources/rs3/rs (' + (i + 1) + ').jpg'); 
+    rotationalFrameArr3.push(temp);
+  }
+
+  for (let i = 0; i < 63; i++){
+    let temp = loadImage('assets/vidSourceTest/rotationalSources/rs4/rs (' + (i + 1) + ').jpg'); 
+    rotationalFrameArr4.push(temp);
+  }
+
+  
+  // PROVOKED FRAMES
+  for (let i = 0; i < 90; i++){
+    let temp = loadImage('assets/vidSourceTest/provokedSources/ps1/ps (' + (1 + i) + ').jpg');
+    provokedFrameArr1.push(temp);
+  }
+
+  for (let i = 0; i < 110; i++){
+    let temp = loadImage('assets/vidSourceTest/provokedSources/ps2/ps (' + (1 + i) + ').jpg');
+    provokedFrameArr2.push(temp);
+  }
+
+  for (let i = 0; i < 60; i++){
+    let temp = loadImage('assets/vidSourceTest/provokedSources/ps3/ps (' + (1 + i) + ').jpg');
+    provokedFrameArr3.push(temp);
+  }
+
+  for (let i = 0; i < 60; i++){
+    let temp = loadImage('assets/vidSourceTest/provokedSources/eye2/ps (' + (1 + i) + ').jpg');
+    provokedFrameArr4.push(temp);
+  }
+
+  customFont = loadFont('assets/fonts/time_font_fixed_2.ttf');
+}
+*/
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -222,41 +271,38 @@ function setup() {
   rectMode(CENTER);
   
   loadImages();
-  textFont(customFont);
-  textAlign(CENTER);
-  fontSize = max(windowWidth, windowHeight) * 0.075;
-  textSize(fontSize);
- 
+  
+  //(rowNum, colNum, sizew, sizeh, startingPosx, startingPosy, frameSource, mode)
+
   
 }
 
-let loadingCount = 0;
 function draw() {
+  //background(255, 126, 126);
+  /*
+  background(0);
+  testTileGroup4.display(positionFunc1);
+  testTileGroup1.display(positionFunc4);
+  testTileGroup2.display(positionFunc2);
+  testTileGroup.display(positionFunc1);
+  testTileGroup3.display(positionFunc3);
+  */
+
   if (imagesLoaded){
     if (!frameGroupsCreated){
-     
+      console.log("HM");
       createFrameGroups();
       frameGroupsCreated = true;
     }
     background(0);
-    bgTileGroup.display(positionFunc1);
+    testTileGroup4.display(positionFunc1);
     testTileGroup1.display(positionFunc4);
-    horiTileGroup1.display(positionFunc6);
+    testTileGroup2.display(positionFunc2);
     testTileGroup.display(positionFunc1);
-    horiTileGroup2.display(positionFunc5);
+    testTileGroup3.display(positionFunc3);
   }
-  // LOADING SCREEN GOES HERE
   else {
-    background(0, 0, 0);
-    fill(255, 0, 0);
-    text("LOADING", windowWidth * 0.5, windowHeight * 0.5);
-
- 
-    loadingCount++;
-    console.log(loadingCount);
-    let y = windowHeight * 0.5 + fontSize * 0.5;
-    let w = map(counterImage, 0, totalImages, 0, fontSize * 7);
-    rect(windowWidth * 0.5, y, w, 10);
+    background(255, 0, 0);
   }
 }
 
@@ -268,16 +314,14 @@ function getStartingPos(rowNum, colNum, sizew, sizeh, groupCenterX, groupCenterY
 
 function windowResized(){
   resizeCanvas(windowWidth, windowHeight);
-  if (frameGroupsCreated){
-    testTileGroup1.repositionFrames(windowWidth * 0.5, windowHeight * 0.5);
-    testTileGroup.repositionFrames(windowWidth * 0.5, windowHeight * 0.5);
-    
-    
-    horiTileGroup1.repositionFrames(windowWidth * 0.5, windowHeight * 0.25);
+  testTileGroup1.repositionFrames(windowWidth * 0.5, windowHeight * 0.5);
+  testTileGroup.repositionFrames(windowWidth * 0.5, windowHeight * 0.5);
+  
+  
+  testTileGroup2.repositionFrames(windowWidth * 0.5, windowHeight * 0.5);
 
-    horiTileGroup2.repositionFrames(windowWidth * 0.5, windowHeight * 0.75);
-    bgTileGroup.repositionFrames(windowWidth * 0.5, windowHeight * 0.5);
-  }
+  testTileGroup3.repositionFrames(windowWidth * 0.5, windowHeight * 0.5);
+  testTileGroup4.repositionFrames(windowWidth * 0.5, windowHeight * 0.5);
 }
 
 
@@ -329,7 +373,6 @@ function positionFunc2(frame){
   let d = 0.0005;
   let n = noise(frame.initPosVec.x * d + frameCount * 0.005);
   let amp = 200;
-  let yFac = frame.initPosVec.x / windowHeight;
   n = map(n, 0, 1, -amp, amp);
   frame.posVec.y = frame.initPosVec.y + n;
 }
@@ -340,27 +383,10 @@ function positionFunc3(frame){
   let amp = 400;
   n = map(n, 0, 1, -amp, amp);
   frame.posVec.y = frame.initPosVec.y + n;
-  
 }
 
 function positionFunc4(frame){
   frame.posVec.x = frame.initPosVec.x + windowWidth * 0.25 * Math.sin(frame.posVec.y + frameCount * 0.005);
-}
-
-function positionFunc5(frame){
-  let d = 0.0005;
-  let n = noise(frame.initPosVec.x * d + frameCount * 0.005 + 10);
-  let amp = 400;
-  n = map(n, 0, 1, -amp, amp);
-  frame.posVec.y = frame.initPosVec.y + n;
-}
-
-function positionFunc6(frame){
-  let d = 0.0005;
-  let n = noise(frame.initPosVec.x * d + frameCount * 0.005 + 10);
-  let amp = 400;
-  n = map(n, 0, 1, -amp, amp);
-  frame.posVec.y = frame.initPosVec.y + n;
 }
 
 

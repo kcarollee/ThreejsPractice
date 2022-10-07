@@ -44,6 +44,8 @@ class FrameTile{
 
       this.provokedCount = 0;
       this.neighboringTilesArr = [];
+
+      this.colorTile = false;
     }
   
     setAdjacentTileRight(tile){ this.rightTile = tile; this.neighboringTilesArr.push(this.rightTile); }
@@ -146,10 +148,13 @@ class FrameTile{
       this.provokedFrameSource = provokedFrameSource;
     }
 
-    provokedMovement(){
+    // spreadSpeed depends on audio delayTime: (fast) 0.2 ~ 0.7 (slow)
+    provokedMovement(spreadSpeed){
         if (this.provoked){
           this.sizeFactor = 1.0 + 0.25 * sin(this.provokedCount);
-          this.provokedCount += PI / 45;
+          let spreadFactor = int(map(spreadSpeed, 0.2, 0.7, 30, 60));
+          console.log(spreadFactor);
+          this.provokedCount += PI / spreadFactor;
           if (this.provokedCount > PI / 8 && !this.provokeFlag){
             for (let i = 0; i < this.neighboringTilesArr.length; i++){
               if (this.neighboringTilesArr[i] != null){
@@ -169,13 +174,13 @@ class FrameTile{
     }
   
   
-    display(){
+    display(spreadSpeed){
       if (this.sizeFactor < 1.0) this.sizeFactor += 0.05;
-      this.provokedMovement();
+      this.provokedMovement(spreadSpeed);
     
       if (this.provoked) this.frameIndex = int(random(this.frameSourceSize));
       
-      if (this.mouseIsInTile()){
+      if (this.colorTile && this.mouseIsInTile()){
         fill(255, 0, 0);
         stroke(255, 0, 0);
         rect(this.posVec.x, this.posVec.y, 
@@ -189,9 +194,11 @@ class FrameTile{
       }
       else {
         let provokedFrameIndex = int(map(this.provokedCount, 0, PI, 0, this.provokedFrameSource.length - 1));
+        provokedFrameIndex = constrain(provokedFrameIndex, 0, this.provokedFrameSource.length - 1);
+        console.log(provokedFrameIndex);
         image(this.provokedFrameSource[provokedFrameIndex], this.posVec.x, this.posVec.y, 
           this.sizex * 0.95 * this.sizeFactor, this.sizey * 0.95 * this.sizeFactor);
-      }
+        }
     }
   
     mouseIsInTile(){

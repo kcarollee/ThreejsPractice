@@ -25,13 +25,16 @@ class FrameTileGroup{
       this.bassEnvelope = new p5.Envelope();
       this.bassEnvelope.setADSR(0.01, 0.01, 0.1, 0.1);
       this.bassEnvelope.setRange(this.bassAmp, 0);
+
+      this.reverb = new p5.Reverb();
+      this.reverb.process(this.bassOscillator, 10, 0.5);
+      
       this.delay = new p5.Delay();
-      
-      
-      
+      this.delayTime = null;
+
       this.clickedOnce = false;
 
-      this.melodyOscillator = new p5.Oscillator('triangle');
+      this.melodyOscillator = new p5.Oscillator('sine');
       //this.melodyOscillator.start();
       this.melodyFreq;
       this.melodyAmp = 0.1;
@@ -47,6 +50,7 @@ class FrameTileGroup{
     setNoteArrays(bassNotesArr, melodyNotesArr){
       this.bassNotesArr = bassNotesArr;
       this.melodyNotesArr = melodyNotesArr;
+      this.melodyFreq = this.melodyNotesArr[0];
     }
 
     playOscillator(){
@@ -66,17 +70,17 @@ class FrameTileGroup{
     display(positionFunc){
       if (this.clickedOnce){
         this.playOscillator();
-        
+        this.reverb.drywet(map(mouseX, 0, windowWidth, 0.1, 0.95));
       }
-      push();
       
       
+      let dt = this.delayTime;
       this.frameTileArr.forEach(function(frame){
         frame.updateFrameIndex();
         frame.updatePosition(positionFunc);
-        frame.display();
+        frame.display(dt);
       });
-      pop();
+
     }
   
     mouseClickReactive(){
@@ -94,12 +98,15 @@ class FrameTileGroup{
               // melody notes
               this.melodyNoteIndex = int(random(0, this.melodyNotesArr.length));
               this.melodyFreq = this.melodyNotesArr[this.melodyNoteIndex];
-              console.log(this.melodyFreq, this.melodyNoteIndex);
+              //console.log(this.melodyFreq, this.melodyNoteIndex);
               this.melodyOscillator.freq(this.melodyFreq);
               //this.melodyOscillator.amp(this.melodyAmp * 0.5);
               this.melodyOscillator.start();
               this.melodyEnvelope.setRange(0.1, 0);
               this.melodyEnvelope.play(this.melodyOscillator);
+
+              this.delayTime = map(mouseY, 0, windowHeight, 0.2, 0.7);
+              this.delay.delayTime(this.delayTime);
               return true;
           }
       }
