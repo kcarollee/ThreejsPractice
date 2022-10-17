@@ -188,6 +188,8 @@ function main() {
 	gui.add(controls, 'outputObj');
 */
 
+
+
   function render(time) {
     time *= 0.001;
     step++;

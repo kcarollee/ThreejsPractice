@@ -18,8 +18,8 @@ function main() {
   scene.background = new THREE.Color(0x000000);
   renderer.render(scene, camera);
 
-  const orbitControls = new OrbitControls(camera, renderer.domElement);
-  orbitControls.update();
+  //const orbitControls = new OrbitControls(camera, renderer.domElement);
+  //orbitControls.update();
   //GUI
   /*
   const gui = new dat.GUI();
@@ -57,13 +57,15 @@ function main() {
     }
     renderer.render(scene, camera);
     requestAnimationFrame(render);
-    orbitControls.update();
+    //orbitControls.update();
     distortPlane(time);
   }
 
   function changeNoiseHeight() {
-    noiseHeight += document.body.getBoundingClientRect().top;
-    console.log("HEY");
+    noiseHeight =
+      10 * Math.sin(document.body.getBoundingClientRect().top * 0.005);
+
+    console.log(document.body.getBoundingClientRect().top);
   }
 
   function distortPlane(time) {
