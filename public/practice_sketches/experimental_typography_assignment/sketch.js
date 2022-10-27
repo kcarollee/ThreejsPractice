@@ -29,116 +29,13 @@ const imgLinkArr = [
   "./images/18.jpg",
 ];
 
-class TextElement {
-  constructor(
-    posX,
-    posY,
-    size,
-    img,
-    destPosX = null,
-    destPosY = null,
-    destSize = null
-  ) {
-    this.size = size;
-    this.posX = posX;
-    this.posY = posY;
-    this.img = img;
+class TextElement{
+  constructor(){
 
-    this.destPosX = destPosX;
-    this.destPosY = destPosY;
-    this.destSize = destSize;
-
-    this.elem = null;
-
-    this.prevWindowWidth = window.innerWidth;
-    this.prevWindowHeight = window.innerHeight;
-  }
-
-  updatePos() {
-    if (this.destPosX != null && abs(this.destPosX - this.posX) > 10) {
-      this.posX += (this.destPosX - this.posX) / 40;
-      this.posY += (this.destPosY - this.posY) / 40;
-      this.elem.position(this.posX, this.posY);
-    }
-  }
-
-  updateSize() {
-    if (this.destSize != null) {
-      this.size += (this.destSize - this.size) / 40;
-      this.elem.style("width", this.size + "vw");
-    }
-  }
-
-  create() {
-    this.elem = createDiv(this.img, "OOPS");
-    this.elem.position(this.posX, this.posY);
-    // px -> vw로 바꾸기: 화면에 따라 사이즈가 같이 바꿔진다.
-    // 브라우저 창 자체를 키워보는 것도 한번 고려해보자
-    // 전체적으로 위에서 바라보는것 같은 효과도
-    // 네모들 말고 다른 모양들도 시도해보자
-    // even the leaves on the buildings are turning red and then I realize it's already almost end of october
-    //this.elem.style("position", "relative");
-    this.elem.style("width", this.size + "vw");
-    this.elem.style("z-index", "0");
-    let elemRef = this.elem;
-    this.elem.mouseOver(() => {
-      elemRef.style("opacity", "0.5");
-    });
-
-    this.elem.mouseOut(() => {
-      elemRef.style("opacity", "1.0");
-    });
-
-    this.elem.mouseClicked(() => {
-      let defaultImageWidth = 25;
-
-      let randDestPosX1 = this.posX + 200 * Math.cos(random(0, PI));
-
-      let randDestPosY1 = this.posY + 200 * Math.sin(random(0, PI));
-
-      let randDestPosX2 = this.posX + 200 * Math.cos(random(0, PI));
-      let randDestPosY2 = this.posY + 200 * Math.sin(random(0, PI));
-
-      let newElem = new TextElement(
-        this.posX,
-        this.posY,
-        defaultImageWidth * 0.5,
-
-        imgLinkArr[int(random(0, 19))],
-        randDestPosX1,
-        randDestPosY1,
-        defaultImageWidth
-      );
-      newElem.create();
-
-      let newElem2 = new TextElement(
-        this.posX,
-        this.posY,
-        defaultImageWidth * 0.5,
-
-        imgLinkArr[int(random(0, 19))],
-        randDestPosX2,
-        randDestPosY2,
-        defaultImageWidth
-      );
-      newElem2.create();
-      elemRef.remove();
-    });
-
-    TextElement.elementArr.push(this);
-  }
-
-  onWindowResize() {
-    this.posX = (window.innerWidth * this.posX) / this.prevWindowWidth;
-    this.posY = (window.innerHeight * this.posY) / this.prevWindowHeight;
-    this.destPosX = (window.innerWidth * this.destPosX) / this.prevWindowWidth;
-    this.destPosY =
-      (window.innerHeight * this.destPosY) / this.prevWindowHeight;
-    this.elem.position(this.posX, this.posY);
-    this.prevWindowWidth = window.innerWidth;
-    this.prevWindowHeight = window.innerHeight;
   }
 }
+
+
 
 class ImageElement {
   constructor(
