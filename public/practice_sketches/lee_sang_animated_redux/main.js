@@ -1,5 +1,29 @@
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 // https://dmitrykandalov.com/lsystem/
+class CustomCurve extends THREE.Curve {
+  // startPos: THREE.Vector3()
+  constructor(scale = 1, startPos) {
+    super();
+    this.scale = scale;
+    this.curPos = startPos.clone();
+  }
+
+  getPoint(t, optionalTarget = new THREE.Vector3()) {
+    let v = computeCurl2(this.curPos.x, this.curPos.y, this.curPos.z);
+
+    const tx = this.curPos.x;
+    const ty = this.curPos.y;
+    const tz = this.curPos.z;
+    //console.log(tx, ty, tz);
+
+    this.curPos.addScaledVector(v, 0.001);
+
+    return optionalTarget.set(tx, ty, tz).multiplyScalar(this.scale);
+  }
+}
+
+CustomCurve.noiseScale = 1;
+
 function main() {
   // P5 SKETCH
   const p5Sketch = (sketch) => {
@@ -65,7 +89,13 @@ function main() {
   //RAYCASTER
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
-  //TEXTURES
+
+  // NOISE
+  noise.seed(Math.random());
+
+  // TEXTURE
+  const curlTexture = new THREE.TextureLoader().load("tex1.png");
+
   const textureLoader = new THREE.TextureLoader();
   /*
 	textureArr[n] : ARRAY OF 11 TEXTURES OF THE NUMBER 'n-1' (n < 10)
@@ -143,6 +173,24 @@ function main() {
     //wireframe: true
   });
 
+  const curlMeshNum = 1000;
+  const meshArr = [];
+  for (let i = 0; i < curlMeshNum; i++) {
+    let x = randomNumber(-1.0, 1.0) * 0.25;
+    let y = randomNumber(-1.0, 1.0) * 0.25;
+    let z = randomNumber(-1.0, 1.0) * 0.25;
+    let path = new CustomCurve(100, new THREE.Vector3(x, y, z));
+    let geometry = new THREE.TubeGeometry(path, 1000, 1, 4, false);
+    let material = new THREE.MeshBasicMaterial({
+      //color: 0x000000,
+      map: curlTexture,
+    });
+    let mesh = new THREE.Mesh(geometry, material);
+    meshArr.push(mesh);
+    mesh.geometry.setDrawRange(0, 0);
+    scene.add(mesh);
+  }
+
   // material for the title pannel
   const shaderMaterial2 = new THREE.ShaderMaterial({
     uniforms: {
@@ -188,9 +236,19 @@ function main() {
 	gui.add(controls, 'outputObj');
 */
 
-
+  function updateDrawRange() {
+    let updateSpeed = 50;
+    meshArr.forEach(function (mesh) {
+      //let prevDrawRange = mesh.geometry.drawRange.count;
+      mesh.geometry.drawRange.count += updateSpeed;
+    });
+  }
+  function randomNumber(min, max) {
+    return Math.random() * (max - min) + min;
+  }
 
   function render(time) {
+    updateDrawRange();
     time *= 0.001;
     step++;
     updateRaycaster();

@@ -1,6 +1,7 @@
 html, body {
    margin: 0;
    height: 100%;
+   overflow-x: hidden;
 }
 #c {
    width: 100%;
@@ -18,41 +19,13 @@ html, body {
 }
 
 
-.header {
-   text-align: center;
-   padding: 32px;
- }
- 
- .row {
-   display: flex;
-   flex-direction: row;
-   flex-wrap:wrap;
-   padding: 0 4px;
-   
- }
 
- .column {
-   flex: 100%;
-   padding: 0 4px;
-   
- }
- 
- .column img {
-   
-   vertical-align: middle;
- }
-
- .column img:hover {
-  opacity: 50%;
-  cursor: pointer;
+.click-images img{
+  position: absolute;
+  top: 50%;
+  bottom: 50%;
+  left: 50%;
+  right: 50%;
+  margin: auto;
+  transition: all 0.7s;
 }
-
- .column p {
-  
-  vertical-align: middle;
-  color: white;
- }
- 
-
-
-
