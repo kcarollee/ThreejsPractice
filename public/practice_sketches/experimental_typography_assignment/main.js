@@ -73,12 +73,10 @@ function main() {
     for (let i = 0; i < posAttribute.count; i++) {
       vertex.fromBufferAttribute(posAttribute, i);
       vertex.z =
-        /*
         noise(vertex.x * noiseSpread, vertex.y * noiseSpread, 0.0, time) *
         noiseHeight;
-        */
 
-        noise(vertex.x * noiseSpread, vertex.y * noiseSpread, 0.0, time);
+      noise(vertex.x * noiseSpread, vertex.y * noiseSpread, 0.0, time);
 
       posAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
     }
