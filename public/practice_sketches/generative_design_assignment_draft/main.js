@@ -6,234 +6,40 @@ class CustomCurve extends THREE.Curve {
     super();
     this.scale = scale;
     this.curPos = startPos.clone();
+    this.arcLengthDivisions = 10;
   }
 
   getPoint(t, optionalTarget = new THREE.Vector3()) {
-    let v = computeCurl2(this.curPos.x, this.curPos.y, this.curPos.z);
-    let tempVec = this.curPos.clone();
+    /*
+    let v = computeCurl2(
+      this.curPos.x * 0.001,
+      this.curPos.y * 0.001,
+      this.curPos.z * 0.001
+    );
+    */
+
+    //let v = new THREE.Vector3(0, 0, 1);
+    //let tempVec = this.curPos.clone();
     const tx = this.curPos.x;
     const ty = this.curPos.y;
     const tz = this.curPos.z;
-    //console.log(tx, ty, tz);
+
+    console.log(tx, ty, tz);
+
     // the smaller the scale coef, the closer the cluster of mesh will resemble the original function
     // 0.00001 : basically the original function
     // 0.0001 : a bit screwed version of the original function
     // 0.001 : resembles what we commonly associate as curl noise
-    this.curPos.addScaledVector(v, 0.001);
+    this.curPos.z += 0.1;
+    //this.curPos.addScaledVector(v, 0.1);
 
-    return optionalTarget.set(tx, ty, tz).multiplyScalar(this.scale);
+    return optionalTarget.set(tx, ty, tz).multiplyScalar(0.1);
   }
 }
-
-class RectangularSpiral {
-  constructor(startPos, segmentLength, spiralCount) {
-    this.startPos = startPos;
-
-    this.spiralCount = spiralCount;
-    this.segmentLength = segmentLength;
-
-    this.boxGeometryHori = new THREE.BoxGeometry(
-      this.segmentLength,
-      this.segmentLength,
-      this.segmentLength
-    );
-
-    this.boxGeometryVert = new THREE.BoxGeometry(
-      this.segmentLength,
-      this.segmentLength,
-      this.segmentLength
-    );
-
-    this.boxGroup = new THREE.Group();
-
-    this.points = [];
-    //console.log("HEY");
-    this._plotSpiral(
-      this.startPos.x,
-      this.startPos.y,
-      this.startPos.z,
-      1,
-      this.spiralCount
-    );
-    console.log(this.points);
-    this.boxVisibleCount = 0;
-    //this.geometry = new THREE.BufferGeometry().setFromPoints(this.points);
-
-    //this.line = new THREE.Line(this.geometry, this.material);
-
-    this.boxGroup.rotateX(Math.random() * 180);
-    this.boxGroup.rotateY(Math.random() * 180);
-    this.boxGroup.rotateZ(Math.random() * 180);
-  }
-
-  // iter must always be given as 1
-  _plotSpiral(x, y, z, iter, count) {
-    //console.log(iter, count);
-    if (iter > count) {
-      console.log(iter);
-      return;
-    }
-    let lengthVal = 2 * iter - 1;
-    // go down
-    for (let i = 1; i <= lengthVal; i++) {
-      this.points.push(new THREE.Vector3(x, y - i * this.segmentLength, z));
-      let boxMesh = new THREE.Mesh(
-        this.boxGeometryVert,
-        RectangularSpiral.materials[Math.floor(Math.random() * 10)]
-      );
-      boxMesh.position.set(x, y - i * this.segmentLength, z);
-      boxMesh.visible = false;
-      this.boxGroup.add(boxMesh);
-    }
-
-    z -= this.segmentLength;
-
-    // turn right
-    for (let i = 1; i <= lengthVal; i++) {
-      this.points.push(
-        new THREE.Vector3(
-          x + i * this.segmentLength,
-          y - lengthVal * this.segmentLength,
-          z
-        )
-      );
-      let boxMesh = new THREE.Mesh(
-        this.boxGeometryHori,
-        RectangularSpiral.materials[Math.floor(Math.random() * 10)]
-      );
-      boxMesh.position.set(
-        x + i * this.segmentLength,
-        y - lengthVal * this.segmentLength,
-        z
-      );
-      boxMesh.visible = false;
-      this.boxGroup.add(boxMesh);
-    }
-    z -= this.segmentLength;
-    // go up
-    for (let i = 1; i <= lengthVal + 1; i++) {
-      this.points.push(
-        new THREE.Vector3(
-          x + this.segmentLength * lengthVal,
-          y - lengthVal * this.segmentLength + i * this.segmentLength,
-          z
-        )
-      );
-      let boxMesh = new THREE.Mesh(
-        this.boxGeometryVert,
-        RectangularSpiral.materials[Math.floor(Math.random() * 10)]
-      );
-      boxMesh.position.set(
-        x + this.segmentLength * lengthVal,
-        y - lengthVal * this.segmentLength + i * this.segmentLength,
-        z
-      );
-      boxMesh.visible = false;
-      this.boxGroup.add(boxMesh);
-    }
-    z -= this.segmentLength;
-    // go left
-    for (let i = 1; i <= lengthVal + 1; i++) {
-      this.points.push(
-        new THREE.Vector3(
-          x + lengthVal * this.segmentLength - i * this.segmentLength,
-          y + this.segmentLength,
-          z
-        )
-      );
-      let boxMesh = new THREE.Mesh(
-        this.boxGeometryHori,
-        RectangularSpiral.materials[Math.floor(Math.random() * 10)]
-      );
-      boxMesh.position.set(
-        x + lengthVal * this.segmentLength - i * this.segmentLength,
-        y + this.segmentLength,
-        z
-      );
-      boxMesh.visible = false;
-      this.boxGroup.add(boxMesh);
-    }
-
-    // new starting point
-
-    this._plotSpiral(
-      x - this.segmentLength,
-      y + this.segmentLength,
-      z,
-      ++iter,
-      count
-    );
-  }
-
-  updateAnimation() {
-    /*
-    if (
-      this.line.geometry.drawRange.count >=
-      this.line.geometry.attributes.position.count
-    )
-      this.line.geometry.drawRange.count = 0;
-    else this.line.geometry.drawRange.count++;
-    */
-
-    if (this.boxVisibleCount < this.boxGroup.children.length) {
-      this.boxGroup.children[this.boxVisibleCount].visible = true;
-      this.boxVisibleCount++;
-    }
-  }
-
-  addToScene(scene) {
-    //scene.add(this.line);
-    scene.add(this.boxGroup);
-    console.log(this.boxGroup);
-  }
-}
-
-RectangularSpiral.materials = [
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/0.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/1.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/2.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/3.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/4.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/5.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/6.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/7.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/8.png"),
-    side: THREE.DoubleSide,
-  }),
-  new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load("./assets/images/9.png"),
-    side: THREE.DoubleSide,
-  }),
-];
 
 function main() {
   const canvas = document.querySelector("#c");
-  const renderer = new THREE.WebGLRenderer({ canvas });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   // TEXTURE
   const texture = new THREE.TextureLoader().load("tex1.png");
   const bgTexture = new THREE.TextureLoader().load("bgTex1.png");
@@ -261,29 +67,83 @@ function main() {
   // NOISE
   noise.seed(Math.random());
 
-  // GEOMETRY
+  // RAYCASTER
+  let raycaster = new THREE.Raycaster();
+  let pointer = new THREE.Vector2();
+  let mouseClicked = false;
+  let pointerIsInside = false;
+  document.addEventListener("mousemove", onPointerMove);
+  document.addEventListener("click", onPointerClick);
 
-  const curlMeshNum = 0;
-  const meshArr = [];
-  const curlMeshGroup = new THREE.Group();
-  for (let i = 0; i < curlMeshNum; i++) {
-    let x = Math.cos(i * 0.1);
-    let y = Math.sin(i * 0.1);
-    let z = 0;
-    // scale, startPos
-    let path = new CustomCurve(100, new THREE.Vector3(x, y, z));
-    // curve, tubular segments, radius, radial segments, closed
-    let geometry = new THREE.TubeGeometry(path, 1000, 1, 2, false);
-    let material = new THREE.MeshNormalMaterial({
-      //color: 0x000000,
-      map: texture,
-    });
-    let mesh = new THREE.Mesh(geometry, material);
-    meshArr.push(mesh);
-    mesh.geometry.setDrawRange(0, 0);
-    curlMeshGroup.add(mesh);
+  // GEOMETRY
+  // CURL MESH
+  const curlMeshArr = [];
+
+  function generateCurlPoints(startPos, pointsNum) {
+    let startPosCopy = startPos.clone();
+
+    let points = [];
+
+    for (let i = 0; i < pointsNum; i++) {
+      let v = computeCurl2(
+        startPosCopy.x * 0.005,
+        startPosCopy.y * 0.005,
+        startPosCopy.z * 0.005
+      );
+      startPosCopy.addScaledVector(v, 1);
+      points.push(startPosCopy.clone());
+    }
+    return points;
   }
-  scene.add(curlMeshGroup);
+
+  // LIGHTS
+  let light = new THREE.PointLight(0xffffff, 10, 1000);
+  light.position.set(0, 0, 300);
+
+  let light2 = new THREE.PointLight(0xffffff, 10, 1000);
+  light.position.set(0, 0, -300);
+  scene.add(light);
+
+  function generateCurlMeshGroup(startPosArr) {
+    let curlMeshGroup = new THREE.Group();
+    let curlMeshNum = startPosArr.length;
+    for (let i = 0; i < curlMeshNum; i++) {
+      let startingPoint = startPosArr[i];
+
+      let x = startingPoint.x;
+      let y = startingPoint.y;
+      let z = startingPoint.z;
+      // scale, startPos
+      //let path = new CustomCurve(1, new THREE.Vector3(x, y, z));
+      let path = generateCurlPoints(new THREE.Vector3(x, y, z), 1000);
+      // curve, tubular segments, radius, radial segments, closed
+      //let geometry = new THREE.TubeGeometry(path, 1000, 1, 2, false);
+      let geometry = new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(path),
+        1000,
+        1,
+        3,
+        false
+      );
+      let noiseColor = noise.simplex3(x, y, z);
+      noiseColor = mapValue(noiseColor, -1, 1, 0, 1);
+      let curlMeshMaterial = new THREE.MeshPhongMaterial({
+        color: new THREE.Color(noiseColor, 0, 0),
+        side: THREE.DoubleSide,
+        //map: texture,
+      });
+
+      let mesh = new THREE.Mesh(geometry, curlMeshMaterial);
+      //mesh.position.set(x, y, z);
+      curlMeshArr.push(mesh);
+      mesh.geometry.setDrawRange(0, 0);
+      curlMeshGroup.add(mesh);
+    }
+    scene.add(curlMeshGroup);
+  }
+
+  //generateCurlMeshGroup([new THREE.Vector3(0, 0, 0)]);
+
   // TITLE CARD
   let rectGeom = new THREE.PlaneGeometry(100, 300, 3, 3);
   let rectMat = new THREE.MeshBasicMaterial({
@@ -295,17 +155,25 @@ function main() {
   scene.add(titleMesh);
 
   // RECTANGULAR SPIRALS
-  const rectSpiralNum = 10;
+  const rectSpiralNum = 5;
+  let segmentLength = 10;
   let rectSpiralArr = [];
+  let allSpiralsLoaded = false;
   for (let i = 0; i < rectSpiralNum; i++) {
     const tempSpiral = new RectangularSpiral(
-      new THREE.Vector3(
-        randomNumber(-200, 200),
-        randomNumber(-200, 200),
-        randomNumber(-200, 200)
-      ),
-      10,
-      8
+      new THREE.Vector3(0, 0, -rectSpiralNum * segmentLength + i * 20),
+      segmentLength,
+      10
+    );
+    tempSpiral.setRotation(
+      randomNumber(0, Math.PI * 2),
+      randomNumber(0, Math.PI * 2),
+      randomNumber(0, Math.PI * 2)
+    );
+    tempSpiral.setPosition(
+      randomNumber(-100, 100),
+      randomNumber(-100, 100),
+      randomNumber(-100, 100)
     );
     tempSpiral.addToScene(scene);
     rectSpiralArr.push(tempSpiral);
@@ -326,7 +194,9 @@ function main() {
 
   function updateAnimation() {
     let updateSpeed = 50;
-    meshArr.forEach(function (mesh) {
+
+    /*
+    curlMeshArr.forEach(function (mesh) {
       //let prevDrawRange = mesh.geometry.drawRange.count;
 
       if (
@@ -334,20 +204,57 @@ function main() {
       )
         mesh.geometry.drawRange.count += updateSpeed;
     });
-
+    */
+    let loadFlag = true;
     rectSpiralArr.forEach(function (spiral) {
       spiral.updateAnimation();
+      loadFlag &= spiral.fullyLoaded;
     });
+    allSpiralsLoaded = loadFlag;
+
+    curlMeshArr.forEach(function (curlMesh) {
+      let vertCount = curlMesh.geometry.attributes.position.count;
+      let drawRangeCount = curlMesh.geometry.drawRange.count;
+
+      if (drawRangeCount < vertCount) {
+        curlMesh.geometry.drawRange.count += 10;
+      }
+    });
+  }
+
+  function updateRaycaster() {
+    raycaster.setFromCamera(pointer, camera);
+    let spiralArr = [];
+
+    for (let i = 0; i < scene.children.length; i++) {
+      if (scene.children[i].name == "boxgroup")
+        spiralArr.push(scene.children[i]);
+    }
+
+    let intersects = raycaster.intersectObjects(spiralArr, true);
+    if (intersects.length > 0) pointerIsInside = true;
+    else pointerIsInside = false;
+    //console.log(pointerIsInside, mouseClicked);
+    if (allSpiralsLoaded) {
+      for (let i = 0; i < intersects.length; i++) {
+        let spiralIndex = intersects[i].object.parent.index;
+        let spiral = RectangularSpiral.spiralArr[spiralIndex];
+        spiral.shiftTextures();
+        // ON CLICKING A SPIRAL
+        if (mouseClicked && pointerIsInside) {
+          //console.log(spiral.getAllVertices());
+          generateCurlMeshGroup(spiral.getAllVertices());
+          mouseClicked = false;
+        }
+        //break;
+      }
+    }
   }
 
   function render(time) {
     time *= 0.001;
+    updateRaycaster();
     updateAnimation();
-    /*
-    curlMeshGroup.rotateX(0.001);
-    curlMeshGroup.rotateY(0.001);
-    curlMeshGroup.rotateZ(0.001);
-    */
 
     if (resizeRenderToDisplaySize(renderer)) {
       const canvas = renderer.domElement;
@@ -360,6 +267,22 @@ function main() {
 
   function randomNumber(min, max) {
     return Math.random() * (max - min) + min;
+  }
+
+  function mapValue(value, min1, max1, min2, max2) {
+    return min2 + ((value - min1) * (max2 - min2)) / (max1 - min1);
+  }
+
+  function onPointerMove(event) {
+    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  }
+
+  function onPointerClick(event) {
+    if (pointerIsInside) {
+      mouseClicked = true;
+    }
+    //mouseClicked = true;
   }
 
   function resizeRenderToDisplaySize(renderer) {
