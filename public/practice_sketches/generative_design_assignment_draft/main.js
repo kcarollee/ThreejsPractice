@@ -1,41 +1,5 @@
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
 //import { MeshLine, MeshLineMaterial, MeshLineRaycast } from "./THREE.MeshLine";
-class CustomCurve extends THREE.Curve {
-  // startPos: THREE.Vector3()
-  constructor(scale = 1, startPos) {
-    super();
-    this.scale = scale;
-    this.curPos = startPos.clone();
-    this.arcLengthDivisions = 10;
-  }
-
-  getPoint(t, optionalTarget = new THREE.Vector3()) {
-    /*
-    let v = computeCurl2(
-      this.curPos.x * 0.001,
-      this.curPos.y * 0.001,
-      this.curPos.z * 0.001
-    );
-    */
-
-    //let v = new THREE.Vector3(0, 0, 1);
-    //let tempVec = this.curPos.clone();
-    const tx = this.curPos.x;
-    const ty = this.curPos.y;
-    const tz = this.curPos.z;
-
-    console.log(tx, ty, tz);
-
-    // the smaller the scale coef, the closer the cluster of mesh will resemble the original function
-    // 0.00001 : basically the original function
-    // 0.0001 : a bit screwed version of the original function
-    // 0.001 : resembles what we commonly associate as curl noise
-    this.curPos.z += 0.1;
-    //this.curPos.addScaledVector(v, 0.1);
-
-    return optionalTarget.set(tx, ty, tz).multiplyScalar(0.1);
-  }
-}
 
 function main() {
   const canvas = document.querySelector("#c");
@@ -114,10 +78,10 @@ function main() {
       let y = startingPoint.y;
       let z = startingPoint.z;
       // scale, startPos
-      //let path = new CustomCurve(1, new THREE.Vector3(x, y, z));
+
       let path = generateCurlPoints(new THREE.Vector3(x, y, z), 1000);
       // curve, tubular segments, radius, radial segments, closed
-      //let geometry = new THREE.TubeGeometry(path, 1000, 1, 2, false);
+
       let geometry = new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(path),
         1000,
