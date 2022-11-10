@@ -21,6 +21,7 @@ class RectangularSpiral {
     this.boxGroup.name = "boxgroup";
 
     this.points = [];
+    this.transformedPoints = [];
     this.materialIndices = [];
     //console.log("HEY");
     this._plotSpiral(
@@ -30,7 +31,7 @@ class RectangularSpiral {
       1,
       this.spiralCount
     );
-    console.log(this.points);
+    //console.log(this.points);
     this.boxVisibleCount = 0;
     //this.geometry = new THREE.BufferGeometry().setFromPoints(this.points);
 
@@ -42,6 +43,8 @@ class RectangularSpiral {
 
     this.fullyLoaded = false;
     this.shiftCount = 0;
+
+    this.triggerBoxMovement = false;
   }
 
   setRotation(x, y, z) {
@@ -57,12 +60,15 @@ class RectangularSpiral {
 
   getAllVertices() {
     let quaternion = this.boxGroup.matrixWorld;
-    let pointsCopyArr = [];
-    this.points.forEach(function (p) {
+    let pointsCopyArr = this.transformedPoints;
+
+    let boxMeshArr = this.boxGroup.children;
+    this.points.forEach(function (p, i) {
       let pCopy = p.clone();
       pCopy.applyMatrix4(quaternion);
-      pointsCopyArr.push(pCopy);
+      pointsCopyArr.push({ point: pCopy, boxMesh: boxMeshArr[i] });
     });
+    console.log(this.transformedPoints);
     return pointsCopyArr;
   }
 
@@ -188,6 +194,41 @@ class RectangularSpiral {
       this.boxGroup.children[this.boxVisibleCount].visible = true;
       this.boxVisibleCount++;
     } else this.fullyLoaded = true;
+
+    /*
+    let quaternion = this.boxGroup.matrixWorld;
+    let pointsCopyArr = this.transformedPoints;
+
+    let boxMeshArr = this.boxGroup.children;
+    this.points.forEach(function (p, i) {
+      let pCopy = p.clone();
+      pCopy.applyMatrix4(quaternion);
+      pointsCopyArr.push({ point: pCopy, boxMesh: boxMeshArr[i] });
+    });
+    */
+    if (this.triggerBoxMovement) {
+      /*
+      let matrixWorldInverse = new THREE.Matrix4().getInverse(
+        this.boxGroup.matrixWorld
+      );
+      */
+      let matrixWorldInverse = new THREE.Matrix4();
+      matrixWorldInverse.copy(this.boxGroup.matrixWorld).invert();
+
+      let boxMeshArr = this.boxGroup.children;
+      boxMeshArr.forEach(function (boxMesh) {
+        if (boxMesh.curlPositionIndex < 1000) {
+          let newPos = boxMesh.curlPath[boxMesh.curlPositionIndex];
+          let scale = 1.0 - boxMesh.curlPositionIndex / 1000;
+          scale = Math.pow(scale, 3.0);
+          newPos.applyMatrix4(matrixWorldInverse);
+          boxMesh.position.set(newPos.x, newPos.y, newPos.z);
+          boxMesh.curlPositionIndex++;
+          boxMesh.scale.set(scale, scale, scale);
+          //randomNumber(0, 1);
+        }
+      });
+    }
 
     //this.shiftTextures();
   }

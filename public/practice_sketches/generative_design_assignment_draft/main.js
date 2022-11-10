@@ -42,7 +42,7 @@ function main() {
   // GEOMETRY
   // CURL MESH
   const curlMeshArr = [];
-
+  const densityCoef = randomNumber(0.001, 0.01); // 0.005 for the best result
   function generateCurlPoints(startPos, pointsNum) {
     let startPosCopy = startPos.clone();
 
@@ -50,9 +50,9 @@ function main() {
 
     for (let i = 0; i < pointsNum; i++) {
       let v = computeCurl2(
-        startPosCopy.x * 0.005,
-        startPosCopy.y * 0.005,
-        startPosCopy.z * 0.005
+        startPosCopy.x * densityCoef,
+        startPosCopy.y * densityCoef,
+        startPosCopy.z * densityCoef
       );
       startPosCopy.addScaledVector(v, 1);
       points.push(startPosCopy.clone());
@@ -62,18 +62,25 @@ function main() {
 
   // LIGHTS
   let light = new THREE.PointLight(0xffffff, 10, 1000);
-  light.position.set(0, 0, 300);
+  light.position.copy(camera.position);
 
   let light2 = new THREE.PointLight(0xffffff, 10, 1000);
-  light.position.set(0, 0, -300);
+  light.position.set(0, 0, -200);
   scene.add(light);
-
+  // startPosArr[i]: {THREE.Vector3(), boxMesh}
   function generateCurlMeshGroup(startPosArr) {
     let curlMeshGroup = new THREE.Group();
     let curlMeshNum = startPosArr.length;
+    let colorVal = randomNumber(0, 0.5);
+    //console.log(colorVal);
+    let curlMeshMaterial = new THREE.MeshLambertMaterial({
+      color: new THREE.Color(colorVal, colorVal, colorVal),
+      side: THREE.DoubleSide,
+      //map: texture,
+    });
     for (let i = 0; i < curlMeshNum; i++) {
-      let startingPoint = startPosArr[i];
-
+      let startingPoint = startPosArr[i].point;
+      let boxMeshOnPoint = startPosArr[i].boxMesh;
       let x = startingPoint.x;
       let y = startingPoint.y;
       let z = startingPoint.z;
@@ -81,7 +88,9 @@ function main() {
 
       let path = generateCurlPoints(new THREE.Vector3(x, y, z), 1000);
       // curve, tubular segments, radius, radial segments, closed
-
+      boxMeshOnPoint.curlPath = path;
+      boxMeshOnPoint.curlPositionIndex = 0;
+      //console.log(boxMeshOnPoint);
       let geometry = new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(path),
         1000,
@@ -89,13 +98,6 @@ function main() {
         3,
         false
       );
-      let noiseColor = noise.simplex3(x, y, z);
-      noiseColor = mapValue(noiseColor, -1, 1, 0, 1);
-      let curlMeshMaterial = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(noiseColor, 0, 0),
-        side: THREE.DoubleSide,
-        //map: texture,
-      });
 
       let mesh = new THREE.Mesh(geometry, curlMeshMaterial);
       //mesh.position.set(x, y, z);
@@ -127,7 +129,7 @@ function main() {
     const tempSpiral = new RectangularSpiral(
       new THREE.Vector3(0, 0, -rectSpiralNum * segmentLength + i * 20),
       segmentLength,
-      10
+      Math.floor(randomNumber(5, 10))
     );
     tempSpiral.setRotation(
       randomNumber(0, Math.PI * 2),
@@ -158,7 +160,7 @@ function main() {
 
   function updateAnimation() {
     let updateSpeed = 50;
-
+    light.position.copy(camera.position);
     /*
     curlMeshArr.forEach(function (mesh) {
       //let prevDrawRange = mesh.geometry.drawRange.count;
@@ -181,7 +183,7 @@ function main() {
       let drawRangeCount = curlMesh.geometry.drawRange.count;
 
       if (drawRangeCount < vertCount) {
-        curlMesh.geometry.drawRange.count += 10;
+        curlMesh.geometry.drawRange.count += 20;
       }
     });
   }
@@ -208,6 +210,7 @@ function main() {
         if (mouseClicked && pointerIsInside) {
           //console.log(spiral.getAllVertices());
           generateCurlMeshGroup(spiral.getAllVertices());
+          spiral.triggerBoxMovement = true;
           mouseClicked = false;
         }
         //break;
