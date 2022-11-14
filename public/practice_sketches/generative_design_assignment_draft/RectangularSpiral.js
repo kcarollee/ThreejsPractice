@@ -1,5 +1,12 @@
 class RectangularSpiral {
-  constructor(startPos, segmentLength, spiralCount) {
+  constructor(
+    startPos,
+    segmentLength,
+    spiralCount,
+    trailPointsNum = 1000,
+    densityCoef = 0.05,
+    startAnimation = false
+  ) {
     this.startPos = startPos;
 
     this.spiralCount = spiralCount;
@@ -41,10 +48,29 @@ class RectangularSpiral {
     this.boxGroup.index = this.index;
     RectangularSpiral.spiralArr.push(this);
 
-    this.fullyLoaded = false;
+    this.animationStartFlag = startAnimation;
+
+    this.boxesFullyLoaded = false;
     this.shiftCount = 0;
 
     this.triggerBoxMovement = false;
+    this.trailPointsNum = trailPointsNum;
+    this.trailPointIndex = 0;
+
+    this.trailPointsLoaded = false;
+
+    this.densityCoef = densityCoef;
+
+    this.curlMeshIndex = 0;
+    this.curlMeshArr = [];
+    let colorVal = Math.random() * 0.5;
+    this.curlMeshMaterial = new THREE.MeshLambertMaterial({
+      color: new THREE.Color(colorVal, colorVal, colorVal),
+      side: THREE.DoubleSide,
+      //map: texture,
+    });
+
+    this.curlMeshFullyLoaded = false;
   }
 
   setRotation(x, y, z) {
@@ -59,17 +85,79 @@ class RectangularSpiral {
   }
 
   getAllVertices() {
-    let quaternion = this.boxGroup.matrixWorld;
+    let groupMatrixWorld = this.boxGroup.matrixWorld;
     let pointsCopyArr = this.transformedPoints;
 
     let boxMeshArr = this.boxGroup.children;
     this.points.forEach(function (p, i) {
       let pCopy = p.clone();
-      pCopy.applyMatrix4(quaternion);
+      pCopy.applyMatrix4(groupMatrixWorld);
       pointsCopyArr.push({ point: pCopy, boxMesh: boxMeshArr[i] });
     });
-    console.log(this.transformedPoints);
+    //console.log(this.transformedPoints);
     return pointsCopyArr;
+  }
+
+  calculateTrailPointsIncrementally() {
+    if (this.trailPointIndex < this.trailPointsNum) {
+      let boxMeshArr = this.boxGroup.children;
+      let groupMatrixWorld = this.boxGroup.matrixWorld;
+      let tpi = this.trailPointIndex;
+      let densityCoef = this.densityCoef;
+      boxMeshArr.forEach(function (boxMesh, i) {
+        if (tpi == 0) {
+          let pCopy = boxMesh.position.clone();
+          pCopy.applyMatrix4(groupMatrixWorld);
+          boxMesh.trailPoints.push(pCopy);
+        } else {
+          let tpiPrev = tpi - 1;
+
+          let pPrevCopy = boxMesh.trailPoints[tpiPrev].clone();
+
+          let v = computeCurl2(
+            pPrevCopy.x * densityCoef,
+            pPrevCopy.y * densityCoef,
+            pPrevCopy.z * densityCoef
+          );
+          pPrevCopy.addScaledVector(v, 1);
+          boxMesh.trailPoints.push(pPrevCopy.clone());
+        }
+      });
+      this.trailPointIndex++;
+    } else this.trailPointsLoaded = true;
+  }
+
+  generateCurlMeshIncrementally(scene) {
+    let boxMeshArr = this.boxGroup.children;
+    if (this.curlMeshIndex < boxMeshArr.length) {
+      let boxMeshOnPoint = boxMeshArr[this.curlMeshIndex];
+      boxMeshOnPoint.curlPositionIndex = 0;
+      let path = boxMeshOnPoint.trailPoints;
+      let geometry = new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3(path),
+        this.trailPointsNum,
+        1,
+        3,
+        false
+      );
+      let mesh = new THREE.Mesh(geometry, this.curlMeshMaterial);
+      mesh.geometry.setDrawRange(0, 0);
+      this.curlMeshArr.push(mesh);
+      scene.add(mesh);
+
+      this.curlMeshIndex++;
+    } else this.curlMeshFullyLoaded = true;
+  }
+
+  updateCurlMesh() {
+    this.curlMeshArr.forEach(function (curlMesh) {
+      let vertCount = curlMesh.geometry.attributes.position.count;
+      let drawRangeCount = curlMesh.geometry.drawRange.count;
+
+      if (drawRangeCount < vertCount) {
+        curlMesh.geometry.drawRange.count += 20;
+      }
+    });
   }
 
   // iter must always be given as 1
@@ -89,6 +177,7 @@ class RectangularSpiral {
         this.boxGeometryVert,
         RectangularSpiral.materials[textureIndex]
       );
+      boxMesh.trailPoints = [];
       boxMesh.position.set(x, y - i * this.segmentLength, z);
       boxMesh.visible = false;
       this.boxGroup.add(boxMesh);
@@ -111,6 +200,7 @@ class RectangularSpiral {
         this.boxGeometryVert,
         RectangularSpiral.materials[textureIndex]
       );
+      boxMesh.trailPoints = [];
       boxMesh.position.set(
         x + i * this.segmentLength,
         y - lengthVal * this.segmentLength,
@@ -135,6 +225,7 @@ class RectangularSpiral {
         this.boxGeometryVert,
         RectangularSpiral.materials[textureIndex]
       );
+      boxMesh.trailPoints = [];
       boxMesh.position.set(
         x + this.segmentLength * lengthVal,
         y - lengthVal * this.segmentLength + i * this.segmentLength,
@@ -160,6 +251,7 @@ class RectangularSpiral {
         this.boxGeometryVert,
         RectangularSpiral.materials[textureIndex]
       );
+      boxMesh.trailPoints = [];
       boxMesh.position.set(
         x + lengthVal * this.segmentLength - i * this.segmentLength,
         y + this.segmentLength,
@@ -180,7 +272,7 @@ class RectangularSpiral {
     );
   }
 
-  updateAnimation() {
+  updateAnimation(scene) {
     /*
       if (
         this.line.geometry.drawRange.count >=
@@ -190,47 +282,45 @@ class RectangularSpiral {
       else this.line.geometry.drawRange.count++;
       */
 
-    if (this.boxVisibleCount < this.boxGroup.children.length) {
-      this.boxGroup.children[this.boxVisibleCount].visible = true;
-      this.boxVisibleCount++;
-    } else this.fullyLoaded = true;
+    if (this.animationStartFlag) {
+      if (this.boxVisibleCount < this.boxGroup.children.length) {
+        this.boxGroup.children[this.boxVisibleCount].visible = true;
+        this.boxVisibleCount++;
+      } else this.boxesFullyLoaded = true;
 
-    /*
-    let quaternion = this.boxGroup.matrixWorld;
-    let pointsCopyArr = this.transformedPoints;
+      if (this.boxesFullyLoaded && !this.trailPointsLoaded) {
+        //console.log("LOADING TRAIL POINTS");
+        this.calculateTrailPointsIncrementally();
+      }
 
-    let boxMeshArr = this.boxGroup.children;
-    this.points.forEach(function (p, i) {
-      let pCopy = p.clone();
-      pCopy.applyMatrix4(quaternion);
-      pointsCopyArr.push({ point: pCopy, boxMesh: boxMeshArr[i] });
-    });
-    */
-    if (this.triggerBoxMovement) {
-      /*
-      let matrixWorldInverse = new THREE.Matrix4().getInverse(
-        this.boxGroup.matrixWorld
-      );
-      */
-      let matrixWorldInverse = new THREE.Matrix4();
-      matrixWorldInverse.copy(this.boxGroup.matrixWorld).invert();
+      if (this.trailPointsLoaded) {
+        this.generateCurlMeshIncrementally(scene);
+        this.triggerBoxMovement = true;
+        this.updateCurlMesh();
+      }
 
-      let boxMeshArr = this.boxGroup.children;
-      boxMeshArr.forEach(function (boxMesh) {
-        if (boxMesh.curlPositionIndex < 1000) {
-          let newPos = boxMesh.curlPath[boxMesh.curlPositionIndex];
-          let scale = 1.0 - boxMesh.curlPositionIndex / 1000;
-          scale = Math.pow(scale, 3.0);
-          newPos.applyMatrix4(matrixWorldInverse);
-          boxMesh.position.set(newPos.x, newPos.y, newPos.z);
-          boxMesh.curlPositionIndex++;
-          boxMesh.scale.set(scale, scale, scale);
-          //randomNumber(0, 1);
-        }
-      });
+      if (this.triggerBoxMovement) {
+        let matrixWorldInverse = new THREE.Matrix4();
+        matrixWorldInverse.copy(this.boxGroup.matrixWorld).invert();
+
+        let boxMeshArr = this.boxGroup.children;
+        let tpn = this.trailPointsNum;
+        boxMeshArr.forEach(function (boxMesh) {
+          //console.log(boxMesh.curlPositionIndex);
+          if (boxMesh.curlPositionIndex < tpn) {
+            let newPos = boxMesh.trailPoints[boxMesh.curlPositionIndex];
+            let scale = 1.0 - boxMesh.curlPositionIndex / tpn;
+            scale = Math.pow(scale, 3.0);
+            newPos.applyMatrix4(matrixWorldInverse);
+            boxMesh.position.set(newPos.x, newPos.y, newPos.z);
+            boxMesh.curlPositionIndex++;
+            boxMesh.scale.set(scale, scale, scale);
+          }
+        });
+      }
     }
 
-    //this.shiftTextures();
+    this.shiftTextures();
   }
 
   addToScene(scene) {
@@ -241,7 +331,7 @@ class RectangularSpiral {
   shiftTextures() {
     let boxNum = this.boxGroup.children.length;
     let materialIndicesRef = this.materialIndices;
-    this.shiftCount += 0.01;
+    this.shiftCount += 0.05;
     let sc = this.shiftCount;
     this.boxGroup.children.forEach(function (boxMesh, i) {
       let newIndex = materialIndicesRef[Math.floor(i + sc) % boxNum];

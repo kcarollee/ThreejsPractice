@@ -4,15 +4,66 @@ import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examp
 function main() {
   const canvas = document.querySelector("#c");
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  const scene = new THREE.Scene();
+  /*
+  const rendererWidth = window.innerWidth;
+  const rendererHeight = window.innerHeight;
+  */
+
+  const rendererWidth = 800;
+  const rendererHeight = 800;
+
+  renderer.setSize(rendererWidth, rendererHeight);
   // TEXTURE
   const texture = new THREE.TextureLoader().load("tex1.png");
-  const bgTexture = new THREE.TextureLoader().load("bgTex1.png");
+  const bgTexture = new THREE.TextureLoader().load("bgTex2.png");
 
   const titleTex = new THREE.TextureLoader().load("titleTex.png");
 
+  // BACKGROUND PLANE
+  const bgScene = new THREE.Scene();
+  let uniforms = {
+    tex: { value: bgTexture },
+    resolution: { value: new THREE.Vector2(1000, 1000) },
+    time: { value: 0 },
+  };
+  let planeGeom = new THREE.PlaneGeometry(1.55, 1.55);
+  //let planeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+  let planeMaterial = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: document.getElementById("vert").textContent,
+    fragmentShader: document.getElementById("frag").textContent,
+  });
+
+  let backgroundPlaneMesh = new THREE.Mesh(planeGeom, planeMaterial);
+  bgScene.add(backgroundPlaneMesh);
+
+  // BACKGROUND TEXTURE
+  const bgRenderTarget = new THREE.WebGLRenderTarget(
+    window.innerWidth,
+    window.innerHeight
+  );
+
+  const bgRenderCamera = new THREE.PerspectiveCamera(
+    75,
+    rendererWidth / rendererHeight,
+    0.1,
+    100
+  );
+  bgRenderCamera.position.set(0, 0, 1);
+
+  scene.background = bgRenderTarget.texture;
+  console.log(scene.background);
+
+  function renderRenderTargetScene() {
+    renderer.setRenderTarget(bgRenderTarget);
+    renderer.clear();
+    renderer.render(bgScene, bgRenderCamera);
+  }
   //CAMERA
   const fov = 75;
-  const aspect = 2; // display aspect of the canvas
+  const aspect = rendererWidth / rendererHeight; // display aspect of the canvas
   const near = 0.1;
   const far = 10000;
   const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -20,8 +71,7 @@ function main() {
   camera.position.set(0, 0, 500);
   camera.lookAt(0, 0, 0);
 
-  const scene = new THREE.Scene();
-  scene.background = bgTexture;
+  //scene.background = bgTexture;
   //scene.background = new THREE.Color(0x000000);
   renderer.render(scene, camera);
 
@@ -39,27 +89,6 @@ function main() {
   document.addEventListener("mousemove", onPointerMove);
   document.addEventListener("click", onPointerClick);
 
-  // GEOMETRY
-  // CURL MESH
-  const curlMeshArr = [];
-  const densityCoef = randomNumber(0.001, 0.01); // 0.005 for the best result
-  function generateCurlPoints(startPos, pointsNum) {
-    let startPosCopy = startPos.clone();
-
-    let points = [];
-
-    for (let i = 0; i < pointsNum; i++) {
-      let v = computeCurl2(
-        startPosCopy.x * densityCoef,
-        startPosCopy.y * densityCoef,
-        startPosCopy.z * densityCoef
-      );
-      startPosCopy.addScaledVector(v, 1);
-      points.push(startPosCopy.clone());
-    }
-    return points;
-  }
-
   // LIGHTS
   let light = new THREE.PointLight(0xffffff, 10, 1000);
   light.position.copy(camera.position);
@@ -68,6 +97,7 @@ function main() {
   light.position.set(0, 0, -200);
   scene.add(light);
   // startPosArr[i]: {THREE.Vector3(), boxMesh}
+  /*
   function generateCurlMeshGroup(startPosArr) {
     let curlMeshGroup = new THREE.Group();
     let curlMeshNum = startPosArr.length;
@@ -84,11 +114,13 @@ function main() {
       let x = startingPoint.x;
       let y = startingPoint.y;
       let z = startingPoint.z;
+
       // scale, startPos
 
-      let path = generateCurlPoints(new THREE.Vector3(x, y, z), 1000);
+      //let path = generateCurlPoints(new THREE.Vector3(x, y, z), 1000);
+      let path = boxMeshOnPoint.trailPoints;
       // curve, tubular segments, radius, radial segments, closed
-      boxMeshOnPoint.curlPath = path;
+      //boxMeshOnPoint.curlPath = path;
       boxMeshOnPoint.curlPositionIndex = 0;
       //console.log(boxMeshOnPoint);
       let geometry = new THREE.TubeGeometry(
@@ -107,10 +139,12 @@ function main() {
     }
     scene.add(curlMeshGroup);
   }
+  */
 
   //generateCurlMeshGroup([new THREE.Vector3(0, 0, 0)]);
 
   // TITLE CARD
+  /*
   let rectGeom = new THREE.PlaneGeometry(100, 300, 3, 3);
   let rectMat = new THREE.MeshBasicMaterial({
     map: titleTex,
@@ -119,28 +153,41 @@ function main() {
   let titleMesh = new THREE.Mesh(rectGeom, rectMat);
   titleMesh.position.set(275, 0, 0);
   scene.add(titleMesh);
-
+  */
   // RECTANGULAR SPIRALS
   const rectSpiralNum = 5;
   let segmentLength = 10;
   let rectSpiralArr = [];
-  let allSpiralsLoaded = false;
+  let allBoxesLoaded = false;
+  let allTrailPointsLoaded = false;
+  let animationStartIndex = 0;
+  let densityCoef = randomNumber(0.001, 0.01);
   for (let i = 0; i < rectSpiralNum; i++) {
+    let startAnimation;
+    i == 0 ? (startAnimation = true) : (startAnimation = false);
     const tempSpiral = new RectangularSpiral(
       new THREE.Vector3(0, 0, -rectSpiralNum * segmentLength + i * 20),
       segmentLength,
-      Math.floor(randomNumber(5, 10))
+      5,
+      1000,
+      densityCoef,
+      startAnimation
     );
+
     tempSpiral.setRotation(
       randomNumber(0, Math.PI * 2),
       randomNumber(0, Math.PI * 2),
       randomNumber(0, Math.PI * 2)
     );
+
     tempSpiral.setPosition(
       randomNumber(-100, 100),
       randomNumber(-100, 100),
       randomNumber(-100, 100)
     );
+
+    //tempSpiral.setPosition(0, 0, -i * segmentLength);
+
     tempSpiral.addToScene(scene);
     rectSpiralArr.push(tempSpiral);
   }
@@ -171,21 +218,25 @@ function main() {
         mesh.geometry.drawRange.count += updateSpeed;
     });
     */
-    let loadFlag = true;
-    rectSpiralArr.forEach(function (spiral) {
-      spiral.updateAnimation();
-      loadFlag &= spiral.fullyLoaded;
-    });
-    allSpiralsLoaded = loadFlag;
 
-    curlMeshArr.forEach(function (curlMesh) {
-      let vertCount = curlMesh.geometry.attributes.position.count;
-      let drawRangeCount = curlMesh.geometry.drawRange.count;
-
-      if (drawRangeCount < vertCount) {
-        curlMesh.geometry.drawRange.count += 20;
+    // manage start of animation
+    if (animationStartIndex < rectSpiralArr.length - 1) {
+      if (rectSpiralArr[animationStartIndex].boxesFullyLoaded) {
+        rectSpiralArr[animationStartIndex + 1].animationStartFlag = true;
+        animationStartIndex++;
       }
+    }
+
+    let boxLoadFlag = true;
+    let trailLoadFlag = true;
+    let s = scene;
+    rectSpiralArr.forEach(function (spiral) {
+      spiral.updateAnimation(s);
+      boxLoadFlag &= spiral.boxesFullyLoaded;
+      trailLoadFlag &= spiral.trailLoadFlag;
     });
+    allBoxesLoaded = boxLoadFlag;
+    allTrailPointsLoaded = trailLoadFlag;
   }
 
   function updateRaycaster() {
@@ -201,7 +252,7 @@ function main() {
     if (intersects.length > 0) pointerIsInside = true;
     else pointerIsInside = false;
     //console.log(pointerIsInside, mouseClicked);
-    if (allSpiralsLoaded) {
+    if (allBoxesLoaded) {
       for (let i = 0; i < intersects.length; i++) {
         let spiralIndex = intersects[i].object.parent.index;
         let spiral = RectangularSpiral.spiralArr[spiralIndex];
@@ -209,9 +260,9 @@ function main() {
         // ON CLICKING A SPIRAL
         if (mouseClicked && pointerIsInside) {
           //console.log(spiral.getAllVertices());
-          generateCurlMeshGroup(spiral.getAllVertices());
-          spiral.triggerBoxMovement = true;
-          mouseClicked = false;
+          //generateCurlMeshGroup(spiral.getAllVertices());
+          //spiral.triggerBoxMovement = true;
+          //mouseClicked = false;
         }
         //break;
       }
@@ -219,15 +270,26 @@ function main() {
   }
 
   function render(time) {
+    renderer.setRenderTarget(bgRenderTarget);
+    renderer.clear();
+    renderer.render(bgScene, bgRenderCamera);
+
     time *= 0.001;
-    updateRaycaster();
+    uniforms.time.value = time;
+    //updateRaycaster();
     updateAnimation();
+
+    camera.position.set(500 * Math.cos(time), 0, 500 * Math.sin(time));
+    camera.lookAt(0, 0, 0);
 
     if (resizeRenderToDisplaySize(renderer)) {
       const canvas = renderer.domElement;
       camera.aspect = canvas.clientWidth / canvas.clientHeight;
       camera.updateProjectionMatrix();
     }
+
+    renderer.setRenderTarget(null);
+    renderer.clear();
     renderer.render(scene, camera);
     requestAnimationFrame(render);
   }
