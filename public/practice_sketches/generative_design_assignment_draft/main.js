@@ -2,9 +2,87 @@ import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examp
 //import { MeshLine, MeshLineMaterial, MeshLineRaycast } from "./THREE.MeshLine";
 
 function main() {
+  let p5Texture, p5Canvas;
+  let p5CanvasLoadedFlag = false;
+  let p5LoopStarted = false;
   const canvas = document.querySelector("#c");
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  const scene = new THREE.Scene();
+  // P5 SKETCH
+
+  const p5Sketch = (sketch) => {
+    let bgTex;
+    let backbuffer;
+    let pg1;
+    let shd;
+    sketch.setup = () => {
+      sketch.createCanvas(800, 800, sketch.WEBGL);
+
+      bgTex = sketch.loadImage("bgTex2Inverted.png", sketch.getImage);
+      shd = sketch.loadShader(
+        "assets/shaders/shader.vert",
+        "assets/shaders/shader.frag",
+        sketch.getShader
+      );
+
+      bgTex.resize(sketch.width, sketch.height);
+      backbuffer = sketch.createGraphics(
+        sketch.width,
+        sketch.height,
+        sketch.WEBGL
+      );
+      pg1 = sketch.createGraphics(sketch.width, sketch.height, sketch.WEBGL);
+    };
+
+    sketch.draw = () => {
+      try {
+        p5LoopStarted = true;
+
+        pg1.shader(shd);
+        shd.setUniform("resolution", [sketch.width, sketch.height]);
+        shd.setUniform("backbuffer", backbuffer);
+        shd.setUniform("time", sketch.frameCount * 0.01);
+        shd.setUniform("startTex", bgTex);
+        pg1.rect(0, 0, sketch.width, sketch.height);
+        pg1.resetMatrix();
+        pg1._renderer._update();
+
+        backbuffer.rotateX(Math.PI);
+        backbuffer.image(pg1, -sketch.width * 0.5, -sketch.height * 0.5);
+        backbuffer.resetMatrix();
+        backbuffer._renderer._update();
+
+        sketch.image(backbuffer, -sketch.width * 0.5, -sketch.height * 0.5);
+
+        //sketch.background(200 + 50 * Math.sin(sketch.frameCount * 0.1), 0, 0);
+      } catch {}
+      if (p5Texture && p5LoopStarted) {
+        //console.log("HEY");
+        //console.log(p5Texture);
+
+        p5Texture.needsUpdate = true;
+      }
+    };
+
+    sketch.getShader = (s) => {
+      sketch.shader(s);
+    };
+    sketch.getImage = (i) => {
+      sketch.image(i, 0, 0);
+    };
+  };
+  p5Canvas = new p5(p5Sketch);
+  console.log(p5Canvas.canvas);
+
+  try {
+    p5Canvas.canvas.style.display = "none";
+  } catch {}
+  //p5Canvas.canvas.style.display = "none";
+
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    preserverDrawingBuffer: true,
+  });
+
   /*
   const rendererWidth = window.innerWidth;
   const rendererHeight = window.innerHeight;
@@ -13,51 +91,26 @@ function main() {
   const rendererWidth = 800;
   const rendererHeight = 800;
 
+  // TRY USING TWO RENDERTARGETS WITH THE FIRST ONE HAVING A CUSTOM SHADER PASS AND THE SECONDS ONE BEING THE BACKBUFFER
+  const bgRenderTarget = new THREE.WebGLRenderTarget(
+    rendererWidth,
+    rendererHeight
+  );
+
+  const backbufferRenderTarget = new THREE.WebGLRenderTarget(
+    rendererWidth,
+    rendererHeight
+  );
+
   renderer.setSize(rendererWidth, rendererHeight);
   // TEXTURE
   const texture = new THREE.TextureLoader().load("tex1.png");
-  const bgTexture = new THREE.TextureLoader().load("bgTex2.png");
+  const bgTexture = new THREE.TextureLoader().load("bgTex2Inverted.png");
 
   const titleTex = new THREE.TextureLoader().load("titleTex.png");
 
-  // BACKGROUND PLANE
-  const bgScene = new THREE.Scene();
-  let uniforms = {
-    tex: { value: bgTexture },
-    resolution: { value: new THREE.Vector2(1000, 1000) },
-    time: { value: 0 },
-  };
-  let planeGeom = new THREE.PlaneGeometry(1.55, 1.55);
-  //let planeMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-
-  let planeMaterial = new THREE.ShaderMaterial({
-    uniforms: uniforms,
-    vertexShader: document.getElementById("vert").textContent,
-    fragmentShader: document.getElementById("frag").textContent,
-  });
-
-  let backgroundPlaneMesh = new THREE.Mesh(planeGeom, planeMaterial);
-  bgScene.add(backgroundPlaneMesh);
-
-  // BACKGROUND TEXTURE
-  const bgRenderTarget = new THREE.WebGLRenderTarget(
-    window.innerWidth,
-    window.innerHeight
-  );
-
-  const bgRenderCamera = new THREE.PerspectiveCamera(
-    75,
-    rendererWidth / rendererHeight,
-    0.1,
-    100
-  );
-  bgRenderCamera.position.set(0, 0, 1);
-
-  scene.background = bgRenderTarget.texture;
-  console.log(scene.background);
-
   function renderRenderTargetScene() {
-    renderer.setRenderTarget(bgRenderTarget);
+    renderer.setRenderTarget(bgRenderTargetPing);
     renderer.clear();
     renderer.render(bgScene, bgRenderCamera);
   }
@@ -73,6 +126,8 @@ function main() {
 
   //scene.background = bgTexture;
   //scene.background = new THREE.Color(0x000000);
+  const scene = new THREE.Scene();
+  //scene.background = p5Texture;
   renderer.render(scene, camera);
 
   const orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -96,64 +151,7 @@ function main() {
   let light2 = new THREE.PointLight(0xffffff, 10, 1000);
   light.position.set(0, 0, -200);
   scene.add(light);
-  // startPosArr[i]: {THREE.Vector3(), boxMesh}
-  /*
-  function generateCurlMeshGroup(startPosArr) {
-    let curlMeshGroup = new THREE.Group();
-    let curlMeshNum = startPosArr.length;
-    let colorVal = randomNumber(0, 0.5);
-    //console.log(colorVal);
-    let curlMeshMaterial = new THREE.MeshLambertMaterial({
-      color: new THREE.Color(colorVal, colorVal, colorVal),
-      side: THREE.DoubleSide,
-      //map: texture,
-    });
-    for (let i = 0; i < curlMeshNum; i++) {
-      let startingPoint = startPosArr[i].point;
-      let boxMeshOnPoint = startPosArr[i].boxMesh;
-      let x = startingPoint.x;
-      let y = startingPoint.y;
-      let z = startingPoint.z;
 
-      // scale, startPos
-
-      //let path = generateCurlPoints(new THREE.Vector3(x, y, z), 1000);
-      let path = boxMeshOnPoint.trailPoints;
-      // curve, tubular segments, radius, radial segments, closed
-      //boxMeshOnPoint.curlPath = path;
-      boxMeshOnPoint.curlPositionIndex = 0;
-      //console.log(boxMeshOnPoint);
-      let geometry = new THREE.TubeGeometry(
-        new THREE.CatmullRomCurve3(path),
-        1000,
-        1,
-        3,
-        false
-      );
-
-      let mesh = new THREE.Mesh(geometry, curlMeshMaterial);
-      //mesh.position.set(x, y, z);
-      curlMeshArr.push(mesh);
-      mesh.geometry.setDrawRange(0, 0);
-      curlMeshGroup.add(mesh);
-    }
-    scene.add(curlMeshGroup);
-  }
-  */
-
-  //generateCurlMeshGroup([new THREE.Vector3(0, 0, 0)]);
-
-  // TITLE CARD
-  /*
-  let rectGeom = new THREE.PlaneGeometry(100, 300, 3, 3);
-  let rectMat = new THREE.MeshBasicMaterial({
-    map: titleTex,
-    side: THREE.DoubleSide,
-  });
-  let titleMesh = new THREE.Mesh(rectGeom, rectMat);
-  titleMesh.position.set(275, 0, 0);
-  scene.add(titleMesh);
-  */
   // RECTANGULAR SPIRALS
   const rectSpiralNum = 5;
   let segmentLength = 10;
@@ -192,15 +190,6 @@ function main() {
     rectSpiralArr.push(tempSpiral);
   }
 
-  //GUI
-  const gui = new dat.GUI();
-  const controls = new (function () {
-    this.outputObj = function () {
-      scene.children.forEach((c) => console.log(c));
-    };
-  })();
-  gui.add(controls, "outputObj");
-
   function mod(n, m) {
     return ((n % m) + m) % m;
   }
@@ -208,16 +197,6 @@ function main() {
   function updateAnimation() {
     let updateSpeed = 50;
     light.position.copy(camera.position);
-    /*
-    curlMeshArr.forEach(function (mesh) {
-      //let prevDrawRange = mesh.geometry.drawRange.count;
-
-      if (
-        mesh.geometry.drawRange.count < mesh.geometry.attributes.position.count
-      )
-        mesh.geometry.drawRange.count += updateSpeed;
-    });
-    */
 
     // manage start of animation
     if (animationStartIndex < rectSpiralArr.length - 1) {
@@ -239,48 +218,26 @@ function main() {
     allTrailPointsLoaded = trailLoadFlag;
   }
 
-  function updateRaycaster() {
-    raycaster.setFromCamera(pointer, camera);
-    let spiralArr = [];
-
-    for (let i = 0; i < scene.children.length; i++) {
-      if (scene.children[i].name == "boxgroup")
-        spiralArr.push(scene.children[i]);
-    }
-
-    let intersects = raycaster.intersectObjects(spiralArr, true);
-    if (intersects.length > 0) pointerIsInside = true;
-    else pointerIsInside = false;
-    //console.log(pointerIsInside, mouseClicked);
-    if (allBoxesLoaded) {
-      for (let i = 0; i < intersects.length; i++) {
-        let spiralIndex = intersects[i].object.parent.index;
-        let spiral = RectangularSpiral.spiralArr[spiralIndex];
-        spiral.shiftTextures();
-        // ON CLICKING A SPIRAL
-        if (mouseClicked && pointerIsInside) {
-          //console.log(spiral.getAllVertices());
-          //generateCurlMeshGroup(spiral.getAllVertices());
-          //spiral.triggerBoxMovement = true;
-          //mouseClicked = false;
-        }
-        //break;
-      }
-    }
-  }
-
   function render(time) {
-    renderer.setRenderTarget(bgRenderTarget);
-    renderer.clear();
-    renderer.render(bgScene, bgRenderCamera);
+    if (p5Canvas.canvas != undefined && !p5CanvasLoadedFlag) {
+      p5Canvas.canvas.style.display = "none";
+      p5Texture = new THREE.CanvasTexture(p5Canvas.canvas);
+      p5Texture.needsUpdate = true;
+      p5Texture.wrapS = THREE.RepeatWrapping;
+      p5Texture.wrapT = THREE.RepeatWrapping;
+      p5CanvasLoadedFlag = true;
+
+      scene.background = p5Texture;
+      //console.log("HEY");
+    }
 
     time *= 0.001;
-    uniforms.time.value = time;
-    //updateRaycaster();
+
     updateAnimation();
 
-    camera.position.set(500 * Math.cos(time), 0, 500 * Math.sin(time));
-    camera.lookAt(0, 0, 0);
+    // think about easing camera movement at one point
+    //camera.position.set(500 * Math.cos(time), 0, 500 * Math.sin(time));
+    //camera.lookAt(0, 0, 0);
 
     if (resizeRenderToDisplaySize(renderer)) {
       const canvas = renderer.domElement;
@@ -288,10 +245,15 @@ function main() {
       camera.updateProjectionMatrix();
     }
 
-    renderer.setRenderTarget(null);
-    renderer.clear();
     renderer.render(scene, camera);
+
     requestAnimationFrame(render);
+    //console.log(p5LoopStarted);
+
+    //if (p5LoopStarted) scene.background = p5Texture;
+    //p5Texture.needsUpdate = true;
+    //console.log(p5Texture.image);
+    //p5Texture.dispose();
   }
 
   function randomNumber(min, max) {
