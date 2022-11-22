@@ -1,35 +1,48 @@
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@v0.124.0/examples/jsm/controls/OrbitControls.js";
-//import { MeshLine, MeshLineMaterial, MeshLineRaycast } from "./THREE.MeshLine";
-
-function main() {
+async function main() {
   let p5Texture, p5Canvas;
   let p5CanvasLoadedFlag = false;
   let p5LoopStarted = false;
   const canvas = document.querySelector("#c");
   // P5 SKETCH
 
+  let nRed, nGreen, nBlue;
+  let nAmp, nPeriod;
+  let nBBCoef;
+
   const p5Sketch = (sketch) => {
     let bgTex;
     let backbuffer;
     let pg1;
     let shd;
-    sketch.setup = () => {
-      sketch.createCanvas(800, 800, sketch.WEBGL);
 
-      bgTex = sketch.loadImage("bgTex2Inverted.png", sketch.getImage);
-      shd = sketch.loadShader(
+    sketch.setup = async () => {
+      await sketch.createCanvas(800, 800, sketch.WEBGL);
+
+      bgTex = await sketch.loadImage("bgTex3Inverted.png", sketch.getImage);
+      shd = await sketch.loadShader(
         "assets/shaders/shader.vert",
         "assets/shaders/shader.frag",
         sketch.getShader
       );
 
       bgTex.resize(sketch.width, sketch.height);
-      backbuffer = sketch.createGraphics(
+      backbuffer = await sketch.createGraphics(
         sketch.width,
         sketch.height,
         sketch.WEBGL
       );
-      pg1 = sketch.createGraphics(sketch.width, sketch.height, sketch.WEBGL);
+      pg1 = await sketch.createGraphics(
+        sketch.width,
+        sketch.height,
+        sketch.WEBGL
+      );
+
+      nRed = Math.random();
+      nGreen = Math.random();
+      nBlue = Math.random();
+      nAmp = Math.random() * 20;
+      nPeriod = Math.random() * 20;
+      nBBCoef = 0.7 + Math.random() * 0.25;
     };
 
     sketch.draw = () => {
@@ -39,8 +52,14 @@ function main() {
         pg1.shader(shd);
         shd.setUniform("resolution", [sketch.width, sketch.height]);
         shd.setUniform("backbuffer", backbuffer);
-        shd.setUniform("time", sketch.frameCount * 0.01);
+        shd.setUniform("time", sketch.frameCount * 0.002);
         shd.setUniform("startTex", bgTex);
+        shd.setUniform("nRed", nRed);
+        shd.setUniform("nGreen", nGreen);
+        shd.setUniform("nBlue", nBlue);
+        shd.setUniform("nAmp", nAmp);
+        shd.setUniform("nPeriod", nPeriod);
+        shd.setUniform("nBBCoef", nBBCoef);
         pg1.rect(0, 0, sketch.width, sketch.height);
         pg1.resetMatrix();
         pg1._renderer._update();
@@ -69,13 +88,7 @@ function main() {
       sketch.image(i, 0, 0);
     };
   };
-  p5Canvas = new p5(p5Sketch);
-  console.log(p5Canvas.canvas);
-
-  try {
-    p5Canvas.canvas.style.display = "none";
-  } catch {}
-  //p5Canvas.canvas.style.display = "none";
+  p5Canvas = await new p5(p5Sketch);
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -130,9 +143,6 @@ function main() {
   //scene.background = p5Texture;
   renderer.render(scene, camera);
 
-  const orbitControls = new OrbitControls(camera, renderer.domElement);
-  orbitControls.update();
-
   // NOISE
   noise.seed(Math.random());
 
@@ -153,36 +163,53 @@ function main() {
   scene.add(light);
 
   // RECTANGULAR SPIRALS
-  const rectSpiralNum = 5;
+  const rectSpiralNum = 7;
+
+  const MODE = Math.floor(Math.random() * 2);
+  /*
+    MODE
+    0: random pyramids
+    1: cube
+  */
   let segmentLength = 10;
   let rectSpiralArr = [];
   let allBoxesLoaded = false;
   let allTrailPointsLoaded = false;
   let animationStartIndex = 0;
   let densityCoef = randomNumber(0.001, 0.01);
+  let baseColor = new THREE.Color(
+    randomNumber(0.4, 1.0),
+    randomNumber(0.4, 1.0),
+    randomNumber(0.4, 1.0)
+  );
+
   for (let i = 0; i < rectSpiralNum; i++) {
     let startAnimation;
     i == 0 ? (startAnimation = true) : (startAnimation = false);
     const tempSpiral = new RectangularSpiral(
       new THREE.Vector3(0, 0, -rectSpiralNum * segmentLength + i * 20),
       segmentLength,
-      5,
+      6,
       1000,
       densityCoef,
-      startAnimation
+      startAnimation,
+      baseColor,
+      MODE
     );
 
-    tempSpiral.setRotation(
-      randomNumber(0, Math.PI * 2),
-      randomNumber(0, Math.PI * 2),
-      randomNumber(0, Math.PI * 2)
-    );
+    if (MODE == 0) {
+      tempSpiral.setRotation(
+        randomNumber(0, Math.PI * 2),
+        randomNumber(0, Math.PI * 2),
+        randomNumber(0, Math.PI * 2)
+      );
 
-    tempSpiral.setPosition(
-      randomNumber(-100, 100),
-      randomNumber(-100, 100),
-      randomNumber(-100, 100)
-    );
+      tempSpiral.setPosition(
+        randomNumber(-100, 100),
+        randomNumber(-100, 100),
+        randomNumber(-100, 100)
+      );
+    }
 
     //tempSpiral.setPosition(0, 0, -i * segmentLength);
 
@@ -236,8 +263,8 @@ function main() {
     updateAnimation();
 
     // think about easing camera movement at one point
-    //camera.position.set(500 * Math.cos(time), 0, 500 * Math.sin(time));
-    //camera.lookAt(0, 0, 0);
+    camera.position.set(500 * Math.cos(time), 0, 500 * Math.sin(time));
+    camera.lookAt(0, 0, 0);
 
     if (resizeRenderToDisplaySize(renderer)) {
       const canvas = renderer.domElement;

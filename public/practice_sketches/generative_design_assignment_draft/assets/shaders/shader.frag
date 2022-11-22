@@ -7,6 +7,12 @@ uniform float time;
 uniform vec2 resolution;
 uniform sampler2D backbuffer;
 uniform sampler2D startTex;
+uniform float nRed;
+uniform float nBlue;
+uniform float nGreen;
+uniform float nPeriod;
+uniform float nAmp;
+uniform float nBBCoef;
 
 //	Classic Perlin 3D Noise 
       //	by Stefan Gustavson
@@ -90,16 +96,17 @@ vec2 pc (vec2 d){
 void main( void ) {
 
 	vec2 uv = gl_FragCoord.xy / resolution.xy;
-    float noiseAmp = 5.0;
-    float noisePeriod = 10.0;
+    float noiseAmp = nAmp; // 2~ 20
+    float noisePeriod = nPeriod; // 2 ~ 20
     float noiseX = cnoise(vec3(uv * noisePeriod, time)) * noiseAmp;
     float noiseY = cnoise(vec3(uv * noisePeriod, time + 10.0)) * noiseAmp;
     vec2 displacedUV = pc(vec2(noiseX, noiseY));
-	vec3 outCol = vec3(.0);
+	  vec3 outCol = vec3(.0);
     vec3 bbCol = texture2D(backbuffer, displacedUV).rgb;
     vec3 startTex = texture2D(startTex, uv).rgb;
   
-    //bbCol *= vec3(0.25, 5, 0.9);
-    outCol = startTex + bbCol * 0.85;
+    startTex *= vec3(nRed, nGreen, nBlue);
+
+    outCol = startTex + bbCol * nBBCoef;
 	gl_FragColor = vec4( outCol, 1.0 );
 }
