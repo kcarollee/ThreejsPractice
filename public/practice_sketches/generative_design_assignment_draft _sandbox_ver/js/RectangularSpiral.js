@@ -7,20 +7,17 @@ class RectangularSpiral {
     densityCoef = 0.05,
     startAnimation = false,
     color = null,
-    mode = 0
+    mode = 0,
+    xnum = 10,
+    ynum = 10,
+    znum = 10
   ) {
     this.startPos = startPos;
 
     this.spiralCount = spiralCount;
     this.segmentLength = segmentLength;
 
-    this.boxGeometryHori = new THREE.BoxGeometry(
-      this.segmentLength,
-      this.segmentLength,
-      this.segmentLength
-    );
-
-    this.boxGeometryVert = new THREE.BoxGeometry(
+    this.boxGeometry = new THREE.BoxGeometry(
       this.segmentLength,
       this.segmentLength,
       this.segmentLength
@@ -34,6 +31,10 @@ class RectangularSpiral {
     this.materialIndices = [];
 
     this.mode = mode;
+
+    this.xnum = xnum;
+    this.ynum = ynum;
+    this.znum = znum;
 
     switch (this.mode) {
       case 0:
@@ -53,6 +54,9 @@ class RectangularSpiral {
           1,
           this.spiralCount
         );
+        break;
+      case 2:
+        this._plotSpiral3(this.xnum, this.znum, this.ynum);
         break;
     }
 
@@ -97,6 +101,9 @@ class RectangularSpiral {
     this.curlMeshFullyLoaded = false;
   }
 
+  setEnvMap(envMap) {
+    this.curlMeshMaterial.envMap;
+  }
   setRotation(x, y, z) {
     this.boxGroup.rotateX(x);
     this.boxGroup.rotateY(y);
@@ -189,7 +196,7 @@ class RectangularSpiral {
     let textureIndex = Math.floor(Math.random() * 10);
     this.materialIndices.push(textureIndex);
     let boxMesh = new THREE.Mesh(
-      this.boxGeometryVert,
+      this.boxGeometry,
       RectangularSpiral.materials[textureIndex]
     );
     boxMesh.trailPoints = [];
@@ -305,15 +312,21 @@ class RectangularSpiral {
   }
 
   // noise cube
-  _plotSpiral3(xnum, ynum, znum) {
-    let sideLen = this.segmentLength * xnum;
-    let startOffset = -sideLen * 0.5 + this.segmentLength;
-    for (let zi = 0; zi < xnum; zi++) {
-      for (let yi = 0; yi < ynum; yi++) {
-        for (let xi = 0; xi < xnum; xi++) {
-          let x = this.startPos.x + startOffset;
-          let y = this.startPos.y + startOffset;
-          let z = this.startPos.z + startOffset;
+  _plotSpiral3() {
+    let sideLenX = this.segmentLength * this.xnum;
+    let sideLenY = this.segmentLength * this.ynum;
+    let sideLenZ = this.segmentLength * this.znum;
+    let startOffsetX = -sideLenX * 0.5 + this.segmentLength;
+    let startOffsetY = -sideLenY * 0.5 + this.segmentLength;
+    let startOffsetZ = -sideLenZ * 0.5 + this.segmentLength;
+    let x, y, z;
+    for (let zi = 0; zi < this.znum; zi++) {
+      z = this.startPos.z + startOffsetZ + zi * this.segmentLength;
+      for (let yi = 0; yi < this.ynum; yi++) {
+        y = this.startPos.y + startOffsetY + yi * this.segmentLength;
+        for (let xi = 0; xi < this.xnum; xi++) {
+          x = this.startPos.x + startOffsetX + xi * this.segmentLength;
+          if (fxrand() > 0.5) this._createBoxMesh(x, y, z);
         }
       }
     }

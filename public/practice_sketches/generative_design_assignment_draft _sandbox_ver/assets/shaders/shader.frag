@@ -13,6 +13,7 @@ uniform float nGreen;
 uniform float nPeriod;
 uniform float nAmp;
 uniform float nBBCoef;
+uniform float nOffset;
 
 //	Classic Perlin 3D Noise 
       //	by Stefan Gustavson
@@ -99,7 +100,7 @@ void main( void ) {
     float noiseAmp = nAmp; // 2~ 20
     float noisePeriod = nPeriod; // 2 ~ 20
     float noiseX = cnoise(vec3(uv * noisePeriod, time)) * noiseAmp;
-    float noiseY = cnoise(vec3(uv * noisePeriod, time + 10.0)) * noiseAmp;
+    float noiseY = cnoise(vec3(uv * noisePeriod, time + nOffset)) * noiseAmp;
     vec2 displacedUV = pc(vec2(noiseX, noiseY));
 	  vec3 outCol = vec3(.0);
     vec3 bbCol = texture2D(backbuffer, displacedUV).rgb;

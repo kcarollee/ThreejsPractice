@@ -7,23 +7,38 @@ async function main() {
 
   let nRed, nGreen, nBlue;
   let nAmp, nPeriod;
-  let nBBCoef;
+  let nBBCoef, nOffset;
 
+  console.log(fxhashTrunc);
   const p5Sketch = (sketch) => {
     let bgTex;
     let backbuffer;
-    let pg1;
+    let pg1, pgImg;
     let shd;
+    let numImgs = [];
+    let posArr = [];
 
     sketch.setup = async () => {
       await sketch.createCanvas(800, 800, sketch.WEBGL);
 
-      bgTex = await sketch.loadImage("bgTex3Inverted.png", sketch.getImage);
+      bgTex = await sketch.loadImage(
+        "assets/images/bgTex3Inverted.png",
+        sketch.getImage
+      );
+
       shd = await sketch.loadShader(
         "assets/shaders/shader.vert",
         "assets/shaders/shader.frag",
         sketch.getShader
       );
+
+      for (let i = 0; i < 10; i++) {
+        let img = await sketch.loadImage(
+          "assets/images/" + i + "_inverted.png",
+          sketch.getImage
+        );
+        numImgs.push(img);
+      }
 
       bgTex.resize(sketch.width, sketch.height);
       backbuffer = await sketch.createGraphics(
@@ -31,6 +46,9 @@ async function main() {
         sketch.height,
         sketch.WEBGL
       );
+
+      pgImg = await sketch.createGraphics(sketch.width, sketch.height);
+
       pg1 = await sketch.createGraphics(
         sketch.width,
         sketch.height,
@@ -40,8 +58,9 @@ async function main() {
       nRed = fxrand();
       nGreen = fxrand();
       nBlue = fxrand();
-      nAmp = fxrand() * 20;
+      nAmp = fxrand() * 10;
       nPeriod = fxrand() * 20;
+      nOffset = fxrand() * 10;
       nBBCoef = 0.7 + fxrand() * 0.25;
     };
 
@@ -49,23 +68,39 @@ async function main() {
       try {
         p5LoopStarted = true;
 
+        pgImg.image(bgTex, 0, 0);
+
+        // bg version 1
+
+        for (let i = 0; i < 10; i++) {
+          pgImg.image(
+            numImgs[i],
+            fxrand() * sketch.width,
+            sketch.height * fxrand()
+          );
+        }
+
+        // bg version 2
+
         pg1.shader(shd);
         shd.setUniform("resolution", [sketch.width, sketch.height]);
         shd.setUniform("backbuffer", backbuffer);
         shd.setUniform("time", sketch.frameCount * 0.002);
-        shd.setUniform("startTex", bgTex);
+        shd.setUniform("startTex", pgImg);
         shd.setUniform("nRed", nRed);
         shd.setUniform("nGreen", nGreen);
         shd.setUniform("nBlue", nBlue);
         shd.setUniform("nAmp", nAmp);
         shd.setUniform("nPeriod", nPeriod);
         shd.setUniform("nBBCoef", nBBCoef);
+        shd.setUniform("nOffset", nOffset);
         pg1.rect(0, 0, sketch.width, sketch.height);
         pg1.resetMatrix();
         pg1._renderer._update();
 
         backbuffer.rotateX(Math.PI);
         backbuffer.image(pg1, -sketch.width * 0.5, -sketch.height * 0.5);
+
         backbuffer.resetMatrix();
         backbuffer._renderer._update();
 
@@ -165,13 +200,13 @@ async function main() {
   // RECTANGULAR SPIRALS
   const rectSpiralNum = 7;
 
-  const MODE = Math.floor(fxrand() * 2);
+  const MODE = Math.floor(fxrand() * 3);
   /*
     MODE
     0: random pyramids
     1: cube
   */
-  let segmentLength = 10;
+  let segmentLength = Math.floor(randomNumber(10, 16));
   let rectSpiralArr = [];
   let allBoxesLoaded = false;
   let allTrailPointsLoaded = false;
@@ -186,18 +221,18 @@ async function main() {
   for (let i = 0; i < rectSpiralNum; i++) {
     let startAnimation;
     i == 0 ? (startAnimation = true) : (startAnimation = false);
-    const tempSpiral = new RectangularSpiral(
-      new THREE.Vector3(0, 0, -rectSpiralNum * segmentLength + i * 20),
-      segmentLength,
-      6,
-      1000,
-      densityCoef,
-      startAnimation,
-      baseColor,
-      MODE
-    );
-
+    let tempSpiral;
     if (MODE == 0) {
+      tempSpiral = new RectangularSpiral(
+        new THREE.Vector3(0, 0, 0),
+        segmentLength,
+        6,
+        1000,
+        densityCoef,
+        startAnimation,
+        baseColor,
+        MODE
+      );
       tempSpiral.setRotation(
         randomNumber(0, Math.PI * 2),
         randomNumber(0, Math.PI * 2),
@@ -209,14 +244,46 @@ async function main() {
         randomNumber(-100, 100),
         randomNumber(-100, 100)
       );
+    } else if (MODE == 1) {
+      tempSpiral = new RectangularSpiral(
+        new THREE.Vector3(
+          0,
+          0,
+          -rectSpiralNum * segmentLength + i * segmentLength * 2
+        ),
+        segmentLength,
+        6,
+        1000,
+        densityCoef,
+        startAnimation,
+        baseColor,
+        MODE
+      );
+    } else if (MODE == 2) {
+      let sideCubeNum = Math.floor(randomNumber(10, 15));
+      tempSpiral = new RectangularSpiral(
+        new THREE.Vector3(0, 0, 0),
+        segmentLength,
+        6,
+        1000,
+        densityCoef,
+        startAnimation,
+        baseColor,
+        MODE,
+        sideCubeNum,
+        sideCubeNum,
+        sideCubeNum
+      );
+      tempSpiral.addToScene(scene);
+      rectSpiralArr.push(tempSpiral);
+      break;
     }
-
-    //tempSpiral.setPosition(0, 0, -i * segmentLength);
 
     tempSpiral.addToScene(scene);
     rectSpiralArr.push(tempSpiral);
   }
 
+  //console.log(fxhashTrunc);
   fxpreview();
 
   function mod(n, m) {
@@ -265,6 +332,7 @@ async function main() {
     updateAnimation();
 
     // think about easing camera movement at one point
+    camera.rotateY(0.01);
     camera.position.set(500 * Math.cos(time), 0, 500 * Math.sin(time));
     camera.lookAt(0, 0, 0);
 
