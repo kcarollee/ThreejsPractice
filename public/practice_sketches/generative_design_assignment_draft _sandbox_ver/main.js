@@ -9,15 +9,21 @@ async function main() {
   let nAmp, nPeriod;
   let nBBCoef, nOffset;
 
-  console.log(fxhashTrunc);
+  let testTexture;
+
+  let fxStart = false;
+
   const p5Sketch = (sketch) => {
     let bgTex;
     let backbuffer;
     let pg1, pgImg;
+    let font;
     let shd;
     let numImgs = [];
     let posArr = [];
+    let gap;
 
+    let bgRefreshPeriod;
     sketch.setup = async () => {
       await sketch.createCanvas(800, 800, sketch.WEBGL);
 
@@ -30,6 +36,11 @@ async function main() {
         "assets/shaders/shader.vert",
         "assets/shaders/shader.frag",
         sketch.getShader
+      );
+
+      font = await sketch.loadFont(
+        "assets/fonts/typewriter_font.ttf",
+        sketch.getFont
       );
 
       for (let i = 0; i < 10; i++) {
@@ -48,7 +59,9 @@ async function main() {
       );
 
       pgImg = await sketch.createGraphics(sketch.width, sketch.height);
-
+      pgImg.textFont(font);
+      pgImg.textSize(20);
+      pgImg.textAlign(sketch.CENTER);
       pg1 = await sketch.createGraphics(
         sketch.width,
         sketch.height,
@@ -58,10 +71,13 @@ async function main() {
       nRed = fxrand();
       nGreen = fxrand();
       nBlue = fxrand();
-      nAmp = fxrand() * 10;
+      nAmp = fxrand() * 5;
       nPeriod = fxrand() * 20;
       nOffset = fxrand() * 10;
       nBBCoef = 0.7 + fxrand() * 0.25;
+      gap = randomNumber(0.15, 0.25);
+
+      bgRefreshPeriod = Math.floor(randomNumber(1, 10));
     };
 
     sketch.draw = () => {
@@ -71,15 +87,24 @@ async function main() {
         pgImg.image(bgTex, 0, 0);
 
         // bg version 1
-
-        for (let i = 0; i < 10; i++) {
-          pgImg.image(
-            numImgs[i],
-            fxrand() * sketch.width,
-            sketch.height * fxrand()
-          );
+        if (sketch.frameCount % bgRefreshPeriod == 0) {
+          for (let i = 0; i < 10; i++) {
+            pgImg.image(
+              numImgs[i],
+              sketch.width * randomNumber(gap * 0.7, 1.0 - gap),
+              sketch.height * randomNumber(gap * 0.7, 1.0 - gap)
+            );
+          }
         }
 
+        pgImg.fill(255);
+
+        // show hash string on the bottom of the screen
+        if (sketch.frameCount % 10 == 0) {
+          fxhashTrunc += fxhashTrunc[0];
+          fxhashTrunc = fxhashTrunc.substring(1);
+        }
+        pgImg.text(fxhashTrunc, sketch.width * 0.5, sketch.height * 0.9);
         // bg version 2
 
         pg1.shader(shd);
@@ -94,6 +119,7 @@ async function main() {
         shd.setUniform("nPeriod", nPeriod);
         shd.setUniform("nBBCoef", nBBCoef);
         shd.setUniform("nOffset", nOffset);
+
         pg1.rect(0, 0, sketch.width, sketch.height);
         pg1.resetMatrix();
         pg1._renderer._update();
@@ -122,13 +148,16 @@ async function main() {
     sketch.getImage = (i) => {
       sketch.image(i, 0, 0);
     };
+
+    sketch.getFont = (f) => {
+      sketch.text(f, 0, 0);
+    };
   };
   p5Canvas = await new p5(p5Sketch);
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
-    preserverDrawingBuffer: true,
   });
 
   /*
@@ -211,11 +240,11 @@ async function main() {
   let allBoxesLoaded = false;
   let allTrailPointsLoaded = false;
   let animationStartIndex = 0;
-  let densityCoef = randomNumber(0.001, 0.01);
+  let densityCoef = randomNumber(0.002, 0.01);
   let baseColor = new THREE.Color(
-    randomNumber(0.4, 1.0),
-    randomNumber(0.4, 1.0),
-    randomNumber(0.4, 1.0)
+    randomNumber(0, 1.0),
+    randomNumber(0, 1.0),
+    randomNumber(0, 1.0)
   );
 
   for (let i = 0; i < rectSpiralNum; i++) {
@@ -223,43 +252,33 @@ async function main() {
     i == 0 ? (startAnimation = true) : (startAnimation = false);
     let tempSpiral;
     if (MODE == 0) {
+      let spiralCount = Math.floor(randomNumber(7, 11));
       tempSpiral = new RectangularSpiral(
         new THREE.Vector3(0, 0, 0),
         segmentLength,
-        6,
+        spiralCount,
         1000,
         densityCoef,
         startAnimation,
         baseColor,
-        MODE
-      );
-      tempSpiral.setRotation(
-        randomNumber(0, Math.PI * 2),
-        randomNumber(0, Math.PI * 2),
-        randomNumber(0, Math.PI * 2)
+        MODE,
+        10,
+        10,
+        10,
+        testTexture
       );
 
-      tempSpiral.setPosition(
-        randomNumber(-100, 100),
-        randomNumber(-100, 100),
-        randomNumber(-100, 100)
-      );
+      if (fxrand() < 0.5) {
+        tempSpiral.setRotation(-Math.PI * 0.5, 0, 0);
+        tempSpiral.setPosition(0, segmentLength * spiralCount * 1.75, 0);
+      } else {
+        tempSpiral.setRotation(Math.PI * 0.5, 0, 0);
+        tempSpiral.setPosition(0, -segmentLength * spiralCount * 1.75, 0);
+      }
+      tempSpiral.addToScene(scene);
+      rectSpiralArr.push(tempSpiral);
+      break;
     } else if (MODE == 1) {
-      tempSpiral = new RectangularSpiral(
-        new THREE.Vector3(
-          0,
-          0,
-          -rectSpiralNum * segmentLength + i * segmentLength * 2
-        ),
-        segmentLength,
-        6,
-        1000,
-        densityCoef,
-        startAnimation,
-        baseColor,
-        MODE
-      );
-    } else if (MODE == 2) {
       let sideCubeNum = Math.floor(randomNumber(10, 15));
       tempSpiral = new RectangularSpiral(
         new THREE.Vector3(0, 0, 0),
@@ -272,19 +291,44 @@ async function main() {
         MODE,
         sideCubeNum,
         sideCubeNum,
-        sideCubeNum
+        sideCubeNum,
+        testTexture
+      );
+      tempSpiral.setRotation(
+        randomNumber(0, Math.PI * 2),
+        randomNumber(0, Math.PI * 2),
+        randomNumber(0, Math.PI * 2)
+      );
+      tempSpiral.addToScene(scene);
+      rectSpiralArr.push(tempSpiral);
+      break;
+    } else if (MODE == 2) {
+      tempSpiral = new RectangularSpiral(
+        new THREE.Vector3(0, 0, 0),
+        segmentLength,
+        6,
+        1000,
+        densityCoef,
+        startAnimation,
+        baseColor,
+        MODE,
+        10,
+        10,
+        10,
+        testTexture
+      );
+      tempSpiral.setRotation(
+        randomNumber(0, Math.PI * 2),
+        randomNumber(0, Math.PI * 2),
+        randomNumber(0, Math.PI * 2)
       );
       tempSpiral.addToScene(scene);
       rectSpiralArr.push(tempSpiral);
       break;
     }
-
-    tempSpiral.addToScene(scene);
-    rectSpiralArr.push(tempSpiral);
   }
 
   //console.log(fxhashTrunc);
-  fxpreview();
 
   function mod(n, m) {
     return ((n % m) + m) % m;
@@ -312,6 +356,10 @@ async function main() {
     });
     allBoxesLoaded = boxLoadFlag;
     allTrailPointsLoaded = trailLoadFlag;
+    if (allBoxesLoaded && !fxStart) {
+      fxpreview();
+      fxStart = true;
+    }
   }
 
   function render(time) {
@@ -324,6 +372,10 @@ async function main() {
       p5CanvasLoadedFlag = true;
 
       scene.background = p5Texture;
+      testTexture = new THREE.CanvasTexture(p5Canvas.canvas);
+      rectSpiralArr.forEach(function (rectSpiral) {
+        rectSpiral.envMap = testTexture;
+      });
       //console.log("HEY");
     }
 

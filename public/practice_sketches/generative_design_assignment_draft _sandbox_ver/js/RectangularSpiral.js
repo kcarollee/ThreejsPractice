@@ -10,7 +10,8 @@ class RectangularSpiral {
     mode = 0,
     xnum = 10,
     ynum = 10,
-    znum = 10
+    znum = 10,
+    envMap = null
   ) {
     this.startPos = startPos;
 
@@ -36,6 +37,10 @@ class RectangularSpiral {
     this.ynum = ynum;
     this.znum = znum;
 
+    this.envMap = envMap;
+
+    this.materialMode = fxrand();
+
     switch (this.mode) {
       case 0:
         this._plotSpiral(
@@ -47,16 +52,10 @@ class RectangularSpiral {
         );
         break;
       case 1:
-        this._plotSpiral2(
-          this.startPos.x,
-          this.startPos.y,
-          this.startPos.z,
-          1,
-          this.spiralCount
-        );
+        this._plotSpiral2(this.xnum, this.znum, this.ynum);
         break;
       case 2:
-        this._plotSpiral3(this.xnum, this.znum, this.ynum);
+        this._plotSpiral3(randomNumber(10, 30), randomNumber(120, 150));
         break;
     }
 
@@ -84,26 +83,23 @@ class RectangularSpiral {
 
     this.curlMeshIndex = 0;
     this.curlMeshArr = [];
+
+    this.thickness = randomNumber(1, 3);
+
+    this.colorNoiseCoef = Math.pow(randomNumber(0.1, 1.0), 2);
+    this.colorDiff = randomNumber(0.1, 0.5);
     let colorVal = fxrand();
 
-    this.color = new THREE.Color(colorVal, colorVal, colorVal);
+    //this.color = new THREE.Color(colorVal, colorVal, colorVal);
     if (color != null) {
       this.color = color.clone();
       //console.log(this.color);
-      this.color.multiplyScalar(colorVal);
+      //this.color.multiplyScalar(colorVal);
     }
-    this.curlMeshMaterial = new THREE.MeshLambertMaterial({
-      color: this.color,
-      side: THREE.DoubleSide,
-      //map: texture,
-    });
 
     this.curlMeshFullyLoaded = false;
   }
 
-  setEnvMap(envMap) {
-    this.curlMeshMaterial.envMap;
-  }
   setRotation(x, y, z) {
     this.boxGroup.rotateX(x);
     this.boxGroup.rotateY(y);
@@ -167,11 +163,45 @@ class RectangularSpiral {
       let geometry = new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(path),
         this.trailPointsNum,
-        1,
+        this.thickness,
         3,
         false
       );
-      let mesh = new THREE.Mesh(geometry, this.curlMeshMaterial);
+      let curl = computeCurl2(
+        path[0].x * this.colorNoiseCoef,
+        path[0].y * this.colorNoiseCoef,
+        path[0].z * this.colorNoiseCoef
+      );
+
+      curl.x = map(curl.x, -1, 1, 0.5 - this.colorDiff, 0.5 + this.colorDiff);
+      curl.y = map(curl.y, -1, 1, 0.5 - this.colorDiff, 0.5 + this.colorDiff);
+      curl.z = map(curl.z, -1, 1, 0.5 - this.colorDiff, 0.5 + this.colorDiff);
+
+      let curlColor = new THREE.Color(curl.x, curl.y, curl.z);
+      let color = this.color.clone().multiply(curlColor);
+      //console.log(color);
+      //console.log(curl, color);
+
+      let material;
+      if (this.materialMode < 0.5) {
+        material = new THREE.MeshPhysicalMaterial({
+          emissive: color,
+          //side: THREE.DoubleSide,
+          roughness: 0,
+          transmission: 1,
+          thickness: 4,
+          envMap: this.envMap,
+        });
+      } else {
+        material = new THREE.MeshLambertMaterial({
+          color: color,
+          side: THREE.DoubleSide,
+        });
+      }
+
+      //console.log(this.envMap);
+      let mesh = new THREE.Mesh(geometry, material);
+
       mesh.geometry.setDrawRange(0, 0);
       this.curlMeshArr.push(mesh);
       scene.add(mesh);
@@ -199,6 +229,7 @@ class RectangularSpiral {
       this.boxGeometry,
       RectangularSpiral.materials[textureIndex]
     );
+
     boxMesh.trailPoints = [];
     boxMesh.position.set(posx, posy, posz);
     boxMesh.visible = false;
@@ -209,19 +240,19 @@ class RectangularSpiral {
   _plotSpiral(x, y, z, iter, count) {
     //console.log(iter, count);
     if (iter > count) {
-      console.log(iter);
+      //console.log(iter);
       return;
     }
     let lengthVal = 2 * iter - 1;
     // go down
-    for (let i = 1; i <= lengthVal; i++) {
+    for (let i = 0; i <= lengthVal; i++) {
       this._createBoxMesh(x, y - i * this.segmentLength, z);
     }
 
     z -= this.segmentLength;
 
     // turn right
-    for (let i = 1; i <= lengthVal; i++) {
+    for (let i = 0; i <= lengthVal; i++) {
       this._createBoxMesh(
         x + i * this.segmentLength,
         y - lengthVal * this.segmentLength,
@@ -230,7 +261,7 @@ class RectangularSpiral {
     }
     z -= this.segmentLength;
     // go up
-    for (let i = 1; i <= lengthVal + 1; i++) {
+    for (let i = 0; i <= lengthVal + 1; i++) {
       this._createBoxMesh(
         x + this.segmentLength * lengthVal,
         y - lengthVal * this.segmentLength + i * this.segmentLength,
@@ -239,7 +270,7 @@ class RectangularSpiral {
     }
     z -= this.segmentLength;
     // go left
-    for (let i = 1; i <= lengthVal + 1; i++) {
+    for (let i = 0; i <= lengthVal + 1; i++) {
       if (iter == count && i == lengthVal + 1) continue;
       this._createBoxMesh(
         x + lengthVal * this.segmentLength - i * this.segmentLength,
@@ -259,60 +290,8 @@ class RectangularSpiral {
     );
   }
 
-  // without the z difference
-  _plotSpiral2(x, y, z, iter, count) {
-    //console.log(iter, count);
-    if (iter > count) {
-      //console.log(iter);
-      return;
-    }
-    let lengthVal = 2 * iter - 1;
-    // go down
-    for (let i = 1; i <= lengthVal; i++) {
-      this._createBoxMesh(x, y - i * this.segmentLength, z);
-    }
-
-    // turn right
-    for (let i = 1; i <= lengthVal; i++) {
-      this._createBoxMesh(
-        x + i * this.segmentLength,
-        y - lengthVal * this.segmentLength,
-        z
-      );
-    }
-
-    // go up
-    for (let i = 1; i <= lengthVal + 1; i++) {
-      this._createBoxMesh(
-        x + this.segmentLength * lengthVal,
-        y - lengthVal * this.segmentLength + i * this.segmentLength,
-        z
-      );
-    }
-
-    // go left
-    for (let i = 1; i <= lengthVal + 1; i++) {
-      if (iter == count && i == lengthVal + 1) continue;
-      this._createBoxMesh(
-        x + lengthVal * this.segmentLength - i * this.segmentLength,
-        y + this.segmentLength,
-        z
-      );
-    }
-
-    // new starting point
-
-    this._plotSpiral2(
-      x - this.segmentLength,
-      y + this.segmentLength,
-      z,
-      ++iter,
-      count
-    );
-  }
-
   // noise cube
-  _plotSpiral3() {
+  _plotSpiral2() {
     let sideLenX = this.segmentLength * this.xnum;
     let sideLenY = this.segmentLength * this.ynum;
     let sideLenZ = this.segmentLength * this.znum;
@@ -326,9 +305,23 @@ class RectangularSpiral {
         y = this.startPos.y + startOffsetY + yi * this.segmentLength;
         for (let xi = 0; xi < this.xnum; xi++) {
           x = this.startPos.x + startOffsetX + xi * this.segmentLength;
-          if (fxrand() > 0.5) this._createBoxMesh(x, y, z);
+          if (fxrand() > 0.8) this._createBoxMesh(x, y, z);
         }
       }
+    }
+  }
+
+  // spherical spiral
+  _plotSpiral3(sphereSpiralDensity, sphereSpiralRadius) {
+    let c = sphereSpiralDensity; // 10 ~ 30
+    let r = sphereSpiralRadius; // 120 ~ 150
+    let thetaInc = 0.01;
+
+    for (let i = 0; i < Math.PI; i += thetaInc) {
+      let x = r * Math.sin(i) * Math.cos(c * i);
+      let y = r * Math.sin(i) * Math.sin(c * i);
+      let z = r * Math.cos(i);
+      this._createBoxMesh(x, y, z);
     }
   }
 
@@ -447,3 +440,11 @@ RectangularSpiral.materials = [
 ];
 
 RectangularSpiral.spiralArr = [];
+
+function randomNumber(min, max) {
+  return fxrand() * (max - min) + min;
+}
+
+function map(value, min1, max1, min2, max2) {
+  return min2 + ((value - min1) * (max2 - min2)) / (max1 - min1);
+}

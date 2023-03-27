@@ -331,7 +331,7 @@ class ImageElement {
   createTextElement() {
     //widthTexNum, heightTexNum, asciiFunc, mode, phraseIndex = null
 
-    if (totalScreenHeight2 > 500 && !flag500) {
+    if (totalScreenHeight2 > 1000 && !flag500) {
       let textElem = new TextElement(
         this.posX,
         this.posY,
@@ -346,7 +346,7 @@ class ImageElement {
       textElem.create();
       flag500 = true;
     }
-    if (totalScreenHeight2 > 1000 && !flag1000) {
+    if (totalScreenHeight2 > 1500 && !flag1000) {
       let textElem = new TextElement(
         this.posX,
         this.posY,
@@ -361,7 +361,7 @@ class ImageElement {
       textElem.create();
       flag1000 = true;
     }
-    if (totalScreenHeight2 > 1500 && !flag1500) {
+    if (totalScreenHeight2 > 2000 && !flag1500) {
       let textElem = new TextElement(
         this.posX,
         this.posY,
@@ -376,7 +376,7 @@ class ImageElement {
       textElem.create();
       flag1500 = true;
     }
-    if (totalScreenHeight2 > 2000 && !flag2000) {
+    if (totalScreenHeight2 > 2500 && !flag2000) {
       let textElem = new TextElement(
         this.posX,
         this.posY,
@@ -391,7 +391,7 @@ class ImageElement {
       textElem.create();
       flag2000 = true;
     }
-    if (totalScreenHeight2 > 2500 && !flag2500) {
+    if (totalScreenHeight2 > 3000 && !flag2500) {
       let textElem = new TextElement(
         this.posX,
         this.posY,
@@ -406,7 +406,7 @@ class ImageElement {
       textElem.create();
       flag2500 = true;
     }
-    if (totalScreenHeight2 > 3000 && !flag3000) {
+    if (totalScreenHeight2 > 3500 && !flag3000) {
       let textElem = new TextElement(
         this.posX,
         this.posY,
@@ -421,7 +421,7 @@ class ImageElement {
       textElem.create();
       flag3000 = true;
     }
-    if (totalScreenHeight2 > 3500 && !flag3500) {
+    if (totalScreenHeight2 > 4000 && !flag3500) {
       let textElem = new TextElement(
         this.posX,
         this.posY,

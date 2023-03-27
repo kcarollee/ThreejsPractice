@@ -1,0 +1,22 @@
+sc1 = abaaaaba
+sc2 = aabaabaa
+sn  = aaaaaaaa
+
+3가지가 각각 4개의 변에 들어간다 = 3^4 = 81 가지 경우의 수
+
+근데 회전해서 같은 것들 같이 묶어야한다.
+
+
+2111 44 [sc2,sc1,sc1,sc1]
+2211 45 [sc2,sc2,sc1,sc1]
+2221 46 [sc2,sc2,sc2,sc1]
+0112 47 [sn,sc1,sc1,sc2]
+0122 48 [sn,sc1,sc2,sc2]
+0211 49 [sn,sc2,sc1,sc1]
+0221 50 [sn,sc2,sc2,sc1]
+0012 51 [sn,sn,sc1,sc2]
+0021 52 [sn,sn,sc2,sc1]
+
+
+
+
