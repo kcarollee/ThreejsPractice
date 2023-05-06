@@ -246,7 +246,7 @@ function waveFunctionCollapse(){
     cell.options = [pick];
     
     // cell의 옵션이 선택됐으므로 바로 그리면 됨.
-    //image(tiles[cell.options[0]].img, cell.pos[0] * w, cell.pos[1] * h, w, h);
+    image(tiles[cell.options[0]].img, cell.pos[0] * w, cell.pos[1] * h, w, h);
 
     // 일단 붕괴한 거의 주변 타일을 전부 고른다.
     // 붕괴한 주위 타일만 갱신함
