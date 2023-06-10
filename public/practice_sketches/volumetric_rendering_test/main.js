@@ -47,7 +47,8 @@ function main(){
             for (let x = 0; x < size; x++){
                 vector.set(x, y, z).divideScalar(size);
                 let d = perlin.noise(vector.x * 6.5, vector.y * 6.5, vector.z * 6.5);
-                data[i++] = d * 128 + 128;
+                wdata[i++] = d * 128 + 128;
+				//data[i++] = 255;
             }
         }
     }
@@ -176,8 +177,7 @@ function main(){
 
 			float gs = (color.r + color.g + color.b) / 2.0;
 
-			color.rgb = 1.0 - normal(p + 0.5);
-			color.rgb *= 0.75;
+			
 			if ( color.a == 0.0 ) discard;
 		}
     `;
@@ -186,7 +186,7 @@ function main(){
         glslVersion: THREE.GLSL3,
         uniforms:{
             map: {value: texture},
-            cameraPos: {value: new THREE.Vector3()},
+            cameraPos: {value: camera.position},
             threshold: {value: 0.6},
             steps: {value: 200}
         },
@@ -201,9 +201,19 @@ function main(){
     
 
     let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000});
+	let group = new THREE.Group();
+	
     let mesh = new THREE.Mesh(geometry,material);
+	let mesh2 = new THREE.Mesh(geometry, new THREE.MeshNormalMaterial({
+		wireframe: true
+	}))
     mesh.position.set(0, 0, 0);
-    scene.add(mesh);
+	mesh.scale.set(1, 2, 1);
+	group.add(mesh);
+	group.add(mesh2);
+	mesh2.scale.set(1.2, 1.2, 1.2);
+    scene.add(group);
+	
 
 	
 //GUI
@@ -307,6 +317,7 @@ function main(){
     	let testMat = new THREE.MeshBasicMaterial({color: 0xFF0000});
     	let mesh = new THREE.Mesh(geometry,material);
     	mesh.position.set(0, 0, 0);
+		mesh.position.scale(1, )
     	scene.add(mesh);
 
 
@@ -320,8 +331,8 @@ function main(){
 
 		//scene.rotation.set(step * 0.01, step * 0.01, step * 0.01);
 		time *= 0.001;
-		updateTexture();
-		scene.children[0].material.uniforms.cameraPos.value.copy( camera.position );
+		//updateTexture();
+		//scene.children[0].material.uniforms.cameraPos.value.copy( camera.position );
 		
 		if (resizeRenderToDisplaySize(renderer)){
 			const canvas = renderer.domElement;
