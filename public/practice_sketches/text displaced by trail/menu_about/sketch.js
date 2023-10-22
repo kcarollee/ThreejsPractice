@@ -15,6 +15,10 @@ let movableImagesArr = [];
 let imgElemArr = [];
 let imgElemShowcount = 0;
 let testImgElem;
+
+let textElemArr = [];
+
+
 function preload() {
     noiseGenShader = loadShader('shaders/noiseGenShader.vert', 'shaders/noiseGenShader.frag');
     noiseDispShader = loadShader('shaders/noiseDispShader.vert', 'shaders/noiseDispShader.frag');
@@ -121,11 +125,9 @@ class ImageElement {
             this.imgElem.position(this.posX, this.posY);
             if (abs(this.posY - this.posYDest) < 0.001) this.appearAnimationTriggered = false;
         }
-        
     }
 
     
-
     mouseIsInside(){
         if (mouseX < this.posX + this.imgWidth * 0.5 && mouseX > this.posX - this.imgWidth * 0.5){
             if (mouseY < this.posY + this.imgHeight * 0.5 && mouseY > this.posY - this.imgHeight * 0.5){
@@ -145,6 +147,7 @@ function setup() {
     mainCanvas = createCanvas(windowWidth, windowHeight);
     mainCanvas.position(0, 0);
     mainCanvas.style('z-index', '-1');
+
     /*
     image(displaceTextFbo, width * 0.5 - sketchWidth, height * 0.5, sketchWidth, sketchHeight);
     image(displaceTextFbo, width * 0.5, height * 0.5, sketchWidth, sketchHeight);
@@ -155,8 +158,7 @@ function setup() {
     image(textFbo, 200, posYOffset + posYInc * 4.0, sketchWidth * 0.25, sketchHeight * 0.25);
     */
 
-    aboutText1 = createDiv("div");
-    aboutText1.attribute('align', 'center');
+    
 
     sketchWidth = min(windowWidth, windowHeight) * 0.75;
     sketchHeight = sketchWidth;
@@ -186,7 +188,7 @@ function setup() {
     charPosY;
     imageMode(CENTER);
 
-
+    
     //testImgElem = new ImageElement(width * 0.5, height * 0.5, './images/img_1.png', 'https://google.com');
     /*
     let imgNum = 30;
@@ -198,6 +200,95 @@ function setup() {
         imgElemArr.push(imgElemTemp);
     }
     */
+
+    let textElemNum = 50;
+    let textElemStr = 'LEAVE BEHIND TASTEFUL NOISE<br>';
+    let strArr = [
+        'LEAVE BEHIND TASTEFUL NOISE<br>',
+        'TRAIL IS A MEDIA MANIPULATION SERVICE<br>',
+        'WHOSE AIM IS TO TAKE OUR CLIENTS SOURCE<br>',
+        'AND BEND THEM TO OUR WILL<br>',
+        'OUR SERVICES INCLUDE PROJECTION MAPPING<br>',
+        'DATA VISUALIZATION, KICKASS WEBSITES<br>',
+        'GLITCHING OUT MUSIC AND STUFF<br>',
+        'LEAVE BEHIND TASTEFUL NOISE<br>',
+    ]
+
+    let noiseIncrement = 0.2;
+    let noiseStep = 0;
+
+    let textElemPosYOffset = 50;
+    let textElemPosYIncrement = 20;
+    for (let i = 1; i < 4; i++){
+        
+        let textElem = createElement('a' ,strArr[i]);
+        textElem.style('color', 'white');
+        textElem.style('font-size', '2vh')
+        textElem.posY = textElemPosYOffset + textElemPosYIncrement * i;
+        textElem.posX = width * 0.5 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.position(textElem.posX, textElem.posY);
+        textElemArr.push(textElem);
+        noiseStep += 1;
+
+        if (i == 3) textElemPosYOffset = textElem.posY;
+    }
+
+    for (let i = 1; i < textElemNum; i++){
+        let textElem = createElement('a' ,strArr[0]);
+        textElem.style('color', 'grey');
+        textElem.style('opacity', '90');
+        textElem.style('font-size', '2vh')
+        textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
+        textElem.posX = width * 0.5 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.position(textElem.posX, textElem.posY);
+        textElemArr.push(textElem);
+        noiseStep += 1;
+
+        if (i == textElemNum - 1) textElemPosYOffset = textElem.posY;
+    }
+
+    for (let i = 1; i < 4; i++){
+        let textElem = createElement('a' ,strArr[i + 3]);
+        textElem.style('color', 'white');
+        textElem.style('opacity', '90');
+        textElem.style('font-size', '2vh')
+        textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
+        textElem.posX = width * 0.5 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.position(textElem.posX, textElem.posY);
+        textElemArr.push(textElem);
+        noiseStep += 1;
+
+        if (i == 3) textElemPosYOffset = textElem.posY;
+    }
+
+    for (let i = 1; i < textElemNum; i++){
+        let textElem = createElement('a' ,strArr[0]);
+        textElem.style('color', 'grey');
+        textElem.style('opacity', '90');
+        textElem.style('font-size', '2vh')
+        textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
+        textElem.posX = width * 0.5 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.position(textElem.posX, textElem.posY);
+        textElemArr.push(textElem);
+        noiseStep += 1;
+
+        if (i == textElemNum - 1) textElemPosYOffset = textElem.posY;
+    }
+
+
+    /*
+    LEAVE BEHIND TASTEFUL NOISE
+    LEAVE BEHIND TASTEFUL NOISE
+    LEAVE BEHIND TASTEFUL NOISE
+    LEAVE BEHIND TASTEFUL NOISE
+    LEAVE BEHIND TASTEFUL NOISE
+    LEAVE BEHIND TASTEFUL NOISE
+    LEAVE BEHIND TASTEFUL NOISE
+    TRAIL IS A SERVICE FOCUSED ON 
+    CREATING MANIPULAED MEDIA BASED
+    ON OUR CLIENTS' REQUESTS
+    */
+    
 }
 
 function draw() {
@@ -334,7 +425,8 @@ function mouseWheel(event){
     
 
     let deltyY = event.delta;
-    imgElemArr.forEach(function(imgElem){
-        imgElem.updatePos(-deltyY);
+    textElemArr.forEach(function(textElem){
+        textElem.posY -= deltyY;
+        textElem.position(textElem.posX, textElem.posY);
     })
 }

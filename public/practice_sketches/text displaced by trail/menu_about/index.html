@@ -8,32 +8,36 @@
 
   </head>
   <body style="background-color: black;">
-    <a href="../index.html">
-      <img src="./images/weblogo.png" style="width: 30vh;">
-    </a>
-
-   
-    <div style="position: fixed;">
-      <ul>
-        <li>
-          <a href="../menu_about/index.html">
-            <img src="./images/weblogo.png">
-          </a>
-        </li>
-        <li>
-          <a href="">
-            <img src="./images/weblogo.png">
-          </a>
-        </li>
-        <li>
-          <a href="../menu_type/index.html">
-            <img src="./images/weblogo.png">
-          </a>
-        </li>
-      </ul>
-    </div>
+  
+      <img src="./images/weblogo2.png" onmouseover="openNav()" style="width: 8vh; display:block; margin-top: 2vh; margin-left: 2vh;">
+    
 
   
+    <div id="mySidenav" class="sidenav" onmousedown="closeNav()">
+      <br>
+      <br>
+      <br>
+      <a href="">
+        <img src="./images/weblogo.png" style="width: 15vh;">
+      </a>
+      <a href="../menu_works/index.html">
+        <img src="./images/weblogo.png" style="width: 15vh;">
+      </a>
+      <a href="../menu_type/index.html">
+        <img src="./images/weblogo.png" style="width: 15vh;">
+      </a>
+      <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    </div>
+    
+    <script>
+      function openNav() {
+        document.getElementById("mySidenav").style.width = "250px";
+      }
+      
+      function closeNav() {
+        document.getElementById("mySidenav").style.width = "0";
+      }
+    </script>
     
     <script src="sketch.js" ></script>
   </body>

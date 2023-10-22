@@ -327,8 +327,8 @@ function mouseReleased(){
 function mouseWheel(event){
     
 
-    let deltyY = event.delta;
+    let deltaY = event.delta;
     imgElemArr.forEach(function(imgElem){
-        imgElem.updatePos(-deltyY);
+        imgElem.updatePos(-deltaY);
     })
 }
