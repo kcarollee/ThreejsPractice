@@ -10,6 +10,11 @@ let charPosX, charPosY;
 let displaceImage, noiseGenImage, noiseDispImage, textImage;
 let movableImagesArr = [];
 
+
+
+let imgElemArr = [];
+let imgElemShowcount = 0;
+let testImgElem;
 function preload() {
     noiseGenShader = loadShader('shaders/noiseGenShader.vert', 'shaders/noiseGenShader.frag');
     noiseDispShader = loadShader('shaders/noiseDispShader.vert', 'shaders/noiseDispShader.frag');
@@ -56,6 +61,86 @@ class MovableImage{
 }
 
 
+class ImageElement {
+    constructor(posX, posY, imgLink, hrefLink){
+        this.posX = posX;
+        this.posY = posY;
+
+        this.posYDest = this.posY + 20;
+
+        this.size = 0; // initialSize;
+
+        this.anchorElem = createElement('a');
+        this.anchorElem.attribute('href', hrefLink);
+
+        this.imgElem = createImg(imgLink);
+        this.imgElem.style('z-index', 0);
+        this.imgElem.style('opacity', 0.5);
+        this.imgElem.style('width', '20vw');
+        //this.imgElem.style('filter', 'grayscale(100%)');
+        this.imgElem.style('display', 'none');
+        
+        this.imgElem.parent(this.anchorElem);
+        this.imgElem.position(this.posX, this.posY, 'relative');
+
+        this.imgElem.mouseOver(this.onMouseOver);
+        this.imgElem.mouseOut(this.onMouseOut);
+
+        this.appearAnimationTriggered = false;
+        console.log(this.imgElem);
+    }
+
+    onMouseOver(){
+        this.style('opacity', 1);
+        this.style('z-index', 9999);
+    }
+
+    onMouseOut(){
+        this.style('opacity', 0.5);
+        this.style('z-index', 0);
+    }
+
+    updatePos(deltaY){
+        this.posY += deltaY;
+        this.posYDest += deltaY;
+        this.imgElem.position(this.posX, this.posY);
+    }
+
+    // called when window is resized
+    repositionImage(){
+        this.posX = map(this.posX, 0, width, 0, windowWidth);
+        this.imgElem.position(this.posX, this.posY);
+    }
+
+    appearAnimation(){
+        if (this.appearAnimationTriggered){
+            //if (this.size < 10) this.size += 0.5;
+            this.imgElem.style('display', 'block');
+            //this.imgElem.style('width', this.size + 'vw');
+            this.posY += (this.posYDest - this.posY) * 0.1
+            this.imgElem.position(this.posX, this.posY);
+            if (abs(this.posY - this.posYDest) < 0.001) this.appearAnimationTriggered = false;
+        }
+        
+    }
+
+    
+
+    mouseIsInside(){
+        if (mouseX < this.posX + this.imgWidth * 0.5 && mouseX > this.posX - this.imgWidth * 0.5){
+            if (mouseY < this.posY + this.imgHeight * 0.5 && mouseY > this.posY - this.imgHeight * 0.5){
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
+}
+
+
+
+
+
 function setup() {
     mainCanvas = createCanvas(windowWidth, windowHeight);
     mainCanvas.position(0, 0);
@@ -70,6 +155,9 @@ function setup() {
     image(textFbo, 200, posYOffset + posYInc * 4.0, sketchWidth * 0.25, sketchHeight * 0.25);
     */
 
+    aboutText1 = createDiv("div");
+    aboutText1.attribute('align', 'center');
+
     sketchWidth = min(windowWidth, windowHeight) * 0.75;
     sketchHeight = sketchWidth;
     noiseGenFbo = createGraphics(sketchWidth, sketchHeight, WEBGL);
@@ -78,7 +166,7 @@ function setup() {
     displaceTextFbo = createGraphics(sketchWidth, sketchHeight, WEBGL);
     backgroundFbo = createGraphics(width, height, WEBGL);
     textFbo = createGraphics(sketchWidth, sketchHeight);
-
+    
     let posYInc = sketchHeight * 0.25;
     let posYOffset = (height - sketchHeight) * 0.5 - posYInc * 0.5;
     displaceImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 1.0, sketchWidth * 0.25, sketchHeight * 0.25, displaceFbo);
@@ -97,9 +185,33 @@ function setup() {
     charPosX;
     charPosY;
     imageMode(CENTER);
+
+
+    //testImgElem = new ImageElement(width * 0.5, height * 0.5, './images/img_1.png', 'https://google.com');
+    /*
+    let imgNum = 30;
+    for (let i = 0; i < imgNum; i++){
+        let posX = width * 0.5 + map(noise(i * 10), 0, 1, -width * 0.3, width * 0.3);
+        let posY = i * width * 0.1;
+
+        let imgElemTemp =  new ImageElement(posX, posY, './images/img_1.png', 'https://google.com');
+        imgElemArr.push(imgElemTemp);
+    }
+    */
 }
 
 function draw() {
+    /*
+    if (imgElemShowcount < imgElemArr.length){
+        imgElemShowcount = int(imgElemShowcount);
+        imgElemArr[imgElemShowcount].appearAnimationTriggered = true;
+    }
+    imgElemShowcount = frameCount * 0.25;
+    
+    imgElemArr.forEach(function(imgElem){
+        imgElem.appearAnimation();
+    })
+    */
     background(0);
     image(backgroundFbo, width * 0.5, height * 0.5, width, height);
     smooth();
@@ -112,8 +224,8 @@ function draw() {
     let bbox = font.textBounds(mainChar, 0, 0, sketchWidth);
     textFbo.text(mainChar, 0.5 * (sketchWidth), (bbox.h + sketchHeight) * 0.5);
 
-    textImage.display();
-    textImage.updatePos();
+    //textImage.display();
+    //textImage.updatePos();
 
     if (textImage.moveMode){
         if (textImage.prevPosX == textImage.posX){}
@@ -135,8 +247,8 @@ function draw() {
     noiseGenShader.setUniform('density', density);
     noiseGenFbo.rect(0, 0, 50, 50);
 
-    noiseGenImage.display();
-    noiseGenImage.updatePos();
+    //noiseGenImage.display();
+    //noiseGenImage.updatePos();
 
     let density2 = noiseDispImage.posX / windowWidth;
     density2 = map(density2, 0, 1, 1, 5);
@@ -147,8 +259,8 @@ function draw() {
     noiseDispShader.setUniform('density', density2);
     noiseDispFbo.rect(0, 0, 50, 50);
 
-    noiseDispImage.display();
-    noiseDispImage.updatePos();
+    //noiseDispImage.display();
+    //noiseDispImage.updatePos();
 
     let displaceStrength = displaceImage.posX / windowWidth;
     displaceStrength = map(displaceStrength, 0, 1, 0, 0.3);
@@ -161,19 +273,8 @@ function draw() {
     displaceShader.setUniform('dispStrength', displaceStrength);
     displaceFbo.rect(0, 0, 50, 50);
 
-    displaceImage.display();
-    displaceImage.updatePos();
-
-    displaceTextFbo.clear();
-    displaceTextFbo.shader(displaceShader2);
-    displaceShader2.setUniform('resolution', [sketchWidth, sketchHeight]);
-    displaceShader2.setUniform('time', frameCount * 0.001);
-    displaceShader2.setUniform('flipY', true);
-    displaceShader2.setUniform('postProcessOn', true);
-    displaceShader2.setUniform('dispTargetTex', textFbo);
-    displaceShader2.setUniform('dispSourceTex', displaceFbo);
-    displaceShader2.setUniform('dispStrength', 0.05);
-    displaceTextFbo.rect(0, 0, 0, 0);
+    //displaceImage.display();
+    //displaceImage.updatePos();
 
     //displaceTextFbo.smooth();
 
@@ -195,12 +296,16 @@ function draw() {
     let posYOffset = (height - sketchHeight) * 0.5 - posYInc * 0.5;
     
     //image(displaceTextFbo, width * 0.5 - sketchWidth, height * 0.5, sketchWidth, sketchHeight);
-    image(displaceTextFbo, width * 0.5, height * 0.5, sketchWidth, sketchHeight);
+    //image(displaceTextFbo, width * 0.5, height * 0.5, sketchWidth, sketchHeight);
     //image(displaceTextFbo, width * 0.5 + sketchWidth, height * 0.5, sketchWidth, sketchHeight);
     
 }
 
 function windowResized(){
+    imgElemArr.forEach(function(imgElem){
+        imgElem.repositionImage();
+    });
+
     resizeCanvas(windowWidth, windowHeight)
     sketchWidth = min(windowWidth, windowHeight) * 0.75;
     sketchHeight = sketchWidth;
@@ -223,4 +328,13 @@ function mouseReleased(){
     movableImagesArr.forEach(function(img){
             img.moveMode = false;
     });
+}
+
+function mouseWheel(event){
+    
+
+    let deltyY = event.delta;
+    imgElemArr.forEach(function(imgElem){
+        imgElem.updatePos(-deltyY);
+    })
 }
