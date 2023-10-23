@@ -8,8 +8,14 @@
 
   </head>
   <body style="background-color: black;">
-  
-      <img src="./images/weblogo2.png" onmouseover="openNav()" style="width: 8vh; display:block; margin-top: 2vh; margin-left: 2vh;">
+    <div>
+      <img src="../images/weblogo4.png" onclick="openNav()" style="width: 28vh; display:block; margin-top: 2.5vh; margin-left: 2vh; cursor: pointer; position: fixed">
+    </div>
+    <a href="../index.html">
+      <img id="topImage" src="../images/weblogo2.png" 
+      style="width: 8vh; position: absolute; top: 0vh; left: 46vw;" 
+      onmousedown="triggerRandom()" onmouseup="stopRandom()" onclick="rotateImage()">
+    </a>
     
 
   
@@ -18,13 +24,13 @@
       <br>
       <br>
       <a href="">
-        <img src="./images/weblogo.png" style="width: 15vh;">
+        <img src="../images/about_button.png" style="width: 20vh;">
       </a>
       <a href="../menu_works/index.html">
-        <img src="./images/weblogo.png" style="width: 15vh;">
+        <img src="../images/works_button.png" style="width: 20vh;">
       </a>
       <a href="../menu_type/index.html">
-        <img src="./images/weblogo.png" style="width: 15vh;">
+        <img src="../images/type_button.png" style="width: 20vh;">
       </a>
       <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
     </div>
@@ -37,6 +43,15 @@
       function closeNav() {
         document.getElementById("mySidenav").style.width = "0";
       }
+      let randomTriggered = false;
+      function triggerRandom(){
+        randomTriggered = true;
+      }
+
+      function stopRandom(){
+        randomTriggered = false;
+      }
+
     </script>
     
     <script src="sketch.js" ></script>

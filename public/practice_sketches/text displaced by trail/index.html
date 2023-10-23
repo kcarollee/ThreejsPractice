@@ -8,29 +8,51 @@
 
   </head>
   <body style="background-color: black;">
-    <a href="google.com">
-      <img src="./images/weblogo.png" style="width: 30vh;">
+    <div>
+      <img src="./images/weblogo4.png" onclick="openNav()" style="width: 28vh; display:block; margin-top: 2.5vh; margin-left: 2vh; cursor: pointer;">
+    </div>
+    <a href="#">
+      <img id="topImage" src="./images/weblogo2.png" 
+      style="width: 8vh; position: absolute; top: 0vh; left: 46vw;" 
+      onmousedown="triggerRandom()" onmouseup="stopRandom()" onclick="rotateImage()">
     </a>
     
-    <div>
-      <ul>
-        <li>
-          <a href="./menu_about/index.html">
-            <img src="./images/weblogo.png">
-          </a>
-        </li>
-        <li>
-          <a href="./menu_works/index.html">
-            <img src="./images/weblogo.png">
-          </a>
-        </li>
-        <li>
-          <a href="./menu_type/index.html">
-            <img src="./images/weblogo.png">
-          </a>
-        </li>
-      </ul>
+
+  
+    <div id="mySidenav" class="sidenav" onmousedown="closeNav()">
+      <br>
+      <br>
+      <br>
+      <a href="./menu_about/">
+        <img src="./images/about_button.png" style="width: 20vh;">
+      </a>
+      <a href="./menu_works/index.html">
+        <img src="./images/works_button.png" style="width: 20vh;">
+      </a>
+      <a href="./menu_type/index.html">
+        <img src="./images/type_button.png" style="width: 20vh;">
+      </a>
+      <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
     </div>
+    
+    <script>
+      function openNav() {
+        document.getElementById("mySidenav").style.width = "250px";
+      }
+      
+      function closeNav() {
+        document.getElementById("mySidenav").style.width = "0";
+      }
+      let randomTriggered = false;
+      function triggerRandom(){
+        randomTriggered = true;
+      }
+
+      function stopRandom(){
+        randomTriggered = false;
+      }
+
+    </script>
     
     <script src="sketch.js" ></script>
   </body>

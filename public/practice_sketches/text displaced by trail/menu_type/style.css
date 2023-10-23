@@ -1,11 +1,12 @@
 html, body {
   margin: 0;
   padding: 0;
+  overflow: hidden; 
 }
 canvas {
   display: block;
 }
-img {
+a img {
   z-index: 10;
   margin-left: 1vw;
   margin-top: 2vh;
@@ -22,4 +23,42 @@ li a img {
   display: block;
   margin-top: 20vh;
   width: 15vh;
+}
+
+
+.sidenav {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: transparent;
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding-top: 60px;
+}
+
+.sidenav a {
+ 
+ 
+  color: #818181;
+  
+  margin-top: 2vh; 
+  margin-left: 2vh;
+  transition: 0.3s;
+}
+
+.sidenav a:hover {
+  color: #f1f1f1;
+}
+
+.sidenav .closebtn {
+  display: block;
+  margin-top: 2vh; margin-left: 11.5vh;
+}
+
+@media screen and (max-height: 450px) {
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 18px;}
 }

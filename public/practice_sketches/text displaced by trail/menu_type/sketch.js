@@ -11,12 +11,12 @@ let displaceImage, noiseGenImage, noiseDispImage, textImage;
 let movableImagesArr = [];
 
 function preload() {
-    noiseGenShader = loadShader('shaders/noiseGenShader.vert', 'shaders/noiseGenShader.frag');
-    noiseDispShader = loadShader('shaders/noiseDispShader.vert', 'shaders/noiseDispShader.frag');
-    displaceShader = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    displaceShader2 = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    backgroundNoiseShader = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    font = loadFont("fonts/helvetica.ttf");
+    noiseGenShader = loadShader('../shaders/noiseGenShader.vert', '../shaders/noiseGenShader.frag');
+    noiseDispShader = loadShader('../shaders/noiseDispShader.vert', '../shaders/noiseDispShader.frag');
+    displaceShader = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    displaceShader2 = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    backgroundNoiseShader = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    font = loadFont("../fonts/helvetica.ttf");
 }
 
 

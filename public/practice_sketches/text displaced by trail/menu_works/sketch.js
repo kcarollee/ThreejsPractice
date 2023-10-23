@@ -16,12 +16,12 @@ let imgElemArr = [];
 let imgElemShowcount = 0;
 let testImgElem;
 function preload() {
-    noiseGenShader = loadShader('shaders/noiseGenShader.vert', 'shaders/noiseGenShader.frag');
-    noiseDispShader = loadShader('shaders/noiseDispShader.vert', 'shaders/noiseDispShader.frag');
-    displaceShader = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    displaceShader2 = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    backgroundNoiseShader = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    font = loadFont("fonts/helvetica.ttf");
+    noiseGenShader = loadShader('../shaders/noiseGenShader.vert', '../shaders/noiseGenShader.frag');
+    noiseDispShader = loadShader('../shaders/noiseDispShader.vert', '../shaders/noiseDispShader.frag');
+    displaceShader = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    displaceShader2 = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    backgroundNoiseShader = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    font = loadFont("../fonts/helvetica.ttf");
 }
 
 
@@ -144,6 +144,7 @@ class ImageElement {
 function setup() {
     mainCanvas = createCanvas(windowWidth, windowHeight);
     mainCanvas.position(0, 0);
+    mainCanvas.style('position', 'fixed');
     mainCanvas.style('z-index', '-1');
     /*
     image(displaceTextFbo, width * 0.5 - sketchWidth, height * 0.5, sketchWidth, sketchHeight);
@@ -185,7 +186,7 @@ function setup() {
 
 
     //testImgElem = new ImageElement(width * 0.5, height * 0.5, './images/img_1.png', 'https://google.com');
-    let imgNum = 30;
+    let imgNum = 20;
     for (let i = 0; i < imgNum; i++){
         let posX = width * 0.5 + map(noise(i * 10), 0, 1, -width * 0.3, width * 0.3);
         let posY = i * width * 0.1;
@@ -327,8 +328,5 @@ function mouseReleased(){
 function mouseWheel(event){
     
 
-    let deltaY = event.delta;
-    imgElemArr.forEach(function(imgElem){
-        imgElem.updatePos(-deltaY);
-    })
+    
 }

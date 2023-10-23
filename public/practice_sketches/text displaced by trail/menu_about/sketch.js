@@ -20,12 +20,12 @@ let textElemArr = [];
 
 
 function preload() {
-    noiseGenShader = loadShader('shaders/noiseGenShader.vert', 'shaders/noiseGenShader.frag');
-    noiseDispShader = loadShader('shaders/noiseDispShader.vert', 'shaders/noiseDispShader.frag');
-    displaceShader = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    displaceShader2 = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    backgroundNoiseShader = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    font = loadFont("fonts/helvetica.ttf");
+    noiseGenShader = loadShader('../shaders/noiseGenShader.vert', '../shaders/noiseGenShader.frag');
+    noiseDispShader = loadShader('../shaders/noiseDispShader.vert', '../shaders/noiseDispShader.frag');
+    displaceShader = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    displaceShader2 = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    backgroundNoiseShader = loadShader('../shaders/displaceShader.vert', '../shaders/displaceShader.frag');
+    font = loadFont("../fonts/helvetica.ttf");
 }
 
 
@@ -146,6 +146,7 @@ class ImageElement {
 function setup() {
     mainCanvas = createCanvas(windowWidth, windowHeight);
     mainCanvas.position(0, 0);
+    mainCanvas.style('position', 'fixed');
     mainCanvas.style('z-index', '-1');
 
     /*
@@ -201,46 +202,89 @@ function setup() {
     }
     */
 
-    let textElemNum = 50;
+    /*
+    TRAIL IS A SERVICE CATERING
+    TO THE NEEDS OF CLINETS WHO
+    HAVE A DESIRE TO MANIPULATE
+    THEIR CONTENTS AND USE THEM
+    IN THEIR OWN CREATIVE WAYS.
+
+    
+    SHARE YOUR SOURCE MATERIALS
+    WITH US AND THE RESULTS MAY
+    BE SOMETHING UNPRECEDENTED. 
+
+    OUR SERVICES ARE AS FOLLOWS
+    __VIDEO MANIPULATION_______
+    ____GLITCHED OUT FONTS_____
+    __PROJECTION MAPPING_______
+    ____GENERATIVE AUDIO_______
+    ______WEB BASED GRAPHICS___
+    __REAL TIME GRAPHICS_______
+
+    CONTACT US: trail@gmail.com
+    INSTAGRAM: @trail__services
+    */
+    let textElemNum = 20;
     let textElemStr = 'LEAVE BEHIND TASTEFUL NOISE<br>';
     let strArr = [
         'LEAVE BEHIND TASTEFUL NOISE<br>',
-        'TRAIL IS A MEDIA MANIPULATION SERVICE<br>',
-        'WHOSE AIM IS TO TAKE OUR CLIENTS SOURCE<br>',
-        'AND BEND THEM TO OUR WILL<br>',
-        'OUR SERVICES INCLUDE PROJECTION MAPPING<br>',
-        'DATA VISUALIZATION, KICKASS WEBSITES<br>',
-        'GLITCHING OUT MUSIC AND STUFF<br>',
-        'LEAVE BEHIND TASTEFUL NOISE<br>',
+        // 1 ~5
+        'TRAIL IS A SERVICE CATERING<br>',
+        'TO THE NEEDS OF CLIENTS WHO<br>',
+        'HAVE A DESIRE TO MANIPULATE<br>',
+        'THEIR CONTENTS AND USE THEM<br>',
+        'IN THEIR OWN CREATIVE WAYS.<br>',
+        // 6 ~ 8
+        'SHARE YOUR SOURCE MATERIALS<br>',
+        'WITH US AND THE RESULTS MAY<br>',
+        'BE SOMETHING UNPRECEDENTED.<br>',
+        // 9 ~ 15
+        'OUR SERVICES ARE AS FOLLOWS<br>',
+        '__VIDEO MANIPULATION_______<br>',
+        '____GLITCHED OUT FONTS_____<br>',
+        '__PROJECTION MAPPING_______<br>',
+        '____GENERATIVE AUDIO_______<br>',
+        '______WEB BASED GRAPHICS___<br>',
+        '__REAL TIME GRAPHICS_______<br>',
+        // 16 ~ 17
+        'CONTACT US: trail@gmail.com<br>',
+        'INSTAGRAM: @trail__services<br>',
     ]
 
     let noiseIncrement = 0.2;
     let noiseStep = 0;
 
-    let textElemPosYOffset = 50;
-    let textElemPosYIncrement = 20;
-    for (let i = 1; i < 4; i++){
+    let textElemPosYOffset = height * 0.1;
+    let textElemPosYIncrement = 35;
+    for (let i = 1; i < 6; i++){
         
         let textElem = createElement('a' ,strArr[i]);
         textElem.style('color', 'white');
-        textElem.style('font-size', '2vh')
+        textElem.style('font-size', '4vh');
+        textElem.style('font-family', 'Helvetica');
         textElem.posY = textElemPosYOffset + textElemPosYIncrement * i;
-        textElem.posX = width * 0.5 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
         textElem.position(textElem.posX, textElem.posY);
+        textElem.style('display', 'none');
+        textElem.style('white-space', 'nowrap');
         textElemArr.push(textElem);
         noiseStep += 1;
 
-        if (i == 3) textElemPosYOffset = textElem.posY;
+        if (i == 5) textElemPosYOffset = textElem.posY;
     }
 
     for (let i = 1; i < textElemNum; i++){
         let textElem = createElement('a' ,strArr[0]);
         textElem.style('color', 'grey');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '2vh')
+        textElem.style('font-size', '4vh')
+        textElem.style('font-family', 'Helvetica');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
-        textElem.posX = width * 0.5 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.style('white-space', 'nowrap');
         textElem.position(textElem.posX, textElem.posY);
+        textElem.style('display', 'none');
         textElemArr.push(textElem);
         noiseStep += 1;
 
@@ -248,13 +292,16 @@ function setup() {
     }
 
     for (let i = 1; i < 4; i++){
-        let textElem = createElement('a' ,strArr[i + 3]);
+        let textElem = createElement('a' ,strArr[i + 5]);
         textElem.style('color', 'white');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '2vh')
+        textElem.style('font-size', '4vh')
+        textElem.style('font-family', 'Helvetica');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
-        textElem.posX = width * 0.5 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.style('white-space', 'nowrap');
         textElem.position(textElem.posX, textElem.posY);
+        textElem.style('display', 'none');
         textElemArr.push(textElem);
         noiseStep += 1;
 
@@ -265,14 +312,68 @@ function setup() {
         let textElem = createElement('a' ,strArr[0]);
         textElem.style('color', 'grey');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '2vh')
+        textElem.style('font-size', '4vh')
+        textElem.style('font-family', 'Helvetica');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
-        textElem.posX = width * 0.5 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.style('white-space', 'nowrap');
         textElem.position(textElem.posX, textElem.posY);
+        textElem.style('display', 'none');
         textElemArr.push(textElem);
         noiseStep += 1;
 
         if (i == textElemNum - 1) textElemPosYOffset = textElem.posY;
+    }
+
+    for (let i = 1; i < 8; i++){
+        let textElem = createElement('a' ,strArr[i + 8]);
+        textElem.style('color', 'white');
+        textElem.style('opacity', '90');
+        textElem.style('font-size', '4vh')
+        textElem.style('font-family', 'Helvetica');
+        textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
+        textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.style('white-space', 'nowrap');
+        textElem.position(textElem.posX, textElem.posY);
+        textElem.style('display', 'none');
+        textElemArr.push(textElem);
+        noiseStep += 1;
+
+        if (i == 7) textElemPosYOffset = textElem.posY;
+    }
+
+    for (let i = 1; i < textElemNum; i++){
+        let textElem = createElement('a' ,strArr[0]);
+        textElem.style('color', 'grey');
+        textElem.style('opacity', '90');
+        textElem.style('font-size', '4vh')
+        textElem.style('font-family', 'Helvetica');
+        textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
+        textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.style('white-space', 'nowrap');
+        textElem.position(textElem.posX, textElem.posY);
+        textElem.style('display', 'none');
+        textElemArr.push(textElem);
+        noiseStep += 1;
+
+        if (i == textElemNum - 1) textElemPosYOffset = textElem.posY;
+    }
+
+    for (let i = 1; i < 3; i++){
+        let textElem = createElement('a' ,strArr[i + 15]);
+        textElem.style('color', 'white');
+        textElem.style('opacity', '90');
+        textElem.style('font-size', '4vh')
+        textElem.style('font-family', 'Helvetica');
+        textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
+        textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.style('white-space', 'nowrap');
+        textElem.position(textElem.posX, textElem.posY);
+        textElem.style('display', 'none');
+        textElemArr.push(textElem);
+        noiseStep += 1;
+
+        if (i == 2) textElemPosYOffset = textElem.posY;
     }
 
 
@@ -284,7 +385,27 @@ function setup() {
     LEAVE BEHIND TASTEFUL NOISE
     LEAVE BEHIND TASTEFUL NOISE
     LEAVE BEHIND TASTEFUL NOISE
-    TRAIL IS A SERVICE FOCUSED ON 
+    TRAIL IS A SERVICE CATERING
+    TO THE NEEDS OF CLINETS WHO
+    HAVE A DESIRE TO MANIPULATE
+    THEIR CONTENTS AND USE THEM
+    IN THEIR OWN CREATIVE WAYS.
+    
+    SHARE YOUR SOURCE MATERIALS
+    WITH US AND THE RESULTS MAY
+    BE SOMETHING UNPRECEDENTED. 
+
+    OUR SERVICES ARE AS FOLLOWS
+    __VIDEO MANIPULATION_______
+    ____GLITCHED OUT FONTS_____
+    __PROJECTION MAPPING_______
+    ____GENERATIVE AUDIO_______
+    ______WEB BASED GRAPHICS___
+    __REAL TIME GRAPHICS_______
+
+
+    CONTACT US: trail@gmail.com
+    INSTAGRAM: @trail__services
     CREATING MANIPULAED MEDIA BASED
     ON OUR CLIENTS' REQUESTS
     */
@@ -303,6 +424,18 @@ function draw() {
         imgElem.appearAnimation();
     })
     */
+
+    textElemArr.forEach(function(textElem, i){
+        textElem.posX += map(noise(i * 0.1 + frameCount * 0.01), 0, 1, -2, 2);
+        let d = dist(textElem.posX, textElem.posY, mouseX, mouseY);
+        textElem.posX += (mouseX - textElem.posX)  / d;
+        textElem.position(textElem.posX, textElem.posY);
+    })
+
+    let currentVisibleIndex = int(frameCount * 0.25);
+    if (currentVisibleIndex < textElemArr.length){
+        textElemArr[currentVisibleIndex].style('display', 'block');
+    }
     background(0);
     image(backgroundFbo, width * 0.5, height * 0.5, width, height);
     smooth();
@@ -420,13 +553,8 @@ function mouseReleased(){
             img.moveMode = false;
     });
 }
-
+let totalDeltaY = 0;
+let mouseWheelTickNum = 0;
 function mouseWheel(event){
     
-
-    let deltyY = event.delta;
-    textElemArr.forEach(function(textElem){
-        textElem.posY -= deltyY;
-        textElem.position(textElem.posX, textElem.posY);
-    })
 }

@@ -1,7 +1,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  overflow: hidden; 
+  overflow-x: hidden;
 }
 canvas {
   display: block;
@@ -40,11 +40,12 @@ li a img {
 }
 
 .sidenav a {
-  padding: 8px 8px 8px 32px;
-  text-decoration: none;
-  font-size: 25px;
+ 
+ 
   color: #818181;
-  display: block;
+  
+  margin-top: 2vh; 
+  margin-left: 2vh;
   transition: 0.3s;
 }
 
@@ -53,11 +54,15 @@ li a img {
 }
 
 .sidenav .closebtn {
-  
-  text-align: center;
+  display: block;
+  margin-top: 2vh; margin-left: 11.5vh;
 }
 
 @media screen and (max-height: 450px) {
   .sidenav {padding-top: 15px;}
   .sidenav a {font-size: 18px;}
+}
+
+::-webkit-scrollbar {
+  width: 10px;
 }

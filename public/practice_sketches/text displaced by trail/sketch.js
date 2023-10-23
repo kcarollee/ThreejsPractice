@@ -55,11 +55,21 @@ class MovableImage{
     }
 }
 
+let currentValsArr;
+let destValsArr;
+
 
 function setup() {
+
+    
+
+    console.log(randomTriggered);
     mainCanvas = createCanvas(windowWidth, windowHeight);
     mainCanvas.position(0, 0);
     mainCanvas.style('z-index', '-1');
+
+    currentValsArr = [width * 0.5, width * 0.5, width * 0.5, width * 0.5];
+    destValsArr = [random() * width, random() * width, random() * width, random() * width];
     /*
     image(displaceTextFbo, width * 0.5 - sketchWidth, height * 0.5, sketchWidth, sketchHeight);
     image(displaceTextFbo, width * 0.5, height * 0.5, sketchWidth, sketchHeight);
@@ -81,10 +91,10 @@ function setup() {
 
     let posYInc = sketchHeight * 0.25;
     let posYOffset = (height - sketchHeight) * 0.5 - posYInc * 0.5;
-    displaceImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 1.0, sketchWidth * 0.25, sketchHeight * 0.25, displaceFbo);
-    noiseGenImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 2.0, sketchWidth * 0.25, sketchHeight * 0.25, noiseGenFbo);
-    noiseDispImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 3.0, sketchWidth * 0.25, sketchHeight * 0.25, noiseDispFbo);
-    textImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 4.0, sketchWidth * 0.25, sketchHeight * 0.25, textFbo);
+    displaceImage = new MovableImage(currentValsArr[0], posYOffset + posYInc * 1.0, sketchWidth * 0.25, sketchHeight * 0.25, displaceFbo);
+    noiseGenImage = new MovableImage(currentValsArr[1], posYOffset + posYInc * 2.0, sketchWidth * 0.25, sketchHeight * 0.25, noiseGenFbo);
+    noiseDispImage = new MovableImage(currentValsArr[2], posYOffset + posYInc * 3.0, sketchWidth * 0.25, sketchHeight * 0.25, noiseDispFbo);
+    textImage = new MovableImage(currentValsArr[3], posYOffset + posYInc * 4.0, sketchWidth * 0.25, sketchHeight * 0.25, textFbo);
     
     movableImagesArr = [
         displaceImage, noiseGenImage, noiseDispImage, textImage
@@ -93,13 +103,22 @@ function setup() {
     textFbo.textAlign(CENTER);
     textFbo.textSize(sketchWidth);
     //textFbo.textFont('Helvetica');
-    mainChar = String.fromCharCode(int(random(65, 91)));
+    mainChar = "TRAIL";
     charPosX;
     charPosY;
     imageMode(CENTER);
 }
 
 function draw() {
+
+    let destVals = destValsArr;
+    currentValsArr[0] += (destValsArr[0] - currentValsArr[0]) * 0.1;
+    currentValsArr[1] += (destValsArr[1] - currentValsArr[1]) * 0.1;
+    currentValsArr[2] += (destValsArr[2] - currentValsArr[2]) * 0.1;
+    //console.log(currentValsArr)
+    if (randomTriggered){
+        destValsArr = [random() * width, random() * width, random() * width, random() * width];
+    }
     background(0);
     image(backgroundFbo, width * 0.5, height * 0.5, width, height);
     smooth();
@@ -108,12 +127,12 @@ function draw() {
     textFbo.noFill();
     textFbo.stroke(255);
     textFbo.strokeWeight(10);
-    textFbo.textSize(sketchWidth);
+    textFbo.textSize(sketchWidth * 0.25);
     let bbox = font.textBounds(mainChar, 0, 0, sketchWidth);
-    textFbo.text(mainChar, 0.5 * (sketchWidth), (bbox.h + sketchHeight) * 0.5);
+    textFbo.text(mainChar, 0.5 * (sketchWidth), (bbox.h + sketchHeight) * 0.325);
 
-    textImage.display();
-    textImage.updatePos();
+    // textImage.display();
+    // textImage.updatePos();
 
     if (textImage.moveMode){
         if (textImage.prevPosX == textImage.posX){}
@@ -126,7 +145,7 @@ function draw() {
     // if noiseGenImage is in moveMode, let the normalized mouseX position value in 
     // respect of windowWidth be the density controller
 
-    let density = noiseGenImage.posX / windowWidth;
+    let density = currentValsArr[0] / windowWidth;
     density = map(density, 0, 1, 10, 100);
     
     noiseGenFbo.shader(noiseGenShader);
@@ -135,10 +154,10 @@ function draw() {
     noiseGenShader.setUniform('density', density);
     noiseGenFbo.rect(0, 0, 50, 50);
 
-    noiseGenImage.display();
-    noiseGenImage.updatePos();
+    // noiseGenImage.display();
+    // noiseGenImage.updatePos();
 
-    let density2 = noiseDispImage.posX / windowWidth;
+    let density2 = currentValsArr[1] / windowWidth;
     density2 = map(density2, 0, 1, 1, 5);
 
     noiseDispFbo.shader(noiseDispShader);
@@ -147,10 +166,10 @@ function draw() {
     noiseDispShader.setUniform('density', density2);
     noiseDispFbo.rect(0, 0, 50, 50);
 
-    noiseDispImage.display();
-    noiseDispImage.updatePos();
+    // noiseDispImage.display();
+    // noiseDispImage.updatePos();
 
-    let displaceStrength = displaceImage.posX / windowWidth;
+    let displaceStrength = currentValsArr[2] / windowWidth;
     displaceStrength = map(displaceStrength, 0, 1, 0, 0.3);
 
     displaceFbo.shader(displaceShader);
@@ -161,8 +180,8 @@ function draw() {
     displaceShader.setUniform('dispStrength', displaceStrength);
     displaceFbo.rect(0, 0, 50, 50);
 
-    displaceImage.display();
-    displaceImage.updatePos();
+    // displaceImage.display();
+    // displaceImage.updatePos();
 
     displaceTextFbo.clear();
     displaceTextFbo.shader(displaceShader2);
