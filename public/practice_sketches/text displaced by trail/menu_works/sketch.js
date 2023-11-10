@@ -15,6 +15,8 @@ let movableImagesArr = [];
 let imgElemArr = [];
 let imgElemShowcount = 0;
 let testImgElem;
+
+
 function preload() {
     noiseGenShader = loadShader('../shaders/noiseGenShader.vert', '../shaders/noiseGenShader.frag');
     noiseDispShader = loadShader('../shaders/noiseDispShader.vert', '../shaders/noiseDispShader.frag');
@@ -72,11 +74,14 @@ class ImageElement {
 
         this.anchorElem = createElement('a');
         this.anchorElem.attribute('href', hrefLink);
-
+        this.anchorElem.attribute('target', '_blank');
+        
         this.imgElem = createImg(imgLink);
         this.imgElem.style('z-index', 0);
         this.imgElem.style('opacity', 0.5);
         this.imgElem.style('width', '20vw');
+        this.imgElem.style('overflow', 'hidden');
+        
         //this.imgElem.style('filter', 'grayscale(100%)');
         this.imgElem.style('display', 'none');
         
@@ -87,7 +92,10 @@ class ImageElement {
         this.imgElem.mouseOut(this.onMouseOut);
 
         this.appearAnimationTriggered = false;
-        console.log(this.imgElem);
+        //console.log(this.imgElem);
+
+        this.previousWindowWidth = windowWidth;
+        this.previousWindowHeight = windowHeight;
     }
 
     onMouseOver(){
@@ -187,12 +195,48 @@ function setup() {
 
     //testImgElem = new ImageElement(width * 0.5, height * 0.5, './images/img_1.png', 'https://google.com');
     let imgNum = 20;
+    let igLinks = [
+        "https://www.instagram.com/p/CS36Is5nhD9/",
+        "https://www.instagram.com/p/CSMHSucH0c8/",
+        "https://www.instagram.com/p/CMi1q4DHz8y/",
+        "https://www.instagram.com/p/CbIKFxolugA/",
+        "https://www.instagram.com/p/CZuZplLF09k/",
+        "https://www.instagram.com/p/CYFunV2Jso2/",
+        "https://www.instagram.com/p/CUe2ZBMJFSG/",
+        "https://www.instagram.com/p/COpi-aJHFvO/",
+        "https://www.instagram.com/p/CQlKH70HAX8/",
+        "https://www.instagram.com/p/CliZFRrvzHQ/",
+
+        "https://www.instagram.com/p/CfblgOLlVrK/",
+        "https://www.instagram.com/p/CauDnr-pMAu/",
+        "https://www.instagram.com/p/Ct77HQnOPSk/",
+        "https://www.instagram.com/p/CWdjdFklga3/",
+        "https://www.instagram.com/p/CKJLmjBHPBL/",
+
+        "https://www.instagram.com/p/CJTI9qMnRw4/",
+        "https://www.instagram.com/p/CILC0EOngIo/",
+        "https://www.instagram.com/p/CGwreB6HHXf/",
+        "https://www.instagram.com/p/CQ5rqGGn8UR/",
+        "https://www.instagram.com/p/CbcpfV9Fnn4/"
+    ]
     for (let i = 0; i < imgNum; i++){
         let posX = width * 0.5 + map(noise(i * 10), 0, 1, -width * 0.3, width * 0.3);
-        let posY = i * width * 0.1;
+        let posY = i * width * 0.15;
 
-        let imgElemTemp =  new ImageElement(posX, posY, './images/img_1.png', 'https://google.com');
+        let imgElemTemp =  new ImageElement(posX, posY, './images/img_'  + (i + 1) + '.png', igLinks[i]);
         imgElemArr.push(imgElemTemp);
+    }
+
+    let isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
+    //console.log(isMobile);
+    if (isMobile){
+        pixelDensity(0.75);
+        noiseGenFbo.pixelDensity(0.75);
+        noiseDispFbo.pixelDensity(0.75);
+        displaceFbo.pixelDensity(0.75);
+        displaceTextFbo.pixelDensity(0.75);
+        backgroundFbo.pixelDensity(0.75);
+        textFbo.pixelDensity(0.75);
     }
 }
 

@@ -43,10 +43,12 @@ li a img {
  
  
   color: #818181;
-  
+  display: block;
   margin-top: 2vh; 
   margin-left: 2vh;
   transition: 0.3s;
+
+  text-decoration: none;
 }
 
 .sidenav a:hover {
@@ -61,4 +63,9 @@ li a img {
 @media screen and (max-height: 450px) {
   .sidenav {padding-top: 15px;}
   .sidenav a {font-size: 18px;}
+}
+
+@font-face {
+  font-family: 'Custom Font';
+  src: url(fonts/SilkSerif-Medium.woff) format('woff');
 }

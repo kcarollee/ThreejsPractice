@@ -9,28 +9,27 @@
   </head>
   <body style="background-color: black;">
     <div>
-      <img src="./images/weblogo4.png" onclick="openNav()" style="width: 28vh; display:block; margin-top: 2.5vh; margin-left: 2vh; cursor: pointer;">
+      <img src="./images/weblogo4.png" onclick="openNav()" style="width: 15vh; display:block; margin-top: 2vh; margin-left: 2vh; cursor: pointer;">
     </div>
     <a href="#">
       <img id="topImage" src="./images/weblogo2.png" 
-      style="width: 8vh; position: absolute; top: 0vh; left: 46vw;" 
-      onmousedown="triggerRandom()" onmouseup="stopRandom()" onclick="rotateImage()">
+      style="width: 4vh; position: absolute; top: 0vh; left: 48vw;" 
+      onmousedown="triggerRandom()" onmouseup="stopRandom()" ontouchstart="triggerRandom()" ontouchend = 'stopRandom()'>
     </a>
     
 
   
     <div id="mySidenav" class="sidenav" onmousedown="closeNav()">
       <br>
-      <br>
-      <br>
-      <a href="./menu_about/">
-        <img src="./images/about_button.png" style="width: 20vh;">
+      <a href="./menu_about/index.html" style="font-family: Custom Font; font-size: x-large;">
+        ABOUT
+        
       </a>
-      <a href="./menu_works/index.html">
-        <img src="./images/works_button.png" style="width: 20vh;">
+      <a href="./menu_works/index.html" style="font-family: Custom Font; font-size: x-large;">
+        WORKS
       </a>
-      <a href="./menu_type/index.html">
-        <img src="./images/type_button.png" style="width: 20vh;">
+      <a href="./menu_type/index.html" style="font-family: Custom Font; font-size: x-large;">
+        FONT
       </a>
       <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
     </div>

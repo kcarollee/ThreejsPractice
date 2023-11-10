@@ -17,7 +17,7 @@ let imgElemShowcount = 0;
 let testImgElem;
 
 let textElemArr = [];
-
+let isMobile;
 
 function preload() {
     noiseGenShader = loadShader('../shaders/noiseGenShader.vert', '../shaders/noiseGenShader.frag');
@@ -29,8 +29,8 @@ function preload() {
 }
 
 
-class MovableImage{
-    constructor(posX, posY, imgWidth, imgHeight, fbo){
+class MovableImage {
+    constructor(posX, posY, imgWidth, imgHeight, fbo) {
         this.posX = posX;
         this.posY = posY;
         this.prevPosX = null;
@@ -41,21 +41,21 @@ class MovableImage{
         this.moveMode = false;
     }
 
-    display(){
+    display() {
         image(this.fbo, this.posX, this.posY, this.imgWidth, this.imgHeight);
     }
 
-    updatePos(){
+    updatePos() {
         if (this.moveMode) {
             this.prevPosX = this.posX;
             this.posX = mouseX;
         }
-            
+
     }
 
-    mouseIsInside(){
-        if (mouseX < this.posX + this.imgWidth * 0.5 && mouseX > this.posX - this.imgWidth * 0.5){
-            if (mouseY < this.posY + this.imgHeight * 0.5 && mouseY > this.posY - this.imgHeight * 0.5){
+    mouseIsInside() {
+        if (mouseX < this.posX + this.imgWidth * 0.5 && mouseX > this.posX - this.imgWidth * 0.5) {
+            if (mouseY < this.posY + this.imgHeight * 0.5 && mouseY > this.posY - this.imgHeight * 0.5) {
                 return true;
             }
             return false;
@@ -66,7 +66,7 @@ class MovableImage{
 
 
 class ImageElement {
-    constructor(posX, posY, imgLink, hrefLink){
+    constructor(posX, posY, imgLink, hrefLink) {
         this.posX = posX;
         this.posY = posY;
 
@@ -83,7 +83,7 @@ class ImageElement {
         this.imgElem.style('width', '20vw');
         //this.imgElem.style('filter', 'grayscale(100%)');
         this.imgElem.style('display', 'none');
-        
+
         this.imgElem.parent(this.anchorElem);
         this.imgElem.position(this.posX, this.posY, 'relative');
 
@@ -94,30 +94,30 @@ class ImageElement {
         console.log(this.imgElem);
     }
 
-    onMouseOver(){
+    onMouseOver() {
         this.style('opacity', 1);
         this.style('z-index', 9999);
     }
 
-    onMouseOut(){
+    onMouseOut() {
         this.style('opacity', 0.5);
         this.style('z-index', 0);
     }
 
-    updatePos(deltaY){
+    updatePos(deltaY) {
         this.posY += deltaY;
         this.posYDest += deltaY;
         this.imgElem.position(this.posX, this.posY);
     }
 
     // called when window is resized
-    repositionImage(){
+    repositionImage() {
         this.posX = map(this.posX, 0, width, 0, windowWidth);
         this.imgElem.position(this.posX, this.posY);
     }
 
-    appearAnimation(){
-        if (this.appearAnimationTriggered){
+    appearAnimation() {
+        if (this.appearAnimationTriggered) {
             //if (this.size < 10) this.size += 0.5;
             this.imgElem.style('display', 'block');
             //this.imgElem.style('width', this.size + 'vw');
@@ -127,10 +127,10 @@ class ImageElement {
         }
     }
 
-    
-    mouseIsInside(){
-        if (mouseX < this.posX + this.imgWidth * 0.5 && mouseX > this.posX - this.imgWidth * 0.5){
-            if (mouseY < this.posY + this.imgHeight * 0.5 && mouseY > this.posY - this.imgHeight * 0.5){
+
+    mouseIsInside() {
+        if (mouseX < this.posX + this.imgWidth * 0.5 && mouseX > this.posX - this.imgWidth * 0.5) {
+            if (mouseY < this.posY + this.imgHeight * 0.5 && mouseY > this.posY - this.imgHeight * 0.5) {
                 return true;
             }
             return false;
@@ -149,6 +149,8 @@ function setup() {
     mainCanvas.style('position', 'fixed');
     mainCanvas.style('z-index', '-1');
 
+    isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
+
     /*
     image(displaceTextFbo, width * 0.5 - sketchWidth, height * 0.5, sketchWidth, sketchHeight);
     image(displaceTextFbo, width * 0.5, height * 0.5, sketchWidth, sketchHeight);
@@ -159,7 +161,7 @@ function setup() {
     image(textFbo, 200, posYOffset + posYInc * 4.0, sketchWidth * 0.25, sketchHeight * 0.25);
     */
 
-    
+
 
     sketchWidth = min(windowWidth, windowHeight) * 0.75;
     sketchHeight = sketchWidth;
@@ -169,14 +171,14 @@ function setup() {
     displaceTextFbo = createGraphics(sketchWidth, sketchHeight, WEBGL);
     backgroundFbo = createGraphics(width, height, WEBGL);
     textFbo = createGraphics(sketchWidth, sketchHeight);
-    
+
     let posYInc = sketchHeight * 0.25;
     let posYOffset = (height - sketchHeight) * 0.5 - posYInc * 0.5;
     displaceImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 1.0, sketchWidth * 0.25, sketchHeight * 0.25, displaceFbo);
     noiseGenImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 2.0, sketchWidth * 0.25, sketchHeight * 0.25, noiseGenFbo);
     noiseDispImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 3.0, sketchWidth * 0.25, sketchHeight * 0.25, noiseDispFbo);
     textImage = new MovableImage(random() * windowWidth, posYOffset + posYInc * 4.0, sketchWidth * 0.25, sketchHeight * 0.25, textFbo);
-    
+
     movableImagesArr = [
         displaceImage, noiseGenImage, noiseDispImage, textImage
     ];
@@ -189,7 +191,7 @@ function setup() {
     charPosY;
     imageMode(CENTER);
 
-    
+
     //testImgElem = new ImageElement(width * 0.5, height * 0.5, './images/img_1.png', 'https://google.com');
     /*
     let imgNum = 30;
@@ -257,12 +259,13 @@ function setup() {
 
     let textElemPosYOffset = height * 0.1;
     let textElemPosYIncrement = 35;
-    for (let i = 1; i < 6; i++){
-        
-        let textElem = createElement('a' ,strArr[i]);
+    for (let i = 1; i < 6; i++) {
+
+        let textElem = createElement('a', strArr[i]);
         textElem.style('color', 'white');
-        textElem.style('font-size', '4vh');
-        textElem.style('font-family', 'Helvetica');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh'); 
+        
+        textElem.style('font-family', 'Custom Font');
         textElem.posY = textElemPosYOffset + textElemPosYIncrement * i;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
         textElem.position(textElem.posX, textElem.posY);
@@ -274,12 +277,12 @@ function setup() {
         if (i == 5) textElemPosYOffset = textElem.posY;
     }
 
-    for (let i = 1; i < textElemNum; i++){
-        let textElem = createElement('a' ,strArr[0]);
-        textElem.style('color', 'grey');
+    for (let i = 1; i < textElemNum; i++) {
+        let textElem = createElement('a', strArr[0]);
+        textElem.style('color', 'rgb(100, 100, 100)');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '4vh')
-        textElem.style('font-family', 'Helvetica');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
         textElem.style('white-space', 'nowrap');
@@ -291,12 +294,12 @@ function setup() {
         if (i == textElemNum - 1) textElemPosYOffset = textElem.posY;
     }
 
-    for (let i = 1; i < 4; i++){
-        let textElem = createElement('a' ,strArr[i + 5]);
+    for (let i = 1; i < 4; i++) {
+        let textElem = createElement('a', strArr[i + 5]);
         textElem.style('color', 'white');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '4vh')
-        textElem.style('font-family', 'Helvetica');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
         textElem.style('white-space', 'nowrap');
@@ -308,12 +311,12 @@ function setup() {
         if (i == 3) textElemPosYOffset = textElem.posY;
     }
 
-    for (let i = 1; i < textElemNum; i++){
-        let textElem = createElement('a' ,strArr[0]);
-        textElem.style('color', 'grey');
+    for (let i = 1; i < textElemNum; i++) {
+        let textElem = createElement('a', strArr[0]);
+        textElem.style('color', 'rgb(100, 100, 100)');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '4vh')
-        textElem.style('font-family', 'Helvetica');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
         textElem.style('white-space', 'nowrap');
@@ -325,12 +328,12 @@ function setup() {
         if (i == textElemNum - 1) textElemPosYOffset = textElem.posY;
     }
 
-    for (let i = 1; i < 8; i++){
-        let textElem = createElement('a' ,strArr[i + 8]);
+    for (let i = 1; i < 8; i++) {
+        let textElem = createElement('a', strArr[i + 8]);
         textElem.style('color', 'white');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '4vh')
-        textElem.style('font-family', 'Helvetica');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
         textElem.style('white-space', 'nowrap');
@@ -342,12 +345,12 @@ function setup() {
         if (i == 7) textElemPosYOffset = textElem.posY;
     }
 
-    for (let i = 1; i < textElemNum; i++){
-        let textElem = createElement('a' ,strArr[0]);
-        textElem.style('color', 'grey');
+    for (let i = 1; i < textElemNum; i++) {
+        let textElem = createElement('a', strArr[0]);
+        textElem.style('color', 'rgb(100, 100, 100)');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '4vh')
-        textElem.style('font-family', 'Helvetica');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
         textElem.style('white-space', 'nowrap');
@@ -359,12 +362,12 @@ function setup() {
         if (i == textElemNum - 1) textElemPosYOffset = textElem.posY;
     }
 
-    for (let i = 1; i < 3; i++){
-        let textElem = createElement('a' ,strArr[i + 15]);
+    for (let i = 1; i < 3; i++) {
+        let textElem = createElement('a', strArr[i + 15]);
         textElem.style('color', 'white');
         textElem.style('opacity', '90');
-        textElem.style('font-size', '4vh')
-        textElem.style('font-family', 'Helvetica');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
         textElem.style('white-space', 'nowrap');
@@ -375,6 +378,24 @@ function setup() {
 
         if (i == 2) textElemPosYOffset = textElem.posY;
     }
+
+    for (let i = 1; i < textElemNum; i++) {
+        let textElem = createElement('a', strArr[0]);
+        textElem.style('color', 'rgb(100, 100, 100)');
+        textElem.style('opacity', '90');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        textElem.style('font-family', 'Custom Font');
+        textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
+        textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
+        textElem.style('white-space', 'nowrap');
+        textElem.position(textElem.posX, textElem.posY);
+        textElem.style('display', 'none');
+        textElemArr.push(textElem);
+        noiseStep += 1;
+
+        if (i == textElemNum - 1) textElemPosYOffset = textElem.posY;
+    }
+
 
 
     /*
@@ -409,7 +430,19 @@ function setup() {
     CREATING MANIPULAED MEDIA BASED
     ON OUR CLIENTS' REQUESTS
     */
+
     
+    //console.log(isMobile);
+    if (isMobile){
+        pixelDensity(0.75);
+        noiseGenFbo.pixelDensity(0.75);
+        noiseDispFbo.pixelDensity(0.75);
+        displaceFbo.pixelDensity(0.75);
+        displaceTextFbo.pixelDensity(0.75);
+        backgroundFbo.pixelDensity(0.75);
+        textFbo.pixelDensity(0.75);
+    }
+
 }
 
 function draw() {
@@ -424,16 +457,22 @@ function draw() {
         imgElem.appearAnimation();
     })
     */
+     // mouse movement only available on web due to overflow issues
+     
+     if (!isMobile){
+        textElemArr.forEach(function (textElem, i) {
 
-    textElemArr.forEach(function(textElem, i){
-        textElem.posX += map(noise(i * 0.1 + frameCount * 0.01), 0, 1, -2, 2);
-        let d = dist(textElem.posX, textElem.posY, mouseX, mouseY);
-        textElem.posX += (mouseX - textElem.posX)  / d;
-        textElem.position(textElem.posX, textElem.posY);
-    })
+            textElem.posX += map(noise(i * 0.1 + frameCount * 0.01), 0, 1, -2, 2);
+            let d = dist(textElem.posX, textElem.posY, mouseX, mouseY);
+            textElem.posX += (mouseX - textElem.posX) / d;
+            textElem.position(textElem.posX, textElem.posY);
+    
+        })
+     }
+
 
     let currentVisibleIndex = int(frameCount * 0.25);
-    if (currentVisibleIndex < textElemArr.length){
+    if (currentVisibleIndex < textElemArr.length) {
         textElemArr[currentVisibleIndex].style('display', 'block');
     }
     background(0);
@@ -451,12 +490,12 @@ function draw() {
     //textImage.display();
     //textImage.updatePos();
 
-    if (textImage.moveMode){
-        if (textImage.prevPosX == textImage.posX){}
-        else{
+    if (textImage.moveMode) {
+        if (textImage.prevPosX == textImage.posX) { }
+        else {
             if (frameCount % 5 == 0) mainChar = String.fromCharCode(int(random(65, 91)));
         }
-        
+
     }
 
     // if noiseGenImage is in moveMode, let the normalized mouseX position value in 
@@ -464,7 +503,7 @@ function draw() {
 
     let density = noiseGenImage.posX / windowWidth;
     density = map(density, 0, 1, 10, 100);
-    
+
     noiseGenFbo.shader(noiseGenShader);
     noiseGenShader.setUniform('resolution', [sketchWidth, sketchHeight]);
     noiseGenShader.setUniform('time', frameCount * 0.001);
@@ -518,15 +557,15 @@ function draw() {
 
     let posYInc = sketchHeight * 0.25;
     let posYOffset = (height - sketchHeight) * 0.5 - posYInc * 0.5;
-    
+
     //image(displaceTextFbo, width * 0.5 - sketchWidth, height * 0.5, sketchWidth, sketchHeight);
     //image(displaceTextFbo, width * 0.5, height * 0.5, sketchWidth, sketchHeight);
     //image(displaceTextFbo, width * 0.5 + sketchWidth, height * 0.5, sketchWidth, sketchHeight);
-    
+
 }
 
-function windowResized(){
-    imgElemArr.forEach(function(imgElem){
+function windowResized() {
+    imgElemArr.forEach(function (imgElem) {
         imgElem.repositionImage();
     });
 
@@ -535,26 +574,26 @@ function windowResized(){
     sketchHeight = sketchWidth;
     //textFbo.textSize(sketchWidth);
 
-    movableImagesArr.forEach(function(img){
-        
+    movableImagesArr.forEach(function (img) {
+
     });
 }
 
-function mousePressed(){
-    movableImagesArr.forEach(function(img){
-        if (img.mouseIsInside()){
+function mousePressed() {
+    movableImagesArr.forEach(function (img) {
+        if (img.mouseIsInside()) {
             img.moveMode = true;
         }
     });
 }
 
-function mouseReleased(){
-    movableImagesArr.forEach(function(img){
-            img.moveMode = false;
+function mouseReleased() {
+    movableImagesArr.forEach(function (img) {
+        img.moveMode = false;
     });
 }
 let totalDeltaY = 0;
 let mouseWheelTickNum = 0;
-function mouseWheel(event){
-    
+function mouseWheel(event) {
+
 }

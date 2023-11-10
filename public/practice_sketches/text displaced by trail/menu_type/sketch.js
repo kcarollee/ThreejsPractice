@@ -30,6 +30,9 @@ class MovableImage{
         this.imgHeight = imgHeight;
         this.fbo = fbo;
         this.moveMode = false;
+
+        this.previousWindowWidth = windowWidth;
+        this.previousWindowHeight = windowHeight;
     }
 
     display(){
@@ -41,8 +44,8 @@ class MovableImage{
             this.prevPosX = this.posX;
             this.posX = mouseX;
         }
-            
     }
+
 
     mouseIsInside(){
         if (mouseX < this.posX + this.imgWidth * 0.5 && mouseX > this.posX - this.imgWidth * 0.5){
@@ -97,6 +100,18 @@ function setup() {
     charPosX;
     charPosY;
     imageMode(CENTER);
+
+    let isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
+    //console.log(isMobile);
+    if (isMobile){
+        pixelDensity(0.75);
+        noiseGenFbo.pixelDensity(0.75);
+        noiseDispFbo.pixelDensity(0.75);
+        displaceFbo.pixelDensity(0.75);
+        displaceTextFbo.pixelDensity(0.75);
+        backgroundFbo.pixelDensity(0.75);
+        textFbo.pixelDensity(0.75);
+    }
 }
 
 function draw() {
@@ -202,12 +217,28 @@ function draw() {
 
 function windowResized(){
     resizeCanvas(windowWidth, windowHeight)
+    
     sketchWidth = min(windowWidth, windowHeight) * 0.75;
     sketchHeight = sketchWidth;
     //textFbo.textSize(sketchWidth);
 
+    noiseGenFbo.resizeCanvas(sketchWidth, sketchHeight);
+    noiseDispFbo.resizeCanvas(sketchWidth, sketchHeight);
+    displaceFbo.resizeCanvas(sketchWidth, sketchHeight);
+    displaceTextFbo.resizeCanvas(sketchWidth, sketchHeight);
+    backgroundFbo.resizeCanvas(windowWidth, windowHeight);
+    textFbo.resizeCanvas(sketchWidth, sketchHeight);
+
     movableImagesArr.forEach(function(img){
-        
+        console.log(width, windowWidth)
+        img.posX = map(img.posX, 0, img.previousWindowWidth, 0, windowWidth);
+        img.posY = map(img.posY, 0, img.previousWindowHeight, 0, windowHeight);
+    
+        img.previousWindowWidth = windowWidth;
+        img.previousWindowHeight = windowHeight;
+
+        img.imgWidth = sketchWidth * 0.25;
+        img.imgHeight = sketchHeight * 0.25;
     });
 }
 
