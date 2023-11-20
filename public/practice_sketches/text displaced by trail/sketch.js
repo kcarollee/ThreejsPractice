@@ -16,7 +16,8 @@ function preload() {
     displaceShader = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
     displaceShader2 = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
     backgroundNoiseShader = loadShader('shaders/displaceShader.vert', 'shaders/displaceShader.frag');
-    font = loadFont("fonts/helvetica.ttf");
+    //font = loadFont("fonts/helvetica.ttf");
+    font = loadFont("fonts/Gilroy-Medium.ttf");
 }
 
 

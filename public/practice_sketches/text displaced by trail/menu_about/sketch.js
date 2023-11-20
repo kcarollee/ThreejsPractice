@@ -230,9 +230,9 @@ function setup() {
     let textElemNum = 20;
     let textElemStr = 'LEAVE BEHIND TASTEFUL NOISE<br>';
     let strArr = [
-        'LEAVE BEHIND TASTEFUL NOISE<br>',
+        'leave behind tasteful noise<br>',
         // 1 ~5
-        'TRAIL IS A SERVICE CATERING<br>',
+        'traillll: A SERVICE CATERING<br>',
         'TO THE NEEDS OF CLIENTS WHO<br>',
         'HAVE A DESIRE TO MANIPULATE<br>',
         'THEIR CONTENTS AND USE THEM<br>',
@@ -251,7 +251,7 @@ function setup() {
         '__REAL TIME GRAPHICS_______<br>',
         // 16 ~ 17
         'CONTACT US: trail@gmail.com<br>',
-        'INSTAGRAM: @trail__services<br>',
+        'INSTAGRAM: @traillll_services<br>',
     ]
 
     let noiseIncrement = 0.2;
@@ -263,8 +263,8 @@ function setup() {
 
         let textElem = createElement('a', strArr[i]);
         textElem.style('color', 'white');
-        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh'); 
-        
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '3vh'); 
+        textElem.style('letter-spacing', '0.1em');
         textElem.style('font-family', 'Custom Font');
         textElem.posY = textElemPosYOffset + textElemPosYIncrement * i;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
@@ -281,7 +281,8 @@ function setup() {
         let textElem = createElement('a', strArr[0]);
         textElem.style('color', 'rgb(100, 100, 100)');
         textElem.style('opacity', '90');
-        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '3vh');
+        textElem.style('letter-spacing', '0.1em');
         textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
@@ -298,7 +299,8 @@ function setup() {
         let textElem = createElement('a', strArr[i + 5]);
         textElem.style('color', 'white');
         textElem.style('opacity', '90');
-        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '3vh');
+        textElem.style('letter-spacing', '0.1em');
         textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
@@ -315,7 +317,8 @@ function setup() {
         let textElem = createElement('a', strArr[0]);
         textElem.style('color', 'rgb(100, 100, 100)');
         textElem.style('opacity', '90');
-        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '3vh');
+        textElem.style('letter-spacing', '0.1em');
         textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
@@ -332,7 +335,8 @@ function setup() {
         let textElem = createElement('a', strArr[i + 8]);
         textElem.style('color', 'white');
         textElem.style('opacity', '90');
-        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '3vh');
+        textElem.style('letter-spacing', '0.1em');
         textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
@@ -349,7 +353,8 @@ function setup() {
         let textElem = createElement('a', strArr[0]);
         textElem.style('color', 'rgb(100, 100, 100)');
         textElem.style('opacity', '90');
-        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '3vh');
+        textElem.style('letter-spacing', '0.1em');
         textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
@@ -366,7 +371,8 @@ function setup() {
         let textElem = createElement('a', strArr[i + 15]);
         textElem.style('color', 'white');
         textElem.style('opacity', '90');
-        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '3vh');
+        textElem.style('letter-spacing', '0.1em');
         textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);
@@ -383,7 +389,8 @@ function setup() {
         let textElem = createElement('a', strArr[0]);
         textElem.style('color', 'rgb(100, 100, 100)');
         textElem.style('opacity', '90');
-        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '4vh');
+        isMobile ? textElem.style('font-size', '3vw') : textElem.style('font-size', '3vh');
+        textElem.style('letter-spacing', '0.1em');
         textElem.style('font-family', 'Custom Font');
         textElem.posY = i * textElemPosYIncrement + textElemPosYOffset;
         textElem.posX = width * 0.25 + map(noise(noiseIncrement * noiseStep), 0, 1, -200, 200);

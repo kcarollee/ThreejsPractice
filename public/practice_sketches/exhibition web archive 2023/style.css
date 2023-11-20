@@ -1,0 +1,21 @@
+html, body {
+   margin: 0;
+   height: 100%;
+}
+#c {
+   width: 100%;
+   height: 100%;
+   display: block;
+   
+}
+
+#main-logo-type { 
+   position: absolute; 
+   top: 5vh;
+   left: 1vw; 
+   z-index: 2;
+}
+
+#main-logo-type img{
+   width: 15vw;
+}

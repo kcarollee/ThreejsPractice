@@ -1,0 +1,108 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+canvas {
+  position: relative;
+  z-index: -1;
+}
+
+.textBox {
+  display: -webkit-box;
+    display: -webkit-flex;
+    display: -ms-flexbox;
+    display: flex;
+    position: absolute;
+    
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+    width: calc(100% - 40px);
+    height: 100%;
+    margin: 0 20px;
+   
+    justify-content: center;
+}
+
+.info-text{
+  z-index: 999;
+  color: white;
+  font-family: customFont;
+  display: inline-block;
+  font-size: 2em;
+  padding: .25em 0;
+  background: black;
+}
+
+.refresh-button{
+  z-index: 999;
+  width: 5vh;
+  background: transparent;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+header {
+  background-color: black;
+  color: white;
+  padding: 1vh;
+  position: relative;
+  font-family: customFont;
+  letter-spacing: 2px;
+}
+
+h1 {
+  margin: 0;
+}
+
+h1, p {
+  text-align: left;
+  margin-left: 2%;
+}
+
+/* Navigation Menu Styles */
+nav {
+  display: none; /* Hide the menu by default */
+  position: absolute;
+  top: 100%; /* Position the menu just below the header */
+  left: 0;
+  width: 100%;
+  background-color: #333; /* Background color for the menu */
+  padding: 0.5vh;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1); /* Add a subtle box shadow */
+  animation: slideDown 0.3s ease-in-out; /* Slide-down animation */
+  transform-origin: top center; /* Set the origin for the transform */
+}
+
+.menu-wrapper {
+  margin-left: 1.75%; /* Adjust the left margin */
+}
+
+@keyframes slideDown {
+  from {
+      transform: scaleY(0);
+  }
+  to {
+      transform: scaleY(1);
+  }
+}
+
+nav a {
+  display: inline-block; /* Display menu items in a single line */
+  color: white;
+  text-align: center;
+  padding: 10px;
+  text-decoration: none;
+  transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+nav a:hover {
+  background-color: #555; /* Change background color on hover */
+}
+
+@font-face {
+  font-family: customFont;
+  src: url(./assets/fonts/Supply-Medium.otf);
+}

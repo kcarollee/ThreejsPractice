@@ -36,7 +36,7 @@ li a img {
   background-color: transparent;
   overflow-x: hidden;
   transition: 0.5s;
-  padding-top: 60px;
+  padding-top: 5vh;
 }
 
 .sidenav a {
@@ -71,5 +71,5 @@ li a img {
 
 @font-face {
   font-family: 'Custom Font';
-  src: url(../fonts/SilkSerif-Medium.woff) format('woff');
+  src: url(../fonts/Gilroy-Medium.woff) format('woff');
 }

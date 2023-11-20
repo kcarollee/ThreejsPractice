@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.8.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.8.0/addons/p5.sound.min.js"></script>
+    <script src="offsets.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="utf-8" />
+
+  </head>
+  <body>
+
+    <header>
+      <h1>EXPAND FEST: REAL TIME MEDIA ART FESTIVAL</h1>
+      <nav id="menu">
+          <div class="menu-wrapper">
+              <a href="#">HOME</a>
+              <a href="#">ABOUT</a>
+              <a href="./pages/page_contestants/index.html">CONTESTANTS</a>
+              <a href="#">PERFORMERS</a>
+              <a href="#">SITE MAP</a>
+              <a href="#">TIMETABLE</a>
+          </div>
+      </nav>
+  </header>
+    
+    <script src="sketch.js"></script>
+    <div style="text-align: center; margin-top: 80vh;">
+      <div id="infoText" class="info-text"></div>
+    </div>
+
+    <div id='refreshButton' style="text-align: center; margin-top: 80vh;display: none;">
+      <img src="assets/images/icons/refresh.png" class="refresh-button" onclick="refreshSketch()">
+    </div>
+    <script>
+      const header = document.querySelector('header');
+      const menu = document.getElementById('menu');
+
+      header.addEventListener('mouseenter', () => {
+          menu.style.display = 'block';
+      });
+
+      header.addEventListener('mouseleave', () => {
+          menu.style.display = 'none';
+      });
+    </script>
+  </body>
+</html>

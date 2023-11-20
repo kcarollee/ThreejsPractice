@@ -36,7 +36,7 @@ li a img {
   background-color: transparent;
   overflow-x: hidden;
   transition: 0.5s;
-  padding-top: 60px;
+  padding-top: 5vh;
 }
 
 .sidenav a {
@@ -65,7 +65,11 @@ li a img {
   .sidenav a {font-size: 18px;}
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+}
+
 @font-face {
   font-family: 'Custom Font';
-  src: url(fonts/SilkSerif-Medium.woff) format('woff');
+  src: url(./fonts/Gilroy-Medium.woff) format('woff');
 }
