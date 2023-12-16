@@ -1,6 +1,13 @@
 html, body {
    margin: 0;
    height: 100%;
+   -webkit-tap-highlight-color: transparent;
+   -webkit-touch-callout: none;
+   -webkit-user-select: none;
+   -khtml-user-select: none;
+   -moz-user-select: none;
+   -ms-user-select: none;
+   user-select: none;
 }
 #c {
    width: 100%;
@@ -14,8 +21,100 @@ html, body {
    top: 5vh;
    left: 1vw; 
    z-index: 2;
+
+   width: 15%;
+   margin-left: 3vh;
+   margin-right: auto;
 }
 
-#main-logo-type img{
-   width: 15vw;
+.label {
+   color: #FFF;
+   font-family: sans-serif;
+   padding: 2px;
+   background: rgba( 0, 0, 0, .6 );
 }
+
+
+
+#main-info {
+   position: absolute; 
+   bottom: 5vh;
+   right: 5vh; 
+   z-index: 2;
+   width: 20%;
+   margin-left: 60vw;
+}
+
+.index-button {
+   font-family: customFont;
+   position: fixed;
+   top: 3vh;
+   right: 2.2vw;
+   background-color: #FFDE00;
+   color: black;
+   border: none;
+   padding: 5px 5px;
+   margin: 10px;
+   cursor: pointer;
+   color: #2044FF;
+
+}
+
+.hidden-list {
+   display: none;
+   list-style: none;
+   padding: 0;
+   position: absolute;
+   top: 8vh;
+   right: 2.5vw; /* Adjusted the right margin */
+   margin: 0;
+
+   columns: 2;
+   -webkit-columns: 2;
+   -moz-columns: 2;
+   
+}
+
+.animated-list {
+   animation: slideUpDown 0.5s ease-out;
+}
+
+.hidden-list li {
+   text-align: center;
+   margin-bottom: 5px;
+}
+
+.hidden-list li a {
+   font-family: customFont;
+   text-decoration: none; /* Remove underlines from links */
+   color: white; /* Set link color */
+}
+
+.hidden-list li  :hover{
+   background-color: #FFDE00;
+   color: #2044FF;
+}
+
+
+@keyframes slideUpDown {
+   0% {
+       opacity: 0;
+       transform: translateY(-20px);
+   }
+   100% {
+       opacity: 1;
+       transform: translateY(0);
+   }
+}
+
+@font-face {
+   font-family: customFont;
+   src: url('./assets/fonts/SB\ 어그로\ L.ttf');
+ }
+
+ @font-face {
+   font-family: customFont2;
+   src: url('./assets/fonts/SB\ 어그로\ B.ttf');
+ }
+
+

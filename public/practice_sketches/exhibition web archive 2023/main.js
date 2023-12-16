@@ -4,30 +4,41 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 
 class HyperlinkSprite{
-	constructor(posVec, destPosVec, spriteTexture, faceTexture, link, index, scale = 1){
+	constructor(posVec, destPosVec, spriteTexture, faceTexture, nameTexture, link, index, scale = 1){
 		this.currentPosVec = posVec;
 		this.destPosVec = destPosVec;
+
 		this.spriteTexture = spriteTexture;
-		this.faceTexture = faceTexture;
+		this.faceSpriteTexture = faceTexture;
+		this.nameSpriteTexture = nameTexture;
+
 		this.link = link;
 		this.scale = scale;
 
 		this.spriteMat = new THREE.SpriteMaterial({map: this.spriteTexture});
-		this.faceMat = new THREE.SpriteMaterial({map: this.faceTexture});
+		this.faceSpriteMat = new THREE.SpriteMaterial({map: this.faceSpriteTexture});
+		this.nameSpriteMat = new THREE.SpriteMaterial({map: this.nameSpriteTexture});
 
 		this.sprite = new THREE.Sprite(this.spriteMat);
 		this.sprite.position.copy(this.currentPosVec);
 		this.sprite.scale.set(this.scale, this.scale, this.scale);
 
 		
-		this.face = new THREE.Sprite(this.faceMat);
-		//this.face.position.copy(this.currentPosVec);
-		this.face.scale.set(this.scale * 0.1, this.scale * 0.1);
+		this.faceSprite = new THREE.Sprite(this.faceSpriteMat);
+		//this.faceSprite.position.copy(this.currentPosVec);
+		this.faceSprite.scale.set(this.scale * 0.1, this.scale * 0.1);
 
-		this.sprite.add(this.face);
+		this.nameSprite = new THREE.Sprite(this.nameSpriteMat);
+		this.nameSprite.scale.set(this.scale *  0.15, this.scale  * 0.15);
+		this.nameSprite.visible = false;
+
+		this.sprite.add(this.faceSprite);
+		this.sprite.add(this.nameSprite);
+
 		this.id = index;
 		this.sprite.name = index;
-		this.face.name = index;
+		this.faceSprite.name = index;
+		this.nameSprite.name = index;
 		// animation triggers 
 		this.clickAnimationTriggered = false;
 		this.centerTranslationTriggered = false;
@@ -45,7 +56,7 @@ class HyperlinkSprite{
 
 	addToScene(scene){
 		scene.add(this.sprite);
-		//scene.add(this.face);
+		//scene.add(this.faceSprite);
 	}
 
 	moveToDest(){
@@ -56,9 +67,13 @@ class HyperlinkSprite{
 			this.currentPosVec.add(destPosVecCopy.sub(this.currentPosVec).multiplyScalar(0.1));
 			
 			this.sprite.position.copy(this.currentPosVec);
-			//this.face.position.copy(this.currentPosVec);
+			//this.faceSprite.position.copy(this.currentPosVec);
 		}
 
+	}
+
+	setNewDestPos(newDestPosVec){
+		this.destPosVec.copy(newDestPosVec);
 	}
 
 	clickAnimationZoom(){
@@ -68,7 +83,7 @@ class HyperlinkSprite{
 			this.currentPosVec.add(centerVec.sub(this.currentPosVec).multiplyScalar(this.translationClock.getElapsedTime() * 0.1));
 			
 			this.sprite.position.copy(this.currentPosVec);
-			this.face.position.set(0, 0, 0);
+			this.faceSprite.position.set(0, 0, 0);
 
 			if (centerVec.distanceTo(this.currentPosVec) < 0.1){
 				this.translationClock.stop();
@@ -86,8 +101,8 @@ class HyperlinkSprite{
 			this.scale += this.scaleUpClock.getElapsedTime() * 2.5;
 			
 			this.sprite.scale.set(this.scale, this.scale);
-			this.face.scale.set(2.5 / this.scale, 2.5 / this.scale);
-			
+			this.faceSprite.scale.set(2.5 / this.scale, 2.5 / this.scale);
+			this.nameSprite.scale.set(3.8 / this.scale, 3.8 / this.scale)
 			if (this.scale > 100) {
 				//this.clickAnimationTriggered = false;
 				this.scaleUpTriggered = false;
@@ -149,35 +164,104 @@ function map(value, min1, max1, min2, max2) {
 }
 
 async function main(){
-
+	// MOBILE CHECK
+	let isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
 	// P5 SKETCH
 	let p5Texture, p5Canvas;
 	let p5CanvasLoadedFlag = false;
   	let p5LoopStarted = false;
+	let bgPicLoaded = false;
+	let imageLoading = true;
 	const p5Sketch = (sketch) => {
 		let bgBorderPic;
+		let bgPic;
+		let mouseLerp = [-10000, -10000];
+		let mouseLerpSet = false;
+		let mouseLerpCoef = 0.01
+		let curPosX, curPosY;
+		
 		sketch.setup = async () => {
-			await sketch.createCanvas(sketch.windowWidth, sketch.windowHeight);
-			bgBorderPic = await sketch.loadImage("./assets/graphic elements/bgBorderTop.png", sketch.getImage);
-			console.log(bgBorderPic.width);
+			sketch.createCanvas(sketch.windowWidth, sketch.windowHeight);
+			//bgBorderPic = await sketch.loadImage("./assets/graphic elements/bgBorderTop.png", sketch.getImage);
+			//bgPic = sketch.loadImage("./assets/graphic elements/bgNoisy.png", sketch.getImage);
+			//console.log(bgPic.canvas.style.display = 'none');
+			//bgPic.resize(0, 0);
+			//bgPic = null;
+			// check for mobile
+			sketch.checkForMobile();
+			sketch.imageMode(sketch.CENTER);
+			sketch.background(bgColorArr[curBgColorIndex]);
 		};
 	  
 		sketch.draw = async () => {
 			try {
+				sketch.background(bgColorArr[curBgColorIndex]);
+				
 				p5LoopStarted = true;
-				sketch.background(255);
+				// first time logo is clicked
+				if (logoClickCount == 1){
+					if (logoClicked){
+						bgPic = await sketch.loadImage("./assets/graphic elements/bgNoisyCompressed.png", sketch.getImage);
+						//console.log(mouseLerp);
+						logoClicked = false;
+					}
+					if (bgPic != null) {
+						if (bgPic.width != 1 && !mouseLerpSet){
+							mouseLerp = [bgPic.width, bgPic.height];
+							//console.log(bgPic.width)
+							mouseLerpSet = true;
+						}
+						if (bgPic.width != 1) {
+							sketch.image(bgPic, mouseLerp[0], mouseLerp[1], bgPic.width * 1, bgPic.height * 1);
+							imageLoading = false;
+						}
+						else imageLoading = true;
+						curPosX = mouseLerp[0];
+						curPosY = mouseLerp[1];
+						mouseLerp[0] = sketch.lerp(mouseLerp[0], sketch.mouseX, mouseLerpCoef);
+						mouseLerp[1] = sketch.lerp(mouseLerp[1], sketch.mouseY, mouseLerpCoef);
+					}
+				}
+
+				else {
+					
+					let mode = logoClickCount % 2;
+					//console.log(mode == 1);
+					// sketch moves towards mouse
+					if (mode == 0){
+						sketch.image(bgPic, curPosX, curPosY, bgPic.width * 1, bgPic.height * 1);
+						curPosX = sketch.lerp(curPosX, -bgPic.width, mouseLerpCoef);
+						curPosY = sketch.lerp(curPosY, -bgPic.height, mouseLerpCoef);
+					}
+					// sketch moves outside
+					else if (mode == 1) {
+						sketch.image(bgPic, curPosX, curPosY, bgPic.width * 1, bgPic.height * 1);
+						curPosX = sketch.lerp(curPosX, sketch.mouseX, mouseLerpCoef);
+						curPosY = sketch.lerp(curPosY, sketch.mouseY, mouseLerpCoef);
+						// sketch.image(bgPic, 0, 0, bgPic.width * 1, bgPic.height * 1);
+						//console.log("HERE2");
+					}
+					
+				}
+				
+				
 				// DRAW
-				sketch.image(bgBorderPic, (sketch.frameCount * 1.5) % sketch.windowWidth, 3);
-				sketch.image(bgBorderPic, (sketch.frameCount * 1.5) % sketch.windowWidth - bgBorderPic.width, 3);
+				// sketch.image(bgBorderPic, (sketch.frameCount * 1.5) % sketch.windowWidth, 3);
+				// sketch.image(bgBorderPic, (sketch.frameCount * 1.5) % sketch.windowWidth - bgBorderPic.width, 3);
+
+				// sketch.image(bgBorderPic, (sketch.frameCount * 1.5) % sketch.windowWidth, sketch.windowHeight - bgBorderPic.height);
+				// sketch.image(bgBorderPic, (sketch.frameCount * 1.5) % sketch.windowWidth - bgBorderPic.width, sketch.windowHeight - bgBorderPic.height);
 			} catch {}
 			if (p5Texture && p5LoopStarted) {
 				p5Texture.needsUpdate = true;
 			}
+
+			
 		};
 
 		sketch.windowResized = async () => {
 			sketch.clear();
-			console.log(sketch.windowWidth, sketch.windowHeight);
+			//console.log(sketch.windowWidth, sketch.windowHeight);
 			sketch.resizeCanvas(sketch.windowWidth, sketch.windowHeight);
 			p5Texture.dispose();
 			//p5Texture = new THREE.CanvasTexture(p5Canvas.canvas);
@@ -187,6 +271,14 @@ async function main(){
 		sketch.getImage = (i) => {
 			sketch.image(i, 0, 0);
 		};
+
+		sketch.checkForMobile = () =>{
+			let isMobile = /iPhone|iPad|iPod|Android/i.test(window.navigator.userAgent);
+			if (isMobile){
+			  sketch.pixelDensity(1);
+			}
+			
+		}
 	}
 	p5Canvas = new p5(p5Sketch);
 	
@@ -209,7 +301,9 @@ async function main(){
 	const near = 0.1;
 	const far = 1000;
 
-	const frustumSize = 20;
+	let frustumSize = 20;
+	if (isMobile) frustumSize = 40;
+	
 	let oaspect = window.innerWidth / window.innerHeight;
 
 	const camera = new THREE.OrthographicCamera(frustumSize * oaspect / - 2, frustumSize * oaspect / 2, frustumSize / 2, frustumSize / - 2, 0.1, 100);
@@ -225,6 +319,7 @@ async function main(){
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.05;
 	controls.screenSpacePanning = false;
+	controls.enablePan = false;
 	controls.update();
 
 	// SCENE
@@ -236,7 +331,7 @@ async function main(){
 	const textureLoader = new THREE.TextureLoader();
 	const loadingManager = new THREE.LoadingManager();
 	
-	const textureNum = 23;
+	const textureNum = 24;
 	const spriteTextureArr = [];
 	for (let i = 0; i < textureNum; i++){
 		let url = "./assets/sprites/sprite (" + (i + 1).toString() + ").png";
@@ -251,10 +346,17 @@ async function main(){
 		let textureTemp = textureLoader.load(url);
 		faceTextureArr.push(textureTemp); 
 	}
+
+	const nameTextureArr = [];
+	for (let i = 0; i < textureNum; i++){
+		let url = "./assets/names/name (" + (i + 1).toString() + ").png";
+		let textureTemp = textureLoader.load(url);
+		nameTextureArr.push(textureTemp); 
+	}
 	
-	const instanceNum = 23;
-	const posRange = 10;
 	// SPRTIES VER
+	const instanceNum = 24;
+	const posRange = 10;
 	const spritesArr = [];
 	const hyperlinkSpritesArr = [];
 	for (let i = 0; i < instanceNum; i++){
@@ -275,7 +377,8 @@ async function main(){
 			new THREE.Vector3(x, y, z), 
 			spriteTextureArr[i],
 			faceTextureArr[i],
-			'./students/student_1/index.html',
+			nameTextureArr[i],
+			'./students/student_' + (i + 1) + '/index.html',
 			i,
 			scaleCoef
 		);
@@ -306,6 +409,7 @@ async function main(){
 			// zoom animation for the clicked sprite
 			if (hyperlinkSprite.clickAnimationTriggered){
 				hyperlinkSprite.clickAnimationZoom();
+				hyperlinkSprite.nameSprite.visible = true;
 			}
 
 			// fall back animation for the rest
@@ -315,24 +419,27 @@ async function main(){
 				let cam = controls.object;
 				// get camera's world position
 				let campPos = cam.position;
+				// since the scene is rotating, we need to get the world position of the sprites
 				// the lookAt point for each of the sprite should be a positionVec + camPos, and not jsut camPos 
-				let lookAtVec = hyperlinkSprite.sprite.position.clone().add(campPos);
+				let lookAtVec = scene.localToWorld(hyperlinkSprite.sprite.position.clone()).add(campPos);
 				hyperlinkSprite.sprite.lookAt(lookAtVec);
 
 				// bring the sprite's position to camera's local space and normalized the vector
 				let normalizedSpriteScreenPosition = cam.worldToLocal(hyperlinkSprite.sprite.position.clone().normalize());
-				
-				let normalizedDirectionVec = pointerLerp.clone().sub(normalizedSpriteScreenPosition).normalize();
+				// don't forget to normalize the pointer vector as well!!!
+				let normalizedDirectionVec = pointerLerp.clone().normalize().sub(normalizedSpriteScreenPosition).normalize();
 				let directionVec = normalizedDirectionVec.multiplyScalar(0.25);
-				hyperlinkSprite.face.position.set(directionVec.x, directionVec.y, 0.001);
+				hyperlinkSprite.faceSprite.position.set(directionVec.x, directionVec.y, 0.001);
 				
+				//console.log(normalizedDirectionVec);
 				// if clickedSprite gets defined upon mouse click
 				if (clickedSprite != undefined){
 					// if the clicked sprite is moving to center
 					if (clickedSprite.centerTranslationTriggered){
 						if (globalOpacity > 0) globalOpacity -= HyperlinkSprite.opacityClock.getElapsedTime() * 0.01;
 						hyperlinkSprite.sprite.material.opacity = globalOpacity;
-						hyperlinkSprite.face.material.opacity = globalOpacity;
+						hyperlinkSprite.faceSprite.material.opacity = globalOpacity;
+						hyperlinkSprite.nameSprite.material.opacity = globalOpacity;
 					}
 					// if the clicked sprite is moving back to its original pos
 					// if (clickedSprite.scaleDownTriggered){
@@ -349,19 +456,21 @@ async function main(){
 
 	function render(time){
 		if (p5Canvas.canvas != undefined && !p5CanvasLoadedFlag) {
-			//p5Canvas.canvas.style.display = "none";
+			p5Canvas.canvas.style.display = "none";
 			p5Texture = new THREE.CanvasTexture(p5Canvas.canvas);
 			p5Texture.needsUpdate = true;
 			
 			p5CanvasLoadedFlag = true;
-	  
-			scene.background = p5Texture;
-			//console.log("HEY");
-		  }
-		
+		}
+		if (imageLoading) scene.background.set(0x7A33FF);
+		else scene.background = p5Texture;
+		  //console.log("HEY");
+		  //console.log(imageLoading);
 		time *= 0.001;
 		controls.update();
-		pointerLerp.lerp(pointer, 0.025);
+		pointerLerp.lerp(pointer, 0.01);
+		scene.rotateX(0.001);
+		scene.rotateY(0.001);
 		
 		
 		spriteAnimationHandler(time);
@@ -378,8 +487,11 @@ async function main(){
 			camera.updateProjectionMatrix();
 		}
 
-		raycaster.setFromCamera( pointer, camera );
-		updateRaycaster();
+		
+		if (!isMobile) {
+			raycaster.setFromCamera( pointer, camera );
+			updateRaycaster();
+		}
 		renderer.render(scene, camera);
 		requestAnimationFrame(render);
 	}
@@ -404,7 +516,7 @@ async function main(){
 	
 		pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 		pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-	
+		//console.log(pointer)
 	}
 
 
@@ -417,14 +529,45 @@ async function main(){
 		if (intersects.length > 0){
 			let firstIntersectSprite = intersects[0].object;
 			//console.log(firstIntersectSprite.name);
+			document.body.style.cursor = 'pointer';
+
+			if (!HyperlinkSprite.animationTriggered){
+				hyperlinkSpritesArr[firstIntersectSprite.name].nameSprite.visible = true;
+				for (let i = 0; i < hyperlinkSpritesArr.length; i++){
+					if (i == firstIntersectSprite.name) {
+						hyperlinkSpritesArr[i].faceSprite.position.set(0, 0, 0);
+						hyperlinkSpritesArr[i].nameSprite.visible = true;
+					}
+					else hyperlinkSpritesArr[i].nameSprite.visible = false;
+				}
+			}
+			
+			//console.log(firstIntersectSprite.name);
+		}
+		else {
+			if (!mouseIsInLogo) document.body.style.cursor = 'default';
+			if (!HyperlinkSprite.animationTriggered){
+				for (let i = 0; i < hyperlinkSpritesArr.length; i++){
+					hyperlinkSpritesArr[i].nameSprite.visible = false;
+				}
+			}
+			
 		}
 	}
+
+	
 
 	
 	function onPointerDown( event ){
 		// the latter is needed to prevent clicking other sprites when 
 		// animation is triggered
-		if (intersects.length > 0 && !HyperlinkSprite.animationTriggered){
+		if (isMobile){
+			pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+			pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+			raycaster.setFromCamera( pointer, camera );
+			updateRaycaster();
+		}
+		if (intersects.length > 0 && !HyperlinkSprite.animationTriggered && !mouseIsInLogo){
 			let firstIntersectSprite = intersects[0].object;
 			let index = firstIntersectSprite.name;
 			clickedSprite = hyperlinkSpritesArr[index];
@@ -441,13 +584,39 @@ async function main(){
 			// clickedSprite.posBeforeTriggered.copy(clickedSprite.posVec);
 			// clickedSprite.scaleBeforeClickTriggered = clickedSprite.scale;
 		}
+
+		else if (mouseIsInLogo){
+			resetDestPos();
+		}
+
+		//console.log(pointer)
 	}
 	window.addEventListener('pointerdown', onPointerDown);
+
+	function resetDestPos(){
+		for (let i = 0; i < instanceNum; i++){
+			let hyperlinkSprite = hyperlinkSpritesArr[i];
+			let x = map(Math.random(), 0, 1, -posRange, posRange);
+			let y = map(Math.random(), 0, 1, -posRange, posRange);
+			let z = map(Math.random(), 0, 1, -posRange, posRange);
+
+			let scaleCoef = map(Math.random(), 0, 1, 5,  5);
+			
+			hyperlinkSprite.setNewDestPos(new THREE.Vector3(x, y, z));
+		}
+	}
 
 	function onPointerUp(event){
 		controls.enabled = true;
 	}
 	window.addEventListener('pointerup', onPointerUp);
+
+
+	// TOUCH EVENTS
+	function onDocumentTouchStart(event){
+		event.preventDefault();
+		event.clien
+	}
 }
 
 main();

@@ -7,6 +7,9 @@ html, body {
   flex-direction: column;
   height: 100vh; /* 100% of the viewport height */
   overflow: hidden; /* Hide overflow at the body level */
+  
+  background-image: url('./assets/bg_both_dim.png');
+  background-size: 100%;
 }
 
 
@@ -80,8 +83,8 @@ main {
 /* Left Section Styles */
 .left-section {
   flex: 1; /* Grow and shrink equally */
-  background-color: #000000;
-  background-image: url('./assets/bg_retro_dim.png');
+  
+  
   padding: 20px;
   overflow-y: auto; /* Enable vertical scrolling for the left section */
   scrollbar-width: thin; /* For Firefox */
@@ -107,8 +110,8 @@ main {
 /* Right Section Styles */
 .right-section {
   flex: 1; /* Grow and shrink equally */
-  background-color: #000000;
-  background-image: url('./assets/bg_modern_drim.png');
+  
+  
   padding: 20px;
   overflow-y: auto; /* Enable vertical scrolling for the right section */
   scrollbar-width: thin; /* For Firefox */

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="utf-8" />
+
+  </head>
+  <body>
+
+    <header>
+      <h1><a href="#" style="text-decoration:none;color: white;">EXPAND FEST: REAL TIME MEDIA ART FESTIVAL</a></h1>
+      <nav id="menu">
+          <div class="menu-wrapper">
+              <a href="../../index.html">HOME</a>
+              <a href="../page_about/index.html">ABOUT</a>
+              <a href="../page_contestants/index.html">CONTESTANTS</a>
+              <a href="../page_performers/index.html">PERFORMERS</a>
+              <a href="../page_sitemap/index.html">SITE MAP</a>
+              <a href="#">TIMETABLE</a>
+          </div>
+      </nav>
+  </header>
+    
+    <!-- Main Content -->
+    <main>
+      <!-- Left Section -->
+      <div class="left-section">
+          <h2 style="color: #d6ff98; font-size:3em;">TIME TABLE</h2>
+
+          <h3>12/15 (FRI)</h3>
+          <a href="">
+            <img src="./assets/day1.png">
+          </a>
+
+          <h3>12/16 (SAT)</h3>
+          <a href="">
+            <img src="./assets/day2.png">
+          </a>
+
+          <h3>12/17 (SUN)</h3>
+          <a href="">
+            <img src="./assets/day3.png">
+          </a>
+
+          <br>
+          <br>
+          <br>
+          <a href="">
+            <img src="./assets/info.png">
+          </a>
+          <!-- Add more content as needed -->
+      </div>
+
+      
+  </main>
+    <script>
+      const header = document.querySelector('header');
+      const menu = document.getElementById('menu');
+
+      header.addEventListener('mouseenter', () => {
+          menu.style.display = 'block';
+      });
+
+      header.addEventListener('mouseleave', () => {
+          menu.style.display = 'none';
+      });
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.8.0/lib/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.7.0/lib/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
     <script src="https://cdn.rawgit.com/mrdoob/stats.js/r17/build/stats.min.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
@@ -20,10 +20,81 @@
 
   <script type="module" src="main.js"></script>
   <body>
+
+    <button class="index-button" onclick="toggleNames()">Index</button>
+    
+    <ul id="nameList" class="hidden-list">
+        <li><a href="./students/student_1/index.html">강지현</a></li>
+        <li><a href="./students/student_2/index.html">권나경</a></li>
+        <li><a href="./students/student_3/index.html">권채현</a></li>
+        <li><a href="./students/student_4/index.html">김로영</a></li>
+        <li><a href="./students/student_5/index.html">김민서</a></li>
+        <li><a href="./students/student_6/index.html">김민주</a></li>
+        <li><a href="./students/student_7/index.html">김성희</a></li>
+        <li><a href="./students/student_8/index.html">김승희</a></li>
+        <li><a href="./students/student_9/index.html">김예영</a></li>
+        <li><a href="./students/student_10/index.html">김용규</a></li>
+        <li><a href="./students/student_11/index.html">나미</a></li>
+        <li><a href="./students/student_12/index.html">변민경</a></li>
+        <li><a href="./students/student_13/index.html">박언진</a></li>
+        <li><a href="./students/student_14/index.html">김성현</a></li>
+        <li><a href="./students/student_15/index.html">안지민</a></li>
+        <li><a href="./students/student_16/index.html">오예지</a></li>
+        <li><a href="./students/student_17/index.html">이덕원</a></li>
+        <li><a href="./students/student_18/index.html">이연호</a></li>
+        <li><a href="./students/student_19/index.html">정서윤</a></li>
+        <li><a href="./students/student_20/index.html">이주희</a></li>
+        <li><a href="./students/student_21/index.html">한세흔</a></li>
+        <li><a href="./students/student_22/index.html">황예인</a></li>
+        <li><a href="./students/student_23/index.html">Irene</a></li>
+        <li><a href="./students/student_24/index.html">Maria</a></li>
+        <!-- Add 21 more names as needed -->
+    </ul>
     
     <canvas id="c"></canvas>
-    <div id="main-logo-type">
-      <img src="./assets/graphic elements/mainLogoType.png">
-    </div>
+    
+      <img id="main-logo-type" src="./assets/graphic elements/mainLogoTypeWithBG.png" onmousedown="mouseClickedLogo()" onmouseover="mouseInLogo()" onmouseleave="mouseExitLogo()">
+    
+
+   
+      <img id="main-info" src="./assets/graphic elements/mainInfoWithBG.png" >
+      <script>
+        let logoClicked = false;
+        let logoClickCount = 0;
+        let mouseIsInLogo = false;
+        let bgColorArr = ['#7a33ff', '#43fff6', '#ff283f', '#ff56d3',  '#ff6d4b'];
+        let bgColorArrHex = [0x7a33ff, 0x43fff6, 0xff283f, 0xff56d3,  0xff6d4b];
+        let curBgColorIndex = 0;
+        function mouseClickedLogo(){
+          logoClicked = true;
+          logoClickCount++;
+          console.log(logoClickCount)
+          if (logoClickCount % 2 == 0){
+            curBgColorIndex++;
+					  curBgColorIndex %= bgColorArr.length;
+          }
+      
+        }
+
+        function mouseInLogo(){
+          console.log("HUH")
+          document.getElementById('main-logo-type').style.width = "20%"
+          document.body.style.cursor = "pointer";
+          mouseIsInLogo = true;
+        }
+
+        function mouseExitLogo(){
+          document.getElementById('main-logo-type').style.width = "15%"
+          document.body.style.cursor = "default";
+          mouseIsInLogo = false;
+        }
+
+        function toggleNames() {
+            const nameList = document.getElementById('nameList');
+            nameList.classList.toggle('animated-list');
+            nameList.style.display = (nameList.style.display === 'none' || nameList.style.display === '') ? 'block' : 'none';
+        }
+      </script>
+  
   </body>
 </html>

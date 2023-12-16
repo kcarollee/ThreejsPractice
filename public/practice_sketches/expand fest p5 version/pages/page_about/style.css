@@ -1,0 +1,147 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* 100% of the viewport height */
+  overflow: hidden; /* Hide overflow at the body level */
+  
+  background-image: url('./assets/bg_both_dim.png');
+  background-size: 100%;
+}
+
+
+header {
+  background-color: black;
+  color: white;
+  padding: 1vh;
+  position: relative;
+  font-family: customFont;
+  letter-spacing: 2px;
+  z-index: 1; /* Ensure the header stays on top */
+}
+
+h1 {
+  margin: 0;
+}
+
+h1, p {
+  text-align: left;
+  margin-left: 2%;
+}
+
+/* Navigation Menu Styles */
+nav {
+  display: none; /* Hide the menu by default */
+  position: absolute;
+  top: 100%; /* Position the menu just below the header */
+  left: 0;
+  width: 100%;
+  background-color: #333; /* Background color for the menu */
+  padding: 0.5vh;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1); /* Add a subtle box shadow */
+  animation: slideDown 0.3s ease-in-out; /* Slide-down animation */
+  transform-origin: top center; /* Set the origin for the transform */
+  z-index: 1; /* Ensure the menu stays on top */
+}
+
+.menu-wrapper {
+  margin-left: 1.75%; /* Adjust the left margin */
+}
+
+@keyframes slideDown {
+  from {
+      transform: scaleY(0);
+  }
+  to {
+      transform: scaleY(1);
+  }
+}
+
+nav a {
+  display: inline-block; /* Display menu items in a single line */
+  color: white;
+  text-align: center;
+  padding: 10px;
+  text-decoration: none;
+  transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+nav a:hover {
+  background-color: #555; /* Change background color on hover */
+}
+
+/* Main Content Container */
+main {
+  flex: 1; /* Grow and shrink to take available space */
+  display: flex;
+  overflow: hidden; /* Hide overflow at the main content level */
+}
+
+/* Left Section Styles */
+.left-section {
+  flex: 1; /* Grow and shrink equally */
+  
+  
+  padding: 20px;
+  overflow-y: auto; /* Enable vertical scrolling for the left section */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: transparent transparent; /* For Firefox */
+  font-family: customFont;
+  color: white;
+  text-align: center; /* Center-justify the text */
+}
+
+.left-section img{
+  width: 70vw;
+}
+
+/* WebKit-based browsers */
+.left-section::-webkit-scrollbar {
+  width: 5px; /* Width of the scrollbar */
+}
+
+.left-section::-webkit-scrollbar-thumb {
+  background-color: transparent; /* Color of the scrollbar thumb */
+}
+
+.left-section div {
+  font-size: smaller;
+  text-align:center;
+  margin: 100px;
+
+}
+
+/* Right Section Styles */
+.right-section {
+  flex: 1; /* Grow and shrink equally */
+  
+  
+  padding: 20px;
+  overflow-y: auto; /* Enable vertical scrolling for the right section */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: transparent transparent; /* For Firefox */
+  font-family: customFont;
+  color: white;
+  text-align: center; /* Center-justify the text */
+}
+
+.right-section img{
+  width: 30vw;
+}
+
+/* WebKit-based browsers */
+.right-section::-webkit-scrollbar {
+  width: 5px; /* Width of the scrollbar */
+}
+
+.right-section::-webkit-scrollbar-thumb {
+  background-color: transparent; /* Color of the scrollbar thumb */
+}
+
+@font-face {
+  font-family: customFont;
+  src: url(../../assets/fonts/Supply-Medium.otf);
+}
