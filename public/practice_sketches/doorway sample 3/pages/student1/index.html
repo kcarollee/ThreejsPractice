@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <a href="../student2/index.html" class="back-button">←</a>
+    <a href="../student2/index.html" class="next-button">→</a>
+
+    <div id="flipbook-container">
+        <div id="flipbook"></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="flipbook.js"></script>
+    <div class="container">
+        <div class="student-info">
+            <img src="student_1.jpg" alt="Student Photo" class="student-photo">
+            <div class="info">
+                <h1>핑구핑구</h1>
+                <p>insta: @pingupingu</p>
+                <p>homepage: exampleHomepage.com</p>
+                <p>email: student@example.com</p>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button class="gallery-button" data-gallery="gallery1">통합적타이포그래피</button>
+            <button class="gallery-button" data-gallery="gallery2">멀티미디어디자인</button>
+            <button class="gallery-button" data-gallery="gallery3">시각디자인5</button>
+            <button class="gallery-button" data-gallery="gallery4">자율프로젝트</button>
+        </div>
+
+        <div class="gallery-description" id="description1">
+            <div class="gallery-name">
+                <h3>Name of the Piece 1</h3>
+            </div>
+            <div class="gallery-explanation">
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut ali</p>
+            </div>
+        </div>
+
+        <div class="gallery-description" id="description2">
+            <div class="gallery-name">
+                <h3>Name of the Piece 2</h3>
+            </div>
+            <div class="gallery-explanation">
+                <p>"Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
+            </div>
+        </div>
+
+        <div class="gallery-description" id="description3">
+            <div class="gallery-name">
+                <h3>Name of the Piece 3</h3>
+            </div>
+            <div class="gallery-explanation">
+                <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est labo</p>
+            </div>
+        </div>
+
+        <div class="gallery-description" id="description4">
+            <div class="gallery-name">
+                <h3>Name of the Piece 4</h3>
+            </div>
+            <div class="gallery-explanation">
+                <p>Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumen</p>
+            </div>
+        </div>
+
+        
+        <div class="gallery" id="gallery1">
+            <img src="proj1/img_3.jpg" alt="Work 1">
+        </div>
+
+        <div class="gallery" id="gallery1">
+            <img src="proj1/img_1.jpg" alt="Work 1">
+            <img src="proj1/img_1.jpg" alt="Work 1">
+        </div>
+
+        <div class="gallery" id="gallery1">
+            <img src="proj1/img_1.jpg" alt="Work 1">
+            <img src="proj1/img_1.jpg" alt="Work 1">
+            <img src="proj1/img_1.jpg" alt="Work 1">
+        </div>
+
+
+        
+
+        <div class="gallery" id="gallery2" style="display:none;">
+            <img src="proj1/img_1.jpg" alt="Work 1">
+            <img src="proj1/img_1.jpg" alt="Work 2">
+        </div>
+
+        <div class="gallery" id="gallery3" style="display:none;">
+            <img src="proj1/img_1.jpg" alt="Work 1">
+            <img src="proj1/img_1.jpg" alt="Work 2">
+            <img src="proj1/img_1.jpg" alt="Work 2">
+        </div>
+
+        <div class="gallery" id="gallery4" style="display:none;">
+            <img src="proj1/img_1.jpg" alt="Work 1">
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialGallery = urlParams.get('gallery');
+       
+
+        const buttons = document.querySelectorAll('.gallery-button');
+        const galleries = document.querySelectorAll('.gallery');
+        const descriptions = document.querySelectorAll('.gallery-description');
+
+         // Function to show the initial gallery based on URL parameter
+         if (initialGallery) {
+            console.log(initialGallery)
+            const initialDescriptionId = 'description' + initialGallery.slice(-1);
+            document.getElementById(initialGallery).style.display = 'grid';
+            document.getElementById(initialDescriptionId).style.display = 'flex';
+        }
+
+        else {
+            document.getElementById('gallery1').style.display = 'grid';
+            document.getElementById('description1').style.display = 'flex';
+        }
+
+        buttons.forEach(button => {
+            button.addEventListener('click', function() {
+                const galleryId = this.getAttribute('data-gallery');
+                const descriptionId = 'description' + galleryId.slice(-1);
+
+                // Hide all galleries
+                galleries.forEach(gallery => {
+                    gallery.style.display = 'none';
+                });
+                descriptions.forEach(description => {
+                    description.style.display = 'none';
+                });
+
+                // Show selected gallery
+                document.getElementById(galleryId).style.display = 'grid';
+                document.getElementById(descriptionId).style.display = 'flex';
+            });
+        });
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+
+@import url('https://fonts.googleapis.com/earlyaccess/notosanskr');
+
+body, html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-align: center; /* Centers text elements */
+    height: 100%; /* Ensures full height */
+    background-color: black;
+    font-family: 'Noto Sans KR';
+    color: white;
+}
+
+.back-button {
+    position: absolute; /* Ensures it remains in the corner regardless of scrolling */
+    top: 10px;
+    left: 10px;
+    
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none; /* Removes underline */
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.next-button {
+    position: absolute; /* Ensures it remains in the corner regardless of scrolling */
+    top: 10px;
+    right: 10px;
+    
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    text-decoration: none; /* Removes underline */
+    font-size: 16px;
+    font-weight: bold;
+}
+
+
+
+.container {
+    width: 80%;
+    max-width: 1280px; /* Maximum width of the content area */
+    margin: 20px auto; /* Horizontally centers the container and adds vertical margin */
+    padding: 10px; /* Optional padding */
+}
+
+.student-info {
+    display: flex;
+    justify-content: center; /* Center content within the flex container */
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap; /* Wraps elements on smaller screens */
+}
+
+
+
+
+
+.student-photo {
+    width: 200px;
+    height: 200px;
+    
+    margin-right: 20px; /* Maintains spacing between photo and info on wider screens */
+}
+
+.info {
+    flex-grow: 1;
+    text-align: left; /* Keeps the text alignment to the left within the info box */
+}
+
+
+.info p {
+    margin: 5px 0;  /* Reduces vertical spacing between info items */
+}
+
+.info h1 {
+    font-size: 30px;
+    margin-bottom: 60px;
+    transform: translateY(-25px);
+}
+
+.button-container {
+    display: flex;  /* Use flexbox to layout buttons */
+    justify-content: space-between;  /* Distributes space evenly between buttons */
+    margin: 20px 0;
+    
+}
+
+.button-container button {
+    flex-grow: 1;  /* Allows each button to grow and fill the container */
+    padding: 10px 20px;
+    margin: 0 4px;  /* Adds small gap between buttons, adjust as needed */
+    cursor: pointer;
+    font-family: 'Noto Sans KR';
+    font-weight: bold;
+}
+
+
+.gallery {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjusts number of columns based on the container width */
+    gap: 10px;
+    justify-content: center;
+    display: none; /* Initially hide all galleries */
+}
+
+/* Initially show the first gallery */
+#gallery1 {
+    display: grid;
+}
+
+/* Hide other galleries initially */
+#gallery2, #gallery3 #gallery4{
+    display: none;
+}
+
+.gallery img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* Initially show the first description */
+#description1 {
+    display: flex;
+}
+
+/* Hide other galleries initially */
+#description2, #description3 #description4{
+    display: none;
+}
+
+
+.gallery-description {
+    position: relative; /* Essential for positioning the pseudo-element correctly */
+    display: none;
+    align-items: center;
+    justify-content: space-between; /* Ensures that the two sections can space out evenly */
+    margin: 20px 0;
+}
+
+.gallery-name, .gallery-explanation {
+    flex: 1; /* Each section takes up half of the container */
+}
+
+.gallery-name {
+    text-align: left;
+    font-size: 24px; /* Larger font for the piece name */
+}
+
+.gallery-explanation {
+    text-align: right;
+    font-size: 16px; /* Smaller font for the explanation */
+}
+
+
+
+/* Media Queries for responsiveness */
+@media (max-width: 768px) {
+    .student-info {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .info {
+        padding-left: 0;
+        text-align: center;
+    }
+
+    .gallery {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .button-container {
+        flex-direction: column;
+    }
+
+    .button-container button {
+        margin-bottom: 10px; /* Adds space between vertically stacked buttons */
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: 95%;
+    }
+
+    .student-photo {
+        width: 120px;
+        height: 120px;
+    }
+}
