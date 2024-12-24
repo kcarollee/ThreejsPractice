@@ -1,9 +1,58 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap');
+@font-face {
+  font-family: 'Neue Haas Display Medium';
+  src: url('assets/fonts/NeueHaasDisplayMedium.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Neue Haas Display Light';
+  src: url('assets/fonts/NeueHaasDisplayLight.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'LetterGothic';
+  src: url('assets/fonts/letter-gothic-std-bold.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SM';
+  src: url('assets/fonts/SM3중고딕-02.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'LetterNoto';
+  src: url('assets/fonts/LetterNoto-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+
 
 html, body {
    margin: 0;
    height: 100%;
+   font-family: 'LetterNoto';
+   background-color: rgb(255, 255, 255);
+   transition: background-color 0.5s;
+   overflow-y: hidden;
+   scroll-snap-type: none; 
+   scroll-behavior: smooth; 
 }
+
+body.change-color {
+  background-color: white;
+}
+
+
+
 #c {
    position: fixed;
    top: 0;
@@ -14,60 +63,208 @@ html, body {
    pointer-events: none;
 }
 
-#scroll-container {
-   position: relative;
-   width: 100%;
-   height: 100%;
-   z-index: 20;
-   overflow: auto;
-   pointer-events: auto;
- }
+
+
  #content {
    position: relative;
    width: 100%;
    height: 2000px; /* Adjust the height to make it scrollable */
  }
 
- .menu-bar {
-   opacity: 0;
-   position: fixed;
-   top: 0;
-   width: 100%;
-   background: rgba(255, 255, 255, 0); /* Changed background to white */
-   color: black; /* Changed text color to black */
-   text-align: center;
-   padding: 10px 0;
-   z-index: 30;
-   transition: opacity 0.5s;
+
+.menu-bar {
+  opacity: 0;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0); /* Changed background to white */
+  color: black; /* Changed text color to black */
+  text-align: center;
+  padding: 10px 0;
+  z-index: 30;
+  transition: opacity 0.5s;
  }
- .menu-bar.visible {
+
+.menu-bar.visible {
    opacity: 1;
  }
 
- .menu-bar h1 {
-  font-size:large;
+.menu-bar h1 {
+   font-size: 30px;
    margin: 0;
    padding: 0;
    display: flex;
    justify-content: left;
-   margin-left: 1.5vw;
+   margin-left: 20px;
  }
 
- .menu-bar ul {
+.menu-bar ul {
    list-style: none;
-   margin-top: -2.2vh;
+   margin-top: 5px;
    padding: 0;
    display: flex;
-   justify-content: right;
+   justify-content: center;
    margin-right: 1.5vw;
-   
+   font-family: 'LetterGothic';
  }
  .menu-bar li {
-   margin: 0 20px;
- }
- .menu-bar a {
-   color: black;
-   text-decoration: none;
- }
+  margin: 0 30px;
+  position: relative; /* Ensure positioning is relative for pseudo-elements */
+}
+
+.menu-bar a {
+  color: black;
+  text-decoration: none;
+  position: relative; /* Ensure the link's position is relative for pseudo-elements */
+}
+
+.menu-bar a::before,
+.menu-bar a::after {
+  content: ''; /* Initially, no content */
+  opacity: 0; /* Hide the parentheses by default */
+  transition: opacity 0.1s; /* Smooth transition for the appearance of parentheses */
+}
+
+.menu-bar a::before {
+  content: '('; /* Left parenthesis */
+  position: absolute;
+  left: -10px; /* Adjust position relative to the text */
+}
+
+.menu-bar a::after {
+  content: ')'; /* Right parenthesis */
+  position: absolute;
+  right: -10px; /* Adjust position relative to the text */
+}
+
+.menu-bar li.active a,
+.menu-bar a:hover {
+    color: rgb(92, 156, 186);
+    text-decoration: none;
+}
+
+.menu-bar li.active a::before,
+.menu-bar li.active a::after,
+.menu-bar a:hover::before,
+.menu-bar a:hover::after {
+    opacity: 1; /* Show the parentheses on hover or when active */
+}
+
+.menu-bar a:hover {
+  color: rgb(92, 156, 186);
+  text-decoration: none;
+  transition: color 0.1s; /* Smooth transition for text color change */
+}
+
+
+.main-contents-container{
+    opacity: 0;
+    z-index: 20;
+    transition: opacity 0.5s;
+}
+
+.main-contents-container.visible{
+  opacity: 1;
+}
+
+.scroll-snap {
+  scroll-snap-type: y mandatory;
+}
+
+section {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  scroll-snap-align: start;
+  scroll-snap-stop: always; /* Ensures the scroll snap aligns fully before moving on */
+  transition: transform 1s ease-in-out; /* Smoother transition */
+}
+
+.container {
+  width: 80%;
+  display: grid;
+  grid-template-columns: 35% 65%;
+  column-gap: 40px;
+  
+}
+
+.left-section {
+  display: grid;
+  grid-template-rows: auto auto;
+  text-align: right;
+}
+
+.left-section-top {
+  margin-bottom: 10px;
+  font-size: 18pt;
+  color: rgb(92, 156, 186);
+}
+
+.left-section-bottom {
+
+  /* same as right-section's font attributes */
+  font-weight: lighter;
+  font-size: 10pt;
+  word-spacing: 0.1em;
+  line-height: 175%;
+
+  transform: translateY(-37px);
+}
+
+.right-section {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+
+  font-weight: lighter;
+  font-size: 10pt;
+  word-spacing: 0.1em;
+  line-height: 175%;
+
+  transform: translateY(-3px);
+}
+
+.right-section p {
+  margin: 10px 0;
+  text-align: justify;
+}
+
+.right-section-roles-names {
+  display: grid;
+  grid-template-columns: 10% 90%; /* 10% for roles, 90% for names */
+  column-gap: 20px; /* Adjust the gap between the two sections */
+}
+
+.right-section-roles {
+  text-align: right; /* Right-align text in the roles section */
+  font-weight: bold;
+}
+
+.right-section-names {
+  text-align: left; /* Left-align text in the names section */
+}
+
+.right-section-top {
+  margin-bottom: 10px; /* Space between the top text and the image section */
+ 
+}
+
+.right-section-image {
+  text-align: center; /* Center the image */
+}
+
+.right-section-image img {
+  width: 50%; /* Shrink the image size to 50% of its container width */
+  height: auto; /* Maintain the aspect ratio */
+  display: inline-block; /* Align the image to the left */
+  margin: 0; /* Remove any default margins */
+  text-align: left; /* Ensure the image sticks to the left */
+  transform: translateX(-250px);
+}
+
+
+
+
 
 
