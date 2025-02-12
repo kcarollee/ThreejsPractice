@@ -9,12 +9,13 @@
                 }
             }
         </script>
+
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
         <script src="https://cdn.rawgit.com/mrdoob/stats.js/r17/build/stats.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
         <script src="js/noise.js"></script>
         <script src="js/imgData.js"></script>
-
+        <script src="js/custom-shader.js"></script>
         <link rel="stylesheet" type="text/css" href="style.css" />
 
         <meta charset="utf-8" />
@@ -22,7 +23,6 @@
     <body>
         <script type="module" src="main.js"></script>
         <canvas id="c"></canvas>
-
         <div class="container">
             <div class="menu-bars">
                 <div class="upper-left">
@@ -52,7 +52,7 @@
         console.log("SCRIPT RUNNING");
         // 1920 991
         // gap size in pixels
-        const fontSize = 80;
+        const fontSize = 60;
         const widthGapSize = fontSize;
         const heightGapSize = fontSize;
 
