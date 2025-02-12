@@ -26,7 +26,7 @@
         <div class="container">
             <div class="menu-bars">
                 <div class="upper-left">
-                    <div class="upper-left-text">WORKS</div>
+                    <div class="upper-left-text" onclick="onWorksClick()">DWKL WORKS</div>
                     <div class="upper-line"></div>
                 </div>
                 <div class="upper-right">
@@ -46,16 +46,27 @@
                     </div>
                 </div>
             </div>
+
+            <div class="thumbnail-gallery">
+                <div class="category-menu-bars">
+                    <a href="#" class="category">ALL</a>
+                    <a href="#" class="category">MULTIMEDIA</a>
+                    <a href="#" class="category">GRAPHICS EXPERIMENTS</a>
+                    <a href="#" class="category">PUBLICATIONS</a>
+                    <a href="#" class="category">MISC</a>
+                </div>
+                <div class="thumbnails"></div>
+            </div>
         </div>
     </body>
     <script>
         console.log("SCRIPT RUNNING");
         // 1920 991
         // gap size in pixels
-        const fontSize = 60;
+        const fontSize = 80;
         const widthGapSize = fontSize;
         const heightGapSize = fontSize;
-
+        let worksClickCount = 0;
         const menuBars = document.querySelector(".menu-bars");
         menuBars.style.fontSize = fontSize + "px";
 
@@ -68,6 +79,8 @@
         const upperRightText = document.querySelector(".upper-right-text");
         const lowerRightText = document.querySelector(".lower-right-text");
         const lowerLeftText = document.querySelector(".lower-left-text");
+
+        const categoryMenuBars = document.querySelector(".category-menu-bars");
 
         adjustLinePositions();
         adjustTextPositions();
@@ -96,6 +109,49 @@
             upperRightText.style.left = window.innerWidth + "px";
             lowerRightText.style.top = window.innerHeight - heightGapSize + "px";
             lowerLeftText.style.top = window.innerHeight + "px";
+        }
+
+        function onWorksClick() {
+            worksClickCount++;
+            if (worksClickCount % 2 == 1) hideMenuBars();
+            else showMenuBars();
+        }
+
+        function hideMenuBars() {
+            lowerLeftText.style.left = -200 + "px";
+            lowerRightText.style.top = window.innerHeight + 200 + "px";
+            upperRightText.style.left = window.innerWidth + 200 + "px";
+
+            leftLine.style.left = -200 + "px";
+            lowerLine.style.top = window.innerHeight - heightGapSize + 200 + "px";
+            rightLine.style.left = window.innerWidth - widthGapSize + 200 + "px";
+
+            upperLine.style.width = window.innerWidth + 200 + "px";
+
+            showCategoryMenuBars();
+        }
+
+        function showMenuBars() {
+            lowerLeftText.style.left = 0 + "px";
+            lowerRightText.style.top = window.innerHeight - heightGapSize + "px";
+            upperRightText.style.left = window.innerWidth + "px";
+
+            leftLine.style.left = widthGapSize + "px";
+            lowerLine.style.top = window.innerHeight - heightGapSize + "px";
+            rightLine.style.left = window.innerWidth - widthGapSize + "px";
+
+            upperLine.style.width = window.innerWidth - widthGapSize + "px";
+
+            hideCategoryMenuBars();
+        }
+
+        function showCategoryMenuBars() {
+            categoryMenuBars.style.left = 0 + "px";
+            categoryMenuBars.style.top = heightGapSize + "px";
+        }
+
+        function hideCategoryMenuBars() {
+            categoryMenuBars.style.left = -500 + "px";
         }
 
         window.addEventListener("resize", function () {

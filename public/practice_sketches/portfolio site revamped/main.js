@@ -126,7 +126,7 @@ function main() {
     function render() {
         orbitControls.update();
         objMeshArr.forEach(function (objMesh) {
-            objMesh.geometry.setDrawRange(0, count * 2);
+            objMesh.geometry.setDrawRange(0, count);
             // objMesh.rotateX(0.001);
         });
 

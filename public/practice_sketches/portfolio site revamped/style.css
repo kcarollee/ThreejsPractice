@@ -33,6 +33,7 @@ html, body {
   left: 1920px;
   
   transform-origin: left top;
+  transition: left 0.5s ease-in-out;
 }
 
 .lower-right-text{
@@ -40,6 +41,7 @@ html, body {
   transform: rotate(180deg);
   right: 0px;
   top: 941px;
+  transition: top 0.5s ease-in-out;
 }
 
 .lower-left-text{
@@ -48,6 +50,7 @@ html, body {
   transform-origin: left top;
   left: 0px;
   top: 991px;
+  transition: left 0.5s ease-in-out;
 }
 
 /* keep line gap width to 97vw for now */
@@ -58,6 +61,7 @@ html, body {
   width: 97vw; /* 75% of the viewport width */
   height: 2px; /* Line thickness */
   background-color: white; /* Line color */
+  transition: width 0.5s ease-in-out;
 }
 
 .right-line{
@@ -67,6 +71,7 @@ html, body {
   width: 2px; /* Line thickness */
   height: 97vh; /* 75% of the viewport height */
   background-color: white; /* Line color */
+  transition: left 0.5s ease-in-out;
 }
 
 .lower-line{
@@ -76,6 +81,7 @@ html, body {
   width: 97vw; /* 75% of the viewport width */
   height: 2px; /* Line thickness */
   background-color: white; /* Line color */
+  transition: top 0.5s ease-in-out;
 }
 
 .left-line{
@@ -85,6 +91,29 @@ html, body {
   width: 2px; /* Line thickness */
   height: 97vh; /* 75% of the viewport height */
   background-color: white; /* Line color */
+  transition: left 0.5s ease-in-out;
+}
+
+.thumbnail-gallery{
+
+}
+
+.category-menu-bars{
+  position: absolute;
+  left: -500px;
+  transition: left 0.5s ease-in-out;
+}
+
+.category-menu-bars a{
+  display: block;
+  color: white;
+  font-size: 40px;
+  font-family: 'HelveticaNeueLight';
+  text-decoration: none;
+}
+
+.category{
+
 }
 
 
