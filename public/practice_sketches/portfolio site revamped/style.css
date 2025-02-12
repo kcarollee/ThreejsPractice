@@ -1,0 +1,104 @@
+@font-face {
+  font-family: "HelveticaNeueLight";
+  src: url("./assets/fonts/HelveticaNeueLight.otf");
+}
+
+html, body {
+   margin: 0;
+   height: 100%;
+   overflow-y: hidden;
+   overflow-x: hidden;
+}
+
+
+.container{
+  z-index: 0;
+}
+
+.menu-bars{
+  font-family: "HelveticaNeueLight";
+  font-size: 50px;
+  color: white;
+}
+.menu-bars:hover{
+  cursor: pointer;
+}
+.upper-left-text{
+  position: absolute;
+}
+
+.upper-right-text{
+  position: absolute;
+  transform: rotate(90deg);
+  left: 1920px;
+  
+  transform-origin: left top;
+}
+
+.lower-right-text{
+  position: absolute;
+  transform: rotate(180deg);
+  right: 0px;
+  top: 941px;
+}
+
+.lower-left-text{
+  position: absolute;;
+  transform: rotate(-90deg);
+  transform-origin: left top;
+  left: 0px;
+  top: 991px;
+}
+
+/* keep line gap width to 97vw for now */
+.upper-line{
+  position: absolute;
+  top: 5vh; /* Adjust as needed */
+  left: 0;
+  width: 97vw; /* 75% of the viewport width */
+  height: 2px; /* Line thickness */
+  background-color: white; /* Line color */
+}
+
+.right-line{
+  position: absolute;
+  top: 0; /* Start from the top of the page */
+  left: 97vw; /* Position at 75% of the page width */
+  width: 2px; /* Line thickness */
+  height: 97vh; /* 75% of the viewport height */
+  background-color: white; /* Line color */
+}
+
+.lower-line{
+  position: absolute;
+  top: 97vh; /* Adjust as needed */
+  left: 3vw;
+  width: 97vw; /* 75% of the viewport width */
+  height: 2px; /* Line thickness */
+  background-color: white; /* Line color */
+}
+
+.left-line{
+  position: absolute;
+  top: 5vh; /* Start from the top of the page */
+  left: 3vw; /* Position at 75% of the page width */
+  width: 2px; /* Line thickness */
+  height: 97vh; /* 75% of the viewport height */
+  background-color: white; /* Line color */
+}
+
+
+#c {
+   position: fixed;
+   top: 0;
+   left: 0;
+   width: 100vw;
+   height: 100vh;
+   z-index: -1;
+
+}
+
+
+
+
+

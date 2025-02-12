@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+                }
+            }
+        </script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
+        <script src="https://cdn.rawgit.com/mrdoob/stats.js/r17/build/stats.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="js/noise.js"></script>
+        <script src="js/imgData.js"></script>
+
+        <link rel="stylesheet" type="text/css" href="style.css" />
+
+        <meta charset="utf-8" />
+    </head>
+    <body>
+        <script type="module" src="main.js"></script>
+        <canvas id="c"></canvas>
+
+        <div class="container">
+            <div class="menu-bars">
+                <div class="upper-left">
+                    <div class="upper-left-text">WORKS</div>
+                    <div class="upper-line"></div>
+                </div>
+                <div class="upper-right">
+                    <div class="upper-right-text">ABOUT</div>
+                    <div class="right-line"></div>
+                </div>
+                <div class="lower-right">
+                    <div class="lower-right">
+                        <div class="lower-right-text">CV</div>
+                        <div class="lower-line"></div>
+                    </div>
+                </div>
+                <div class="lower-left">
+                    <div class="lower-left">
+                        <div class="lower-left-text">CONTACT</div>
+                        <div class="left-line"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        console.log("SCRIPT RUNNING");
+        // 1920 991
+        // gap size in pixels
+        const fontSize = 80;
+        const widthGapSize = fontSize;
+        const heightGapSize = fontSize;
+
+        const menuBars = document.querySelector(".menu-bars");
+        menuBars.style.fontSize = fontSize + "px";
+
+        const upperLine = document.querySelector(".upper-line");
+        const rightLine = document.querySelector(".right-line");
+        const lowerLine = document.querySelector(".lower-line");
+        const leftLine = document.querySelector(".left-line");
+
+        const upperLeftText = document.querySelector(".upper-left-text");
+        const upperRightText = document.querySelector(".upper-right-text");
+        const lowerRightText = document.querySelector(".lower-right-text");
+        const lowerLeftText = document.querySelector(".lower-left-text");
+
+        adjustLinePositions();
+        adjustTextPositions();
+
+        function adjustLinePositions() {
+            let newWidth = window.innerWidth - widthGapSize;
+            let newHeight = window.innerHeight - heightGapSize;
+
+            upperLine.style.width = newWidth + "px";
+            upperLine.style.top = heightGapSize + "px";
+            lowerLine.style.width = newWidth + "px";
+            lowerLine.style.left = widthGapSize + "px";
+            lowerLine.style.top = newHeight + "px";
+
+            leftLine.style.height = newHeight + "px";
+            leftLine.style.top = heightGapSize + "px";
+            leftLine.style.left = widthGapSize + "px";
+            rightLine.style.height = newHeight + "px";
+            rightLine.style.left = newWidth + "px";
+        }
+
+        function adjustTextPositions() {
+            let newWidth = window.innerWidth - widthGapSize;
+            let newHeight = window.innerHeight - heightGapSize;
+
+            upperRightText.style.left = window.innerWidth + "px";
+            lowerRightText.style.top = window.innerHeight - heightGapSize + "px";
+            lowerLeftText.style.top = window.innerHeight + "px";
+        }
+
+        window.addEventListener("resize", function () {
+            console.log("WINDOW RESIZED");
+            adjustLinePositions();
+            adjustTextPositions();
+        });
+    </script>
+</html>
